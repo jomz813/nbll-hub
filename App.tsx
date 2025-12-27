@@ -73,6 +73,13 @@ const AppContent: React.FC = () => {
       root.classList.remove('rahbizzy-theme');
     }
 
+    // Monochrome Theme
+    if (settings.monochromeTheme) {
+      root.classList.add('monochrome-theme');
+    } else {
+      root.classList.remove('monochrome-theme');
+    }
+
   }, [settings]);
 
   // Global Keyboard Shortcut for Search
@@ -121,6 +128,12 @@ const AppContent: React.FC = () => {
           --accent-soft: rgba(59, 130, 246, 0.05) !important;
           --accent-soft-dark: rgba(59, 130, 246, 0.10) !important;
           --accent-shadow: rgba(59, 130, 246, 0.05) !important;
+        }
+        .monochrome-theme {
+          --accent: #52525b !important; /* zinc-600 */
+          --accent-soft: rgba(82, 82, 91, 0.05) !important;
+          --accent-soft-dark: rgba(82, 82, 91, 0.10) !important;
+          --accent-shadow: rgba(0, 0, 0, 0.05) !important;
         }
       `}</style>
 
@@ -189,6 +202,19 @@ const AppContent: React.FC = () => {
           .theme-hof ::selection {
             background: #3B82F6 !important;
             color: white !important;
+          }
+        `}</style>
+      )}
+
+      {settings.monochromeTheme && (
+        <style>{`
+          ::selection {
+            background: #27272a !important; /* zinc-800 */
+            color: white !important;
+          }
+          .theme-hof .accent-line, .theme-hof ::selection {
+             background: #3f3f46 !important; /* zinc-700 */
+             color: white !important;
           }
         `}</style>
       )}
