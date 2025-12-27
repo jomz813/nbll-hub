@@ -54,10 +54,10 @@ export const contentMap: Record<string, TabContent> = {
     description: 'Explore the peripheral ecosystem of the NBLL.',
     items: [
       { label: 'Records', category: 'History' },
+      { label: 'n/a', category: 'N/A' },
+      { label: 'n/a', category: 'N/A' },
+      { label: 'n/a', category: 'N/A' },
       { label: 'Rules', category: 'Official' },
-      { label: 'n/a', category: 'N/A' },
-      { label: 'n/a', category: 'N/A' },
-      { label: 'n/a', category: 'N/A' },
       { label: 'Credits', category: 'Team' }
     ]
   },
