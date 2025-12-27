@@ -57,6 +57,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 </button>
               </div>
             </div>
+
+            {/* Monochrome Theme Toggle */}
+            <div className="flex items-center justify-between pt-2">
+              <div className="space-y-1">
+                <p className="font-bold text-zinc-800 dark:text-zinc-200">Monochrome Theme</p>
+                <p className="text-xs text-zinc-500">Grayscale palette across the site.</p>
+              </div>
+              <button 
+                onClick={() => updateSettings({ monochromeTheme: !settings.monochromeTheme })}
+                className={`w-12 h-7 rounded-full transition-colors relative ${settings.monochromeTheme ? 'bg-zinc-800 dark:bg-zinc-200' : 'bg-zinc-200 dark:bg-zinc-800'}`}
+              >
+                <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${settings.monochromeTheme ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
           </section>
 
           {/* Accessibility */}
@@ -154,11 +168,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </button>
           </section>
 
-          {/* JewBizzy Special Theme (Hidden/Bottom) */}
+          {/* Special Themes Section */}
           <section className="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
              <div className="flex items-center justify-between">
                <div className="space-y-1">
-                 <p className="font-bold text-zinc-800 dark:text-zinc-200 text-sm">JewBizzy Special Theme</p>
+                 <p className="font-bold text-zinc-800 dark:text-zinc-200 text-sm">RahBizzy Special Theme</p>
                  <p className="text-[10px] text-zinc-400">Forces site theme to Blue + White.</p>
                </div>
                <button 
@@ -187,3 +201,4 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 };
 
 export default SettingsModal;
+
