@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 export interface Settings {
   rahBizzyTheme: boolean;
+  monochromeTheme: boolean;
   reducedMotion: boolean;
   highContrast: boolean;
   fontSize: 'normal' | 'large';
@@ -29,6 +30,7 @@ interface SettingsContextType {
 
 const defaultSettings: Settings = {
   rahBizzyTheme: false,
+  monochromeTheme: false,
   reducedMotion: false,
   highContrast: false,
   fontSize: 'normal',
@@ -68,6 +70,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const getThemeColors = (isHOF = false): ThemeColors => {
+    // Monochrome overrides all other themes for colored accents
+    if (settings.monochromeTheme) {
+      return {
+        text: 'text-zinc-600 dark:text-zinc-400',
+        bg: 'bg-zinc-800 dark:bg-zinc-200',
+        bgSoft: 'bg-zinc-100 dark:bg-zinc-800',
+        border: 'border-zinc-300 dark:border-zinc-600',
+        shadow: 'shadow-[0_4px_12px_rgba(0,0,0,0.1)]',
+        hoverShadow: 'hover:shadow-zinc-500/5'
+      };
+    }
+
     if (settings.rahBizzyTheme) {
       return {
         text: 'text-[#3B82F6]',
