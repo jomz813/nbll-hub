@@ -119,10 +119,10 @@ const S11StatsTable: React.FC<S11StatsTableProps> = ({ isEmbedded = false }) => 
   return (
     <div className={containerClasses}>
       <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-sm">
-        <div className="w-full overflow-x-auto no-scrollbar">
+        <div className="w-full overflow-x-auto overflow-y-auto max-h-[70vh] no-scrollbar">
           <div className="min-w-[640px]">
-            {/* Table Header */}
-            <div className="grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+            {/* Table Header - Sticky */}
+            <div className="sticky top-0 z-20 grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50/95 dark:bg-zinc-800/95 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
               {columns.map((col) => (
                 <button
                   key={col.key}

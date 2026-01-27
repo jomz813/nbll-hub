@@ -118,23 +118,23 @@ const AllTimeStatsPage: React.FC<AllTimeStatsPageProps> = ({ isEmbedded = false 
   ];
 
   const containerClasses = isEmbedded 
-    ? "space-y-12" 
-    : "animate-page-enter pt-4 space-y-12 pb-20";
+    ? "" 
+    : "animate-page-enter pt-4";
 
   return (
     <div className={containerClasses}>
       {isDebug && (
-        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 rounded-xl text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+        <div className="p-4 mb-12 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 rounded-xl text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
           <p>Total rows loaded: {data.length}</p>
           <p>Top 5 by PTS: {data.slice(0, 5).map(p => `${p.player} (${p.pts})`).join(', ')}</p>
         </div>
       )}
 
       <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-sm">
-        <div className="w-full overflow-x-auto no-scrollbar">
+        <div className="w-full overflow-x-auto overflow-y-auto max-h-[70vh] no-scrollbar">
           <div className="min-w-[640px]">
             {/* Table Header */}
-            <div className="grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+            <div className="sticky top-0 z-20 grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50/95 dark:bg-zinc-800/95 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
               {columns.map((col) => (
                 <button
                   key={col.key}
@@ -180,21 +180,6 @@ const AllTimeStatsPage: React.FC<AllTimeStatsPageProps> = ({ isEmbedded = false 
           </div>
         </div>
       </div>
-      
-      {!isEmbedded && (
-        <div className="flex flex-col md:flex-row items-center justify-center gap-6 opacity-50 px-4">
-          <div className="flex items-center gap-2">
-            <span className={`w-1.5 h-1.5 rounded-full ${accentBg} animate-pulse`} />
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-              Live All-Time Registry
-            </span>
-          </div>
-          <div className="hidden md:block w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-800" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-            Last Updated Q4 2025
-          </span>
-        </div>
-      )}
     </div>
   );
 };

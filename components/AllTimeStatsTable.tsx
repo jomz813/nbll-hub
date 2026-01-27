@@ -109,12 +109,12 @@ const AllTimeStatsTable: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-12">
+    <div>
       <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-sm">
-        <div className="w-full overflow-x-auto no-scrollbar">
+        <div className="w-full overflow-x-auto overflow-y-auto max-h-[70vh] no-scrollbar">
           <div className="min-w-[640px]">
-            {/* Table Header */}
-            <div className="grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+            {/* Table Header - Sticky */}
+            <div className="sticky top-0 z-20 grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50/95 dark:bg-zinc-800/95 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
               {columns.map((col) => (
                 <button
                   key={col.key}
@@ -158,15 +158,6 @@ const AllTimeStatsTable: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
-      </div>
-      
-      <div className="flex flex-col md:flex-row items-center justify-center gap-6 opacity-50 px-4">
-        <div className="flex items-center gap-2">
-          <span className={`w-1.5 h-1.5 rounded-full ${accentBg} animate-pulse`} />
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-            Live All-Time Registry
-          </span>
         </div>
       </div>
     </div>
