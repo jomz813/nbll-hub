@@ -1,3 +1,4 @@
+
 export interface TabItem {
   label: string;
   category: string;
@@ -11,7 +12,7 @@ export interface TabContent {
 
 export const contentMap: Record<string, TabContent> = {
   schedule: {
-    title: 'league schedule',
+    title: 'empty page',
     description: '',
     items: [] 
   },
@@ -21,7 +22,7 @@ export const contentMap: Record<string, TabContent> = {
     items: []
   },
   legacy: {
-    title: 'The Legacy Vault',
+    title: 'legacy vault',
     description: "",
     items: [
       { label: 'Hall of Fame', category: 'Greats' },

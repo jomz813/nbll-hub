@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TabItem } from '../data/content';
 
@@ -23,9 +24,7 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ items, onItemClick }) => {
             >
               <div className="flex flex-col h-full justify-between gap-8">
                 <div className="space-y-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60 transition-colors" style={{ color: 'var(--accent)' }}>
-                    {item.category}
-                  </span>
+                  {/* Category tag removed as requested */}
                   <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter group-hover:translate-x-1 transition-transform">
                     {item.label.toLowerCase()}
                   </h3>

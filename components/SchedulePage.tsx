@@ -1,93 +1,56 @@
-import React, { useState } from 'react';
-import { scheduleData } from '../data/schedule';
-import { teamShortNames } from '../data/standings';
-import { useSettings } from '../context/SettingsContext';
 
-const SEASON_PREFIX = 'S12';
+import React, { useState } from 'react';
 
 const SchedulePage: React.FC = () => {
-  const { settings, getThemeColors } = useSettings();
-  const [openWeeks, setOpenWeeks] = useState<number[]>([6]);
-  const colors = getThemeColors();
-  const accentText = colors.text;
+  const [imgSrc, setImgSrc] = useState('/banner.png');
+  const [hasError, setHasError] = useState(false);
 
-  const toggleWeek = (week: number) => {
-    setOpenWeeks(prev => 
-      prev.includes(week) ? prev.filter(w => w !== week) : [...prev, week]
-    );
+  const handleImageError = () => {
+    if (imgSrc === '/banner.png') {
+      setImgSrc('/banner.jpg');
+    } else if (imgSrc === '/banner.jpg') {
+      setImgSrc('/banner.webp');
+    } else {
+      setHasError(true);
+    }
   };
 
-  const cardPadding = 'px-8 py-6';
-  const gameSpacing = 'gap-12';
+  const containerClasses = "w-full h-[300px] md:h-[600px] rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900/50 border-2 border-zinc-100 dark:border-zinc-800 relative overflow-hidden group transition-all duration-500";
+
+  if (hasError) {
+    return (
+      <div className="pt-4 pb-12 animate-page-enter">
+        <div className={`${containerClasses} border-dashed flex items-center justify-center`}>
+          {/* Subtle Inner Glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+          
+          {/* Decorative Grid Pattern */}
+          <div 
+            className="absolute inset-0 opacity-[0.03] pointer-events-none text-zinc-900 dark:text-zinc-100" 
+            style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '32px 32px' }} 
+          />
+
+          {/* Placeholder Text */}
+          <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.5em] text-zinc-300 dark:text-zinc-600 select-none group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors duration-500">
+            image placeholder
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`pt-8 pb-12 space-y-6`}>
-      {scheduleData.map((weekItem) => {
-        const isOpen = openWeeks.includes(weekItem.week);
-        return (
-          <div 
-            key={weekItem.week}
-            className="border border-zinc-100 dark:border-zinc-800 rounded-[2rem] overflow-hidden bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300"
-          >
-            <button 
-              onClick={() => toggleWeek(weekItem.week)}
-              className={`w-full ${cardPadding} flex items-center justify-between text-left hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors border-l-8 ${settings.rahBizzyTheme ? 'border-[#3B82F6]' : 'border-[#D60A07]'}`}
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">
-                  {SEASON_PREFIX} WEEK {weekItem.week}
-                </span>
-              </div>
-              <svg 
-                className={`w-6 h-6 text-zinc-300 dark:text-zinc-600 transition-transform duration-500 ${isOpen ? `rotate-180 ${accentText}` : ''}`} 
-                viewBox="0 0 24 24" 
-                fill="none"  stroke="currentColor" strokeWidth="3" 
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {isOpen && (
-              <div className={`px-8 pb-8 pt-2 animate-page-enter`}>
-                <div className={`grid grid-cols-1 lg:grid-cols-2 ${gameSpacing}`}>
-                  {weekItem.games.map((game, gIdx) => (
-                    <div key={gIdx} className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <span className={`text-[10px] font-black ${accentText} uppercase tracking-[0.3em]`}>
-                          {game.title}
-                        </span>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-1" />
-                      </div>
-                      <div className="space-y-2">
-                        {game.matchups.map((matchup, mIdx) => {
-                          const [away, home] = matchup.split(' @ ');
-                          return (
-                            <div 
-                              key={mIdx}
-                              className={`group flex items-center justify-between p-4 rounded-2xl border border-transparent hover:border-zinc-100 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-800/80 transition-all duration-300 bg-zinc-50/50 dark:bg-zinc-800/30`}
-                            >
-                              <div className={`flex-1 text-sm font-bold text-left text-zinc-800 dark:text-zinc-300`}>
-                                <span className="hidden md:inline">{away}</span>
-                                <span className="md:hidden">{teamShortNames[away] || away}</span>
-                              </div>
-                              <div className="px-3 py-1 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-full shadow-sm">
-                                <span className={`text-[10px] font-black ${accentText}`}>@</span>
-                              </div>
-                              <div className={`flex-1 text-sm font-bold text-right text-zinc-800 dark:text-zinc-300`}>
-                                <span className="hidden md:inline">{home}</span>
-                                <span className="md:hidden">{teamShortNames[home] || home}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+    <div className="pt-4 pb-12 animate-page-enter">
+      <div className={containerClasses}>
+        <img 
+          src={imgSrc} 
+          alt="League Banner" 
+          onError={handleImageError}
+          className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
+        />
+        {/* Subtle overlay to keep it consistent with site aesthetics */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-40" />
+      </div>
     </div>
   );
 };

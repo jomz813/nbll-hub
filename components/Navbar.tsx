@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabID } from '../App';
@@ -14,7 +15,7 @@ const PLAYERS = [
 
 const PAGES: { name: TabID; label: string; keywords?: string[] }[] = [
   { name: 'home', label: 'home' },
-  { name: 'schedule', label: 'schedule' },
+  { name: 'schedule', label: 'empty' },
   { name: 'stats', label: 'stats', keywords: ['s10', 's11', 's12', 'stats', 'statistics', 'current', 'all-time'] },
   { name: 'legacy', label: 'legacy' },
   { name: 'rules', label: 'rules' },
@@ -79,7 +80,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
 
   const tabs: { name: TabID; label: string }[] = [
     { name: 'home', label: 'home' },
-    { name: 'schedule', label: 'schedule' },
+    { name: 'schedule', label: 'empty' },
     { name: 'stats', label: 'stats' },
     { name: 'legacy', label: 'legacy' },
     { name: 'more', label: 'more' }

@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export interface RecordItem {
@@ -115,19 +116,6 @@ export const recordsData: RecordSection[] = [
       { id: 'awd-fmvp', title: 'Most FMVP awards', valueLabel: 'FMVP', value: '2x', holder: 'Pansho & Tend' },
       { id: 'awd-opoty', title: 'Most OPOTY awards', valueLabel: 'OPOTY', value: '3x', holder: 'Pansho' },
       { id: 'awd-dpoty', title: 'Most DPOTY awards', valueLabel: 'DPOTY', value: 'N/A', holder: 'N/A' },
-    ]
-  },
-  {
-    id: 'misc',
-    title: 'Misc',
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z"/>
-        <path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/>
-      </svg>
-    ),
-    items: [
-      { id: 'misc-leader-dual', title: 'Only player to lead a season in points & steals', valueLabel: 'SEASON DUAL LEADER', value: '867 PTS • 80 STL', holder: 'Rah' }
     ]
   }
 ];

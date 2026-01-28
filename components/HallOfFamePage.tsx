@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { hallOfFameMembers, HOFMember } from '../data/hof';
 
@@ -191,11 +192,6 @@ const HallOfFamePage: React.FC = () => {
       </div>
 
       <HOFEligibility />
-
-      <div className="pt-8 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
-        <span className="hover:text-[#D4AF37] transition-colors">© NBLL Hall of Fame</span>
-        <span className="hover:text-[#D4AF37] transition-colors">Archives Updated Q4 2025</span>
-      </div>
     </div>
   );
 };

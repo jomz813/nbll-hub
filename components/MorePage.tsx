@@ -30,25 +30,21 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
         onClick={() => !isPlaceholder && onItemClick(item.label)}
         disabled={isPlaceholder}
         className={`
-          group p-8 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] text-left transition-all duration-500 
+          group pt-6 pb-6 px-8 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] text-left transition-all duration-500 
           ${isPlaceholder 
             ? 'cursor-default opacity-50' 
             : `hover:shadow-2xl hover:-translate-y-1 ${accentShadow} cursor-pointer`
-          } w-full flex flex-col justify-between gap-8 h-full min-h-[220px]
+          } w-full flex flex-col gap-4 h-full min-h-[130px]
         `}
       >
-        <div className="space-y-2">
-          {item.category && (
-            <span className={`text-[10px] font-black uppercase tracking-widest ${accentText} opacity-60`}>
-              {item.category}
-            </span>
-          )}
+        <div className="space-y-1">
+          {/* Removed the red category tag span as per request */}
           <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter group-hover:translate-x-1 transition-transform">
             {item.label.toLowerCase()}
           </h3>
         </div>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-auto">
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-600">
             {isPlaceholder ? '—' : 'view section'}
           </span>
@@ -65,7 +61,8 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
 
   return (
     <div className="animate-page-enter">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+      {/* Grid updated to match Legacy page's md:grid-cols-2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {items.map((item, idx) => renderCard(item, idx))}
       </div>
 
