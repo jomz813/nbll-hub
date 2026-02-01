@@ -111,7 +111,7 @@ export const recordsData: RecordSection[] = [
       </svg>
     ),
     items: [
-      { id: 'awd-rings', title: 'Most championship rings', valueLabel: 'RINGS', value: '5x', holder: 'Pansho' },
+      { id: 'awd-rings', title: 'Most championship rings', valueLabel: 'RINGS', value: '5x', holder: 'Pansho & Taser' },
       { id: 'awd-mvp', title: 'Most MVP awards', valueLabel: 'MVP', value: 'N/A', holder: 'N/A' },
       { id: 'awd-fmvp', title: 'Most FMVP awards', valueLabel: 'FMVP', value: '2x', holder: 'Pansho & Tend' },
       { id: 'awd-opoty', title: 'Most OPOTY awards', valueLabel: 'OPOTY', value: '3x', holder: 'Pansho' },
