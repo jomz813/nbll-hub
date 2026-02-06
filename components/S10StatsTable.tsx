@@ -15,7 +15,6 @@ interface S10StatsTableProps {
 const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, season, onSeasonChange, searchQuery = '' }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
-  const accentText = colors.text;
   const accentBg = colors.bg;
 
   const [data, setData] = useState<S10Row[]>([]);
@@ -130,6 +129,13 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
     ? "space-y-6 w-full overflow-x-hidden touch-pan-y" 
     : "animate-page-enter pt-4 space-y-6 pb-20 w-full overflow-x-hidden touch-pan-y";
 
+  const StatGroup = ({ label, value }: { label: string, value: string | number }) => (
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">{label}</span>
+      <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 tabular-nums">{value}</span>
+    </div>
+  );
+
   return (
     <div className={containerClasses}>
       {/* Mobile Controls Row: Season Left, Sort Right */}
@@ -222,30 +228,20 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
       </div>
 
       {/* MOBILE LIST */}
-      <div className="md:hidden space-y-4">
+      <div className="md:hidden space-y-3 px-2">
         {filteredData.length > 0 ? (
           filteredData.map((row, idx) => {
-            const statValueClass = "text-sm font-black text-zinc-900 dark:text-zinc-100";
             return (
-              <div key={idx} className="bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-100 dark:border-zinc-800 p-5">
-                <div className="flex justify-between items-start mb-4">
-                  <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100 truncate flex-1 pr-4">{row.player}</h4>
-                  <span className={`text-xl font-black ${accentText} tabular-nums leading-none`}>{row.pts} <span className="text-[8px] font-black uppercase tracking-tighter opacity-40 ml-0.5">PTS</span></span>
+              <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-2xl p-4 shadow-sm">
+                <div className="mb-2">
+                  <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">{row.player}</h4>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="flex flex-col items-center p-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
-                    <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mb-1">AST</span>
-                    <span className={statValueClass}>{row.ast}</span>
-                  </div>
-                  <div className="flex flex-col items-center p-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
-                    <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mb-1">REB</span>
-                    <span className={statValueClass}>{row.reb}</span>
-                  </div>
-                  <div className="flex flex-col items-center p-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
-                    <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mb-1">STL</span>
-                    <span className={statValueClass}>{row.stl}</span>
-                  </div>
+                <div className="flex flex-wrap gap-x-5 gap-y-1">
+                  <StatGroup label="PTS" value={row.pts} />
+                  <StatGroup label="AST" value={row.ast} />
+                  <StatGroup label="REB" value={row.reb} />
+                  <StatGroup label="STL" value={row.stl} />
                 </div>
               </div>
             );
@@ -253,7 +249,7 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
         ) : (
           <div className="py-12 text-center">
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
-              No players found matching "${searchQuery}"
+              No players found matching "{searchQuery}"
             </span>
           </div>
         )}

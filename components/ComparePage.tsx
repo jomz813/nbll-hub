@@ -1,0 +1,786 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { fetchSeasonStats, PlayerStats, SeasonID } from '../data/statsFetcher';
+import { fetchAwards, AwardsData } from '../data/awards';
+import { useSettings } from '../context/SettingsContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toPng } from 'html-to-image';
+
+const SEASONS: SeasonID[] = ['s10', 's11', 's12', 'all-time'];
+
+const DropdownIcon = () => (
+  <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+const ComparePage: React.FC = () => {
+  const { settings, getThemeColors } = useSettings();
+  const colors = getThemeColors();
+  const accentBg = colors.bg;
+  const accentText = colors.text;
+  
+  const [season, setSeason] = useState<SeasonID>('s12');
+  const [loading, setLoading] = useState(false);
+  const [players, setPlayers] = useState<PlayerStats[]>([]);
+  
+  // Store only names to persist selection across season data swaps
+  const [selectedNames, setSelectedNames] = useState<(string | null)[]>([null, null]);
+  
+  const [awardsData, setAwardsData] = useState<AwardsData | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  
+  // Search State
+  const [query, setQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  // Refs
+  const desktopSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const pillAreaRef = useRef<HTMLDivElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
+  const resultsDropdownRef = useRef<HTMLDivElement>(null);
+  const compareRef = useRef<HTMLDivElement>(null);
+
+  // Derive stats for selected players from the current dataset
+  const selectedStats = useMemo(() => {
+    return selectedNames.map(name => {
+      if (!name) return null;
+      return players.find(p => p.player.toLowerCase() === name.toLowerCase()) || null;
+    });
+  }, [players, selectedNames]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [statsData, fetchedAwards] = await Promise.all([
+          fetchSeasonStats(season, controller.signal),
+          season === 'all-time' ? fetchAwards(controller.signal) : Promise.resolve(null)
+        ]);
+
+        setPlayers(statsData);
+        setAwardsData(fetchedAwards);
+        // Persistence: Do NOT clear selectedNames here. 
+        // The memoized selectedStats will update automatically.
+      } catch (e: any) {
+        if (e.name !== 'AbortError') console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+    return () => controller.abort();
+  }, [season]);
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return [];
+    return players
+      .filter(p => p.player.toLowerCase().includes(query.toLowerCase()) && !selectedNames.some(s => s?.toLowerCase() === p.player.toLowerCase()))
+      .slice(0, 8);
+  }, [query, players, selectedNames]);
+
+  const addPlayer = (p: PlayerStats) => {
+    const emptyIndex = selectedNames.findIndex(s => s === null);
+    if (emptyIndex !== -1) {
+      const next = [...selectedNames];
+      next[emptyIndex] = p.player;
+      setSelectedNames(next);
+      setQuery('');
+      
+      const remainingEmpty = next.some(s => s === null);
+      if (remainingEmpty) {
+        requestAnimationFrame(() => {
+          if (window.innerWidth <= 768) {
+            mobileSearchInputRef.current?.focus();
+          } else {
+            desktopSearchInputRef.current?.focus();
+          }
+        });
+      }
+    }
+  };
+
+  const removePlayerAt = (index: number) => {
+    const next = [...selectedNames];
+    next[index] = null;
+    setSelectedNames(next);
+  };
+
+  const handleNameClick = (index: number) => {
+    if (window.innerWidth >= 768) {
+      removePlayerAt(index);
+    }
+  };
+
+  const handleRandomMatchup = () => {
+    if (players.length < 2) return;
+    
+    // Select 2 unique random indices
+    const pool = [...players];
+    const idx1 = Math.floor(Math.random() * pool.length);
+    const p1 = pool.splice(idx1, 1)[0];
+    const idx2 = Math.floor(Math.random() * pool.length);
+    const p2 = pool[idx2];
+    
+    setSelectedNames([p1.player, p2.player]);
+    if (isSearchOpen) closeSearch();
+  };
+
+  const resetTable = () => {
+    setSelectedNames([null, null]);
+    setQuery('');
+    closeSearch();
+  };
+
+  const openSearch = () => {
+    setIsSearchOpen(true);
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setQuery('');
+    setShowResults(false);
+  };
+
+  const handleExport = async () => {
+    const target = compareRef.current;
+    if (!target || !selectedNames.some(Boolean) || isExporting) return;
+    
+    setIsExporting(true);
+    closeSearch(); 
+
+    const originalHeight = target.style.height;
+    const originalMaxHeight = target.style.maxHeight;
+    const originalOverflow = target.style.overflow;
+    const originalPaddingBottom = target.style.paddingBottom;
+
+    try {
+      target.style.height = 'auto';
+      target.style.maxHeight = 'none';
+      target.style.overflow = 'visible';
+      target.style.paddingBottom = '48px';
+
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      const p1 = selectedNames[0] ? selectedNames[0].toLowerCase().replace(/\s+/g, '-') : 'empty';
+      const p2 = selectedNames[1] ? `-vs-${selectedNames[1].toLowerCase().replace(/\s+/g, '-')}` : '';
+      const filename = `nbll-compare-${season}-${p1}${p2}.png`;
+
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      const bgColor = isDarkMode ? '#09090b' : '#ffffff';
+
+      const width = target.scrollWidth;
+      const height = target.scrollHeight;
+
+      const dataUrl = await toPng(target, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: bgColor,
+        width: width,
+        height: height,
+        skipFonts: true,
+        fontEmbedCSS: "", 
+        filter: (node: any) => {
+          if (node.tagName === 'LINK' && node.rel === 'stylesheet') {
+            const href = node.getAttribute('href') || '';
+            if (href.includes('fonts.googleapis') || href.includes('fonts.gstatic')) {
+              return false;
+            }
+          }
+          return true;
+        },
+        style: {
+          borderRadius: '0px',
+          paddingBottom: '48px',
+          height: `${height}px`
+        }
+      });
+
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to export image:', err);
+    } finally {
+      if (target) {
+        target.style.height = originalHeight;
+        target.style.maxHeight = originalMaxHeight;
+        target.style.overflow = originalOverflow;
+        target.style.paddingBottom = originalPaddingBottom;
+      }
+      setIsExporting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      const timer = setTimeout(() => {
+        if (window.innerWidth <= 768) {
+          mobileSearchInputRef.current?.focus();
+        } else {
+          desktopSearchInputRef.current?.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isSearchOpen) {
+        closeSearch();
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const isInsideDesktop = pillAreaRef.current?.contains(target);
+      const isInsideMobile = mobileSearchContainerRef.current?.contains(target);
+      const isInsideDropdown = resultsDropdownRef.current?.contains(target);
+
+      if (!isInsideDesktop && !isInsideMobile && !isInsideDropdown) {
+        if (isSearchOpen) {
+          closeSearch();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    if (isSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen]);
+
+  const parseValue = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (!val || val === '—' || val === 'N/A') return 0;
+    const clean = String(val).replace(/,/g, '').replace(/[^0-9.-]/g, '');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const getWinnerClass = (left: any, right: any, isLeft: boolean) => {
+    const lNum = parseValue(left);
+    const rNum = parseValue(right);
+    
+    // Ignore if both are 0 or nullish
+    if (lNum === 0 && rNum === 0) return '';
+    
+    const highlight = settings.rahBizzyTheme ? 'bg-[#3B82F6]/15' : 'bg-[#D60A07]/15';
+    
+    // Tie: highlight both
+    if (lNum === rNum) return highlight;
+    
+    // Win logic
+    const leftWins = lNum > rNum;
+    if (isLeft && leftWins) return highlight;
+    if (!isLeft && !leftWins) return highlight;
+    
+    return '';
+  };
+
+  const categories = {
+    ratings: [
+      { label: 'EFF', key: 'eff' as keyof PlayerStats },
+      { label: 'OFF', key: 'off' as keyof PlayerStats },
+      { label: 'DEF', key: 'def' as keyof PlayerStats },
+    ],
+    stats: [
+      { label: 'PTS', key: 'pts' as keyof PlayerStats },
+      { label: 'AST', key: 'ast' as keyof PlayerStats },
+      { label: 'REB', key: 'reb' as keyof PlayerStats },
+      { label: 'STL', key: 'stl' as keyof PlayerStats },
+    ],
+    averages: [
+      { label: 'GP', key: 'gp' as keyof PlayerStats },
+      { label: 'PPG', key: 'ppg' as keyof PlayerStats },
+      { label: 'APG', key: 'apg' as keyof PlayerStats },
+      { label: 'RPG', key: 'rpg' as keyof PlayerStats },
+      { label: 'SPG', key: 'spg' as keyof PlayerStats },
+    ]
+  };
+
+  const showRatings = season !== 's10';
+  const showAverages = season !== 'all-time';
+  const showAwards = season === 'all-time' && awardsData;
+
+  const isMaxPlayers = selectedNames.every(s => s !== null);
+  const hasSelection = selectedNames.some(s => s !== null);
+
+  const ComparisonRow = ({ label, leftVal, rightVal }: { label: string, leftVal: any, rightVal: any }) => {
+    const leftHighlight = getWinnerClass(leftVal, rightVal, true);
+    const rightHighlight = getWinnerClass(leftVal, rightVal, false);
+    const getValColorClass = (highlight: string) => highlight ? 'text-zinc-900 dark:text-zinc-100 font-extrabold' : 'text-zinc-900 dark:text-zinc-400 font-semibold';
+    return (
+      <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0">
+        <div className={`py-3 md:py-5 px-4 text-right transition-colors ${leftHighlight}`}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftHighlight)}`}>{leftVal === 0 || leftVal === null ? '—' : leftVal}</span>
+        </div>
+        <div className="py-3 md:py-5 text-center bg-zinc-50/30 dark:bg-zinc-900/10 h-full flex items-center justify-center border-x border-zinc-100 dark:border-zinc-900">
+          <span className="text-[8px] md:text-[10px] font-black text-zinc-900 dark:text-zinc-600 uppercase tracking-widest whitespace-nowrap px-1">{label}</span>
+        </div>
+        <div className={`py-3 md:py-5 px-4 text-left transition-colors ${rightHighlight}`}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightHighlight)}`}>{rightVal === 0 || rightVal === null ? '—' : rightVal}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const isYes = (val: any) => {
+    if (val === null || val === undefined) return false;
+    const s = String(val).toLowerCase().trim();
+    return ['yes', 'y', 'true', '1'].includes(s);
+  };
+
+  const BooleanComparisonRow = ({ label, leftRaw, rightRaw }: { label: string, leftRaw: any, rightRaw: any }) => {
+    const leftIsYes = isYes(leftRaw);
+    const rightIsYes = isYes(rightRaw);
+    
+    const highlight = settings.rahBizzyTheme ? 'bg-[#3B82F6]/15' : 'bg-[#D60A07]/15';
+    let leftHighlight = '';
+    let rightHighlight = '';
+    
+    if (leftIsYes && rightIsYes) {
+      leftHighlight = highlight;
+      rightHighlight = highlight;
+    } else if (leftIsYes) {
+      leftHighlight = highlight;
+    } else if (rightIsYes) {
+      rightHighlight = highlight;
+    }
+
+    const getValColorClass = (isYesVal: boolean, hasHighlight: string) => {
+      // Bold if it's "yes" and has a highlight (covers wins and "yes" ties)
+      if (isYesVal && hasHighlight) return 'text-zinc-900 dark:text-zinc-100 font-extrabold';
+      return 'text-zinc-900 dark:text-zinc-400 font-semibold';
+    };
+    
+    return (
+      <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0">
+        <div className={`py-3 md:py-5 px-4 text-right transition-colors ${leftHighlight}`}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftIsYes, leftHighlight)}`}>{leftIsYes ? 'yes' : 'no'}</span>
+        </div>
+        <div className="py-3 md:py-5 text-center bg-zinc-50/30 dark:bg-zinc-900/10 h-full flex items-center justify-center border-x border-zinc-100 dark:border-zinc-900">
+          <span className="text-[8px] md:text-[10px] font-black text-zinc-900 dark:text-zinc-600 uppercase tracking-widest whitespace-nowrap px-1">{label}</span>
+        </div>
+        <div className={`py-3 md:py-5 px-4 text-left transition-colors ${rightHighlight}`}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightIsYes, rightHighlight)}`}>{rightIsYes ? 'yes' : 'no'}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const SectionHeader = ({ title }: { title: string }) => (
+    <div className="bg-zinc-50 dark:bg-zinc-900/50 border-y border-zinc-100 dark:border-zinc-900 py-2 md:py-3 text-center">
+      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-900 dark:text-zinc-500">{title}</span>
+    </div>
+  );
+
+  const ResultsList = () => (
+    <div className="max-h-[320px] overflow-y-auto no-scrollbar py-2">
+      {filtered.length > 0 ? (
+        filtered.map(p => (
+          <button 
+            key={p.player} 
+            onClick={(e) => { e.stopPropagation(); addPlayer(p); }} 
+            className="w-full px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-bold border-b border-zinc-100 dark:border-zinc-800 last:border-0 transition-colors text-zinc-900 dark:text-zinc-100 flex items-center justify-between"
+          >
+            <span>{p.player}</span>
+            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest opacity-50">{season}</span>
+          </button>
+        ))
+      ) : (
+        <div className="px-4 py-8 text-center text-[10px] text-zinc-400 font-black uppercase tracking-widest">
+          No matches
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 md:space-y-10 pb-20 animate-page-enter">
+      {/* Header Row */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 md:mb-12 items-start relative z-[60]">
+        <div className="flex items-center justify-between w-full md:w-auto relative min-h-[4rem]">
+          <motion.h2 
+            initial={false}
+            animate={{ 
+              opacity: isSearchOpen && window.innerWidth <= 768 ? 0 : 1,
+              x: isSearchOpen && window.innerWidth <= 768 ? -20 : 0
+            }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className={`text-4xl md:text-6xl font-black tracking-tighter shrink-0 select-none pointer-events-none md:pointer-events-auto ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}
+          >
+            compare players
+          </motion.h2>
+
+          {/* Mobile Search Button Overlay (Always Top Row on Mobile) */}
+          <div className="md:hidden absolute right-0 flex items-center justify-end">
+            <div className="relative" ref={mobileSearchContainerRef}>
+              <motion.div 
+                initial={false}
+                animate={{ width: isSearchOpen ? 'calc(100vw - 32px)' : '3rem' }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className={`flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-12 shadow-sm relative z-20`}
+                onMouseDown={(e) => isSearchOpen && e.stopPropagation()}
+              >
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (!isSearchOpen) openSearch(); 
+                  }} 
+                  className={`flex-none w-12 h-12 flex items-center justify-center ${accentText}`}
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+                <AnimatePresence>
+                  {isSearchOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex items-center pr-2">
+                      <input 
+                        ref={mobileSearchInputRef}
+                        type="text" 
+                        value={query} 
+                        onChange={(e) => { setQuery(e.target.value); setShowResults(true); }} 
+                        placeholder="Search player..." 
+                        className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400" 
+                        onMouseDown={(e) => e.stopPropagation()}
+                      />
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          closeSearch(); 
+                        }} 
+                        className="w-8 h-8 flex items-center justify-center text-zinc-400"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Mobile Search Results */}
+              <AnimatePresence>
+                {isSearchOpen && query.trim() && showResults && (
+                  <motion.div 
+                    ref={resultsDropdownRef}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-full right-0 mt-3 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl z-50 overflow-hidden"
+                  >
+                    <ResultsList />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Controls Row: Always Visible */}
+        <div className="md:hidden flex items-center gap-2 w-full">
+          {/* Season Selector */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 shrink-0">Season</span>
+            <div className="relative w-28">
+              <select value={season} onChange={(e) => setSeason(e.target.value as SeasonID)} className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-lg py-2 pl-3 pr-7 text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 outline-none appearance-none">
+                {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2"><DropdownIcon /></div>
+            </div>
+          </div>
+          
+          {/* Reset Table Button (Tightened) */}
+          <button 
+            onClick={resetTable}
+            className="flex-1 min-w-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg py-2 px-1 text-xs font-bold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all outline-none whitespace-nowrap"
+          >
+            reset table
+          </button>
+
+          {/* Random Matchup Button (New for Mobile) */}
+          <button 
+            onClick={handleRandomMatchup}
+            disabled={players.length < 2}
+            className={`shrink-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg py-2 px-3 text-xs font-bold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all outline-none ${players.length < 2 ? 'opacity-30 cursor-not-allowed' : ''}`}
+            aria-label="Random matchup"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
+            </svg>
+          </button>
+
+          {/* Export Button */}
+          <button 
+            onClick={handleExport}
+            disabled={!hasSelection || isExporting}
+            className={`shrink-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg py-2 px-3.5 text-xs font-bold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all outline-none ${!hasSelection || isExporting ? 'opacity-30 cursor-not-allowed' : ''}`}
+            aria-label="Export image"
+          >
+            {isExporting ? (
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            ) : (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* Desktop Controls Area */}
+        <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1 gap-2.5 z-50">
+          <button 
+            onClick={handleRandomMatchup}
+            disabled={players.length < 2}
+            className={`w-8 h-8 rounded-full ${accentBg} text-white flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all shrink-0 ${players.length < 2 ? 'opacity-30 cursor-not-allowed' : ''}`}
+            aria-label="Random matchup"
+          >
+             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
+            </svg>
+          </button>
+
+          <button 
+            onClick={handleExport}
+            disabled={!hasSelection || isExporting}
+            className={`w-8 h-8 rounded-full ${accentBg} text-white flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all shrink-0 ${!hasSelection || isExporting ? 'opacity-30 cursor-not-allowed' : ''}`}
+            aria-label="Export image"
+          >
+            {isExporting ? (
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            ) : (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            )}
+          </button>
+          
+          <button 
+            onClick={resetTable}
+            className={`w-8 h-8 rounded-full ${accentBg} text-white flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all shrink-0`}
+            aria-label="Reset comparison"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </button>
+
+          <div className="relative flex items-center gap-2.5 h-full" ref={pillAreaRef}>
+            <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <div role="tablist" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1.5 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0">
+                <div className="flex gap-1 h-full items-center px-0.5">
+                  {SEASONS.map((s) => {
+                    const isActive = season === s;
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => setSeason(s)}
+                        className={`relative flex-none rounded-full font-black uppercase tracking-widest transition-colors duration-300 whitespace-nowrap px-4 py-2 text-[10px] ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
+                      >
+                        <span className="relative z-20">{s}</span>
+                        {isActive && (
+                          <motion.div layoutId="compare-active-pill" className={`absolute inset-0 ${accentBg} rounded-full shadow-md z-10`} transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.6 }} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                onClick={() => !isMaxPlayers && openSearch()}
+                disabled={isMaxPlayers}
+                className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${isMaxPlayers ? 'opacity-30 cursor-not-allowed' : ''}`}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {isSearchOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scaleX: 0.8 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
+                  exit={{ opacity: 0, scaleX: 0.8 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ transformOrigin: 'right center' }}
+                  className="absolute inset-0 z-20 h-11 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 flex items-center bg-zinc-100 dark:bg-zinc-900 shadow-inner overflow-hidden"
+                >
+                  <div className={`flex-none w-11 h-11 flex items-center justify-center ${accentText}`}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </div>
+                  <div className="flex-1 flex items-center pr-3">
+                    <input
+                      ref={desktopSearchInputRef}
+                      type="text"
+                      value={query}
+                      onChange={(e) => { setQuery(e.target.value); setShowResults(true); }}
+                      placeholder={isMaxPlayers ? "Max players" : "Search players..."}
+                      className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
+                    />
+                    <button onClick={closeSearch} className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-600 active:scale-90 transition-all">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+              {isSearchOpen && query && showResults && (
+                <motion.div 
+                  ref={resultsDropdownRef}
+                  initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} 
+                  className="absolute top-full right-0 mt-2 w-[18rem] md:w-[22rem] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-[1000] overflow-hidden"
+                >
+                  <ResultsList />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {hasSelection ? (
+        <div ref={compareRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-xl z-10">
+           {/* Season Tag - Visible on card (Desktop only) and included in export */}
+           <div className="absolute top-3 right-3 z-30 pointer-events-none hidden md:block">
+             <div className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800/80 backdrop-blur-sm rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
+                <span className="text-[8px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{season}</span>
+             </div>
+           </div>
+
+           <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-[1fr_120px_1fr] items-center bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
+              <div className="p-4 md:p-8 text-left md:text-right flex flex-col items-start md:items-end gap-1 min-w-0">
+                 <button
+                   onClick={() => handleNameClick(0)}
+                   disabled={!selectedNames[0]}
+                   className={`w-full text-left md:text-right focus:outline-none flex flex-col items-start md:items-end gap-1 min-w-0 group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
+                   title={selectedNames[0] ? "Click to remove" : ""}
+                 >
+                   <span className={`text-xs md:text-sm font-black tracking-tight text-zinc-900 dark:text-zinc-100 truncate w-full uppercase ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                     {selectedNames[0] ? selectedNames[0] : '...'}
+                   </span>
+                 </button>
+              </div>
+              <div className="px-2 md:px-0 text-center flex items-center justify-center shrink-0">
+                 <span className="hidden md:block text-[9px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-700 italic">VS</span>
+                 {/* Mobile Season Indicator */}
+                 <div className="md:hidden px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
+                    <span className="text-[8px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{season}</span>
+                 </div>
+              </div>
+              <div className="p-4 md:p-8 text-right md:text-left flex flex-col items-end md:items-start gap-1 min-w-0">
+                 <button
+                   onClick={() => handleNameClick(1)}
+                   disabled={!selectedNames[1]}
+                   className={`w-full text-right md:text-left focus:outline-none flex flex-col items-end md:items-start gap-1 min-w-0 group/name1 ${selectedNames[1] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
+                   title={selectedNames[1] ? "Click to remove" : ""}
+                 >
+                   <span className={`text-xs md:text-sm font-black tracking-tight text-zinc-900 dark:text-zinc-100 truncate w-full uppercase ${selectedNames[1] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                     {selectedNames[1] ? selectedNames[1] : '...'}
+                   </span>
+                 </button>
+              </div>
+           </div>
+
+           <div className="flex flex-col">
+              {/* Section 1: Always Stats first for all seasons */}
+              <SectionHeader title="Stats" />
+              {categories.stats.map(cat => (
+                <ComparisonRow 
+                  key={cat.label} 
+                  label={cat.label} 
+                  leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
+                  rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
+                />
+              ))}
+
+              {/* Order depends on season */}
+              {season === 'all-time' ? (
+                <>
+                  {/* All-Time: Stats -> Ratings -> Awards */}
+                  <SectionHeader title="Ratings" />
+                  {categories.ratings.map(cat => (
+                    <ComparisonRow 
+                      key={cat.label} 
+                      label={cat.label} 
+                      leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
+                      rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
+                    />
+                  ))}
+
+                  {showAwards && awardsData && (
+                    <>
+                      <SectionHeader title="All-Time Awards" />
+                      {awardsData.categories.map(cat => {
+                        const isBool = ['ROTY', 'HOF'].includes(cat.toUpperCase());
+                        const leftRaw = selectedNames[0] ? awardsData.byPlayer[selectedNames[0].toLowerCase()]?.[cat] : null;
+                        const rightRaw = selectedNames[1] ? awardsData.byPlayer[selectedNames[1].toLowerCase()]?.[cat] : null;
+                        
+                        if (isBool) {
+                          return <BooleanComparisonRow key={cat} label={cat} leftRaw={leftRaw} rightRaw={rightRaw} />;
+                        }
+                        
+                        const leftVal = selectedNames[0] ? (parseValue(leftRaw) || 0) : 0;
+                        const rightVal = selectedNames[1] ? (parseValue(rightRaw) || 0) : null;
+                        return <ComparisonRow key={cat} label={cat} leftVal={leftVal} rightVal={rightVal} />;
+                      })}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* S10, S11, S12: Stats -> Averages -> Ratings */}
+                  {showAverages && (
+                    <>
+                      <SectionHeader title="Averages" />
+                      {categories.averages.map(cat => (
+                        <ComparisonRow 
+                          key={cat.label} 
+                          label={cat.label} 
+                          leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
+                          rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {showRatings && (
+                    <>
+                      <SectionHeader title="Ratings" />
+                      {categories.ratings.map(cat => (
+                        <ComparisonRow 
+                          key={cat.label} 
+                          label={cat.label} 
+                          leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
+                          rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+           </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 md:py-32 text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem] md:rounded-[3rem] px-6">
+          <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">ready to compare</h3>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ComparePage;

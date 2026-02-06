@@ -1,16 +1,20 @@
+
 import Papa from 'papaparse';
 
 export const S12_STATS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRt0_--RlgbIXxVLV67Qi1q50iM9apZoG7aaXc-HHYCDWSX55EcsA27u9-pNqnUJqRWart-DuyEmkuF/pub?gid=0&single=true&output=csv';
 
 export type S12Row = {
   player: string;
+  gp: number;
   pts: number;
   ast: number;
   reb: number;
   stl: number;
   eff: number;
-  off: number;
-  def: number;
+  ppg: number;
+  apg: number;
+  rpg: number;
+  spg: number;
 };
 
 export const normalizeKey = (k: string) => {
@@ -40,15 +44,25 @@ export const mapRow = (raw: Record<string, any>): S12Row => {
     return key ? String(raw[key]).trim() : '';
   };
 
+  const gp = findValue(['gp', 'gamesplayed', 'games']);
+  const pts = findValue(['pts', 'points']);
+  const ast = findValue(['ast', 'assists']);
+  const reb = findValue(['reb', 'rebounds']);
+  const stl = findValue(['stl', 'steals']);
+  const eff = findValue(['eff', 'efficiency']);
+
   return {
     player: findPlayer(),
-    pts: findValue(['pts', 'points']),
-    ast: findValue(['ast', 'assists']),
-    reb: findValue(['reb', 'rebounds']),
-    stl: findValue(['stl', 'steals']),
-    eff: findValue(['eff', 'efficiency']),
-    off: findValue(['off', 'offensiveimpact', 'oimp', 'o']),
-    def: findValue(['def', 'defensiveimpact', 'dimp', 'd']),
+    gp,
+    pts,
+    ast,
+    reb,
+    stl,
+    eff,
+    ppg: gp > 0 ? Number((pts / gp).toFixed(1)) : 0.0,
+    apg: gp > 0 ? Number((ast / gp).toFixed(1)) : 0.0,
+    rpg: gp > 0 ? Number((reb / gp).toFixed(1)) : 0.0,
+    spg: gp > 0 ? Number((stl / gp).toFixed(1)) : 0.0,
   };
 };
 

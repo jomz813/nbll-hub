@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { TabID } from '../App';
 import { contentMap, TabContent } from '../data/content';
 import SchedulePage from './SchedulePage';
@@ -11,6 +12,7 @@ import MorePage from './MorePage';
 import MenuGridPage from './MenuGridPage';
 import RecordsPage from './RecordsPage';
 import HistoryPage from './HistoryPage';
+import ComparePage from './ComparePage';
 import { useSettings } from '../context/SettingsContext';
 
 interface TabPageProps {
@@ -34,6 +36,13 @@ const getParentTab = (tabId: TabID): TabID => {
 
 const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
   const { getThemeColors } = useSettings();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -42,8 +51,9 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
   const subPages: TabID[] = ['partner-hub', 'rules', 'hall-of-fame', 'league-history', 'credits', 'records'];
   const isSubPage = subPages.includes(tabId);
   
-  const isHOF = tabId === 'hall-of-fame';
-  const colors = getThemeColors(isHOF);
+  // Always use neutral theme colors for the TabPage shell (like the back button)
+  // to prevent the "gold" theme from bleeding into the navigation UI.
+  const colors = getThemeColors(false);
 
   const accentText = colors.text;
   const accentShadow = colors.hoverShadow;
@@ -61,6 +71,9 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
   };
 
   const getPageContent = () => {
+    if (tabId === 'hall-of-fame' || tabId === 'records' || tabId === 'legacy') {
+        return contentMap['legacy'];
+    }
     return contentMap[tabId] || { 
       title: tabId.charAt(0).toUpperCase() + tabId.slice(1), 
       description: 'Information regarding this section is currently being updated.',
@@ -76,11 +89,12 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
       'hall of fame': 'hall-of-fame',
       'history': 'league-history',
       'credits': 'credits',
-      'records': 'records'
+      'records': 'records',
+      'compare': 'compare'
     };
     
     const target = slugMap[label.toLowerCase()] || label.toLowerCase() as TabID;
-    const validTabs: TabID[] = ['schedule', 'stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'credits', 'records'];
+    const validTabs: TabID[] = ['schedule', 'stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'credits', 'records', 'compare'];
     
     if (onTabChange && validTabs.includes(target)) {
       onTabChange(target);
@@ -88,11 +102,8 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
   };
 
   const renderContent = () => {
-    if (tabId === 'hall-of-fame') {
-      return <HallOfFamePage />;
-    }
-    if (tabId === 'legacy') {
-      return <LegacyPage items={page.items} onItemClick={handleItemClick} />;
+    if (tabId === 'legacy' || tabId === 'hall-of-fame' || tabId === 'records') {
+      return <LegacyPage initialSegment={tabId === 'records' ? 'records' : 'hof'} />;
     }
     if (tabId === 'rules') {
       return <RulesPage />;
@@ -106,11 +117,11 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     if (tabId === 'credits') {
       return <CreditsPage />;
     }
-    if (tabId === 'records') {
-      return <RecordsPage />;
-    }
     if (tabId === 'league-history') {
       return <HistoryPage />;
+    }
+    if (tabId === 'compare') {
+      return <ComparePage />;
     }
     if (tabId === 'more') {
       return (
@@ -124,7 +135,6 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
       );
     }
     
-    // Default fallback for generic menus (e.g. partner-hub if falling through)
     return (
       <MenuGridPage 
         items={page.items} 
@@ -151,10 +161,10 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
           {isSubPage ? (getParentTab(tabId) === 'legacy' ? 'legacy' : 'more') : 'home'}
         </button>
 
-        {/* Content Header - Conditionally hidden for Stats to allow integrated header row */}
-        {tabId !== 'stats' && (
+        {/* Content Header - Exclude tabs that handle their own specialized layout */}
+        {tabId !== 'stats' && tabId !== 'legacy' && tabId !== 'hall-of-fame' && tabId !== 'records' && tabId !== 'compare' && (
           <div>
-            <h2 className={`text-4xl md:text-6xl font-black tracking-tighter ${isHOF ? 'text-[#D4AF37]' : (colors.text === 'text-[#3B82F6]' ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white')}`}>
+            <h2 className={`text-4xl md:text-6xl font-black tracking-tighter ${colors.text === 'text-[#3B82F6]' ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}>
               {page.title.toLowerCase()}
             </h2>
           </div>
@@ -172,17 +182,6 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
         .animate-page-enter {
           animation: page-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        @keyframes easter-egg-in {
-          from { opacity: 0; transform: translateY(4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-easter-egg {
-          animation: easter-egg-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .perspective-1000 { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-        .rotate-y-180 { transform: rotateY(180deg); }
       `}</style>
     </div>
   );

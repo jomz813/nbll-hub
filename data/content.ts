@@ -48,10 +48,10 @@ export const contentMap: Record<string, TabContent> = {
     title: 'Discover More',
     description: '',
     items: [
+      { label: 'Achievements', category: 'Legacy' },
+      { label: 'Milestones', category: 'Legacy' },
+      { label: 'Leaders', category: 'Season' },
       { label: 'History', category: 'Archives' },
-      { label: 'n/a', category: 'N/A' },
-      { label: 'n/a', category: 'N/A' },
-      { label: 'n/a', category: 'N/A' },
       { label: 'Rules', category: 'Official' },
       { label: 'Credits', category: 'Team' }
     ]
@@ -72,6 +72,11 @@ export const contentMap: Record<string, TabContent> = {
   records: {
     title: 'league records',
     description: '',
+    items: []
+  },
+  compare: {
+    title: 'Player Comparison',
+    description: 'Reference-style side-by-side stats.',
     items: []
   }
 };

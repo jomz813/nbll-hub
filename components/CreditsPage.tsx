@@ -23,7 +23,7 @@ const CreditsPage: React.FC = () => {
           ))}
            <div className="pt-12 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
             <span>© NBLL</span>
-            <span>i want to marry pansho</span>
+            <span>pansho is the goat</span>
           </div>
        </div>
     </div>

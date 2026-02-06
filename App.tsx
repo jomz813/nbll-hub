@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import LandingPage from './components/LandingPage';
@@ -8,12 +9,12 @@ import RouteTransition from './components/RouteTransition';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 
-export type TabID = 'home' | 'schedule' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | string;
+export type TabID = 'home' | 'schedule' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | 'compare' | string;
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabID>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const { settings } = useSettings();
 
   // Track previous RahBizzy theme state to trigger transitions only on change
@@ -22,14 +23,15 @@ const AppContent: React.FC = () => {
   // Initialize theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-    } else {
+    if (savedTheme === 'light') {
       setTheme('light');
       document.documentElement.classList.remove('dark');
+    } else {
+      // If savedTheme is 'dark' or if it doesn't exist (first time visitor)
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
       if (!savedTheme) {
-        localStorage.setItem('theme', 'light');
+        localStorage.setItem('theme', 'dark');
       }
     }
   }, []);

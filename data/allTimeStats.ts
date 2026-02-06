@@ -11,6 +11,7 @@ export type AllTimeRow = {
   eff: number;
   off: number;
   def: number;
+  val: number;
 };
 
 export const normalizeKey = (k: string) => {
@@ -28,11 +29,37 @@ export const toNumber = (v: any): number => {
   return 0;
 };
 
+/**
+ * Specialized parser for currency strings like "$74.4M", "$10K", etc.
+ */
+export const parseValAav = (v: any): number => {
+  if (v === null || v === undefined || v === '') return 0;
+  
+  let s = String(v).trim().toUpperCase();
+  // Remove currency symbol and commas
+  s = s.replace('$', '').replace(/,/g, '');
+  
+  let multiplier = 1;
+  if (s.endsWith('M')) {
+    multiplier = 1_000_000;
+    s = s.slice(0, -1);
+  } else if (s.endsWith('K')) {
+    multiplier = 1_000;
+    s = s.slice(0, -1);
+  } else if (s.endsWith('B')) {
+    multiplier = 1_000_000_000;
+    s = s.slice(0, -1);
+  }
+  
+  const num = parseFloat(s);
+  return isNaN(num) ? 0 : num * multiplier;
+};
+
 export const mapRow = (raw: Record<string, any>): AllTimeRow => {
-  const findValue = (keys: string[]) => {
+  const findValue = (keys: string[], parser = toNumber) => {
     const key = Object.keys(raw).find(k => keys.includes(normalizeKey(k)));
     if (!key) return 0;
-    return toNumber(raw[key]);
+    return parser(raw[key]);
   };
 
   const findPlayer = () => {
@@ -40,7 +67,7 @@ export const mapRow = (raw: Record<string, any>): AllTimeRow => {
     return key ? String(raw[key]).trim() : '';
   };
 
-  return {
+  const mapped = {
     player: findPlayer(),
     pts: findValue(['pts', 'points']),
     ast: findValue(['ast', 'assists']),
@@ -49,7 +76,10 @@ export const mapRow = (raw: Record<string, any>): AllTimeRow => {
     eff: findValue(['eff', 'efficiency']),
     off: findValue(['off', 'offensiveimpact', 'oimp', 'o']),
     def: findValue(['def', 'defensiveimpact', 'dimp', 'd']),
+    val: findValue(['valaav', 'val', 'value'], parseValAav),
   };
+
+  return mapped;
 };
 
 export const fetchAllTimeStats = async (opts?: { signal?: AbortSignal }): Promise<AllTimeRow[]> => {
@@ -71,6 +101,17 @@ export const fetchAllTimeStats = async (opts?: { signal?: AbortSignal }): Promis
         dynamicTyping: false,
         skipEmptyLines: true,
         complete: (results: any) => {
+          // One-time debug log to verify headers and VAL parsing
+          if (results.data.length > 0) {
+            const firstRow = results.data[0];
+            const valKey = Object.keys(firstRow).find(k => normalizeKey(k) === 'valaav');
+            console.debug('[AllTime Debug]', {
+              headers: results.meta.fields,
+              sampleRawVal: valKey ? firstRow[valKey] : 'N/A',
+              sampleParsedVal: mapRow(firstRow).val
+            });
+          }
+
           const rows = results.data
             .map(mapRow)
             .filter((row: AllTimeRow) => {

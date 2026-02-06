@@ -10,6 +10,8 @@ interface MorePageProps {
   accentShadow: string;
 }
 
+const COMING_SOON_LABELS = ['achievements', 'milestones', 'leaders'];
+
 const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, accentBgSoft, accentShadow }) => {
   const [easterEggIndex, setEasterEggIndex] = useState(0);
 
@@ -22,23 +24,22 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
   ];
 
   const renderCard = (item: TabItem, idx: number) => {
-    const isPlaceholder = item.label === 'n/a';
+    const isComingSoon = COMING_SOON_LABELS.includes(item.label.toLowerCase());
     
     return (
       <button 
         key={idx}
-        onClick={() => !isPlaceholder && onItemClick(item.label)}
-        disabled={isPlaceholder}
+        onClick={() => !isComingSoon && onItemClick(item.label)}
+        disabled={isComingSoon}
         className={`
           group pt-6 pb-6 px-8 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] text-left transition-all duration-500 
-          ${isPlaceholder 
-            ? 'cursor-default opacity-50' 
+          ${isComingSoon 
+            ? 'cursor-not-allowed opacity-50' 
             : `hover:shadow-2xl hover:-translate-y-1 ${accentShadow} cursor-pointer`
           } w-full flex flex-col gap-4 h-full min-h-[130px]
         `}
       >
         <div className="space-y-1">
-          {/* Removed the red category tag span as per request */}
           <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter group-hover:translate-x-1 transition-transform">
             {item.label.toLowerCase()}
           </h3>
@@ -46,10 +47,10 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
         
         <div className="flex items-center justify-between mt-auto">
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-600">
-            {isPlaceholder ? '—' : 'view section'}
+            {isComingSoon ? 'coming soon' : 'view section'}
           </span>
-          <div className={`w-8 h-8 rounded-full ${isPlaceholder ? 'bg-zinc-100 dark:bg-zinc-800' : accentBgSoft} flex items-center justify-center ${!isPlaceholder ? 'group-hover:scale-110 transition-transform' : ''}`}>
-            <svg className={`w-4 h-4 ${isPlaceholder ? 'text-zinc-300 dark:text-zinc-600' : accentText}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+          <div className={`w-8 h-8 rounded-full ${isComingSoon ? 'bg-zinc-100 dark:bg-zinc-800' : accentBgSoft} flex items-center justify-center ${!isComingSoon ? 'group-hover:scale-110 transition-transform' : ''}`}>
+            <svg className={`w-4 h-4 ${isComingSoon ? 'text-zinc-300 dark:text-zinc-600' : accentText}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
@@ -61,7 +62,6 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
 
   return (
     <div className="animate-page-enter">
-      {/* Grid updated to match Legacy page's md:grid-cols-2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {items.map((item, idx) => renderCard(item, idx))}
       </div>

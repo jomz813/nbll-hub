@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchAllTimeStats, AllTimeRow } from '../data/allTimeStats';
 import { useSettings } from '../context/SettingsContext';
@@ -14,13 +13,11 @@ interface AllTimeStatsTableProps {
 const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonChange, searchQuery = '' }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
-  const accentText = colors.text;
   const accentBg = colors.bg;
 
   const [data, setData] = useState<AllTimeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
     key: 'pts',
     direction: 'desc'
@@ -91,13 +88,6 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
     setSortConfig({ key, direction });
   };
 
-  const toggleRow = (idx: number) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(idx)) newExpanded.delete(idx);
-    else newExpanded.add(idx);
-    setExpandedRows(newExpanded);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -130,10 +120,24 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
     { key: 'def', label: 'DEF' },
   ];
 
+  const formatCurrency = (val: number) => {
+    if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(1)}B`;
+    if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
+    if (val >= 1_000) return `$${(val / 1_000).toFixed(1)}K`;
+    return `$${val.toFixed(0)}`;
+  };
+
   const DropdownIcon = () => (
     <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="6 9 12 15 18 9" />
     </svg>
+  );
+
+  const StatGroup = ({ label, value }: { label: string, value: string | number }) => (
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">{label}</span>
+      <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 tabular-nums">{value}</span>
+    </div>
   );
 
   return (
@@ -216,7 +220,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
                     <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.ast}</div>
                     <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.reb}</div>
                     <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.stl}</div>
-                    <div className={`text-xs md:text-sm font-black ${accentText} text-center tabular-nums`}>{row.eff}</div>
+                    <div className={`text-xs md:text-sm font-black ${colors.text} text-center tabular-nums`}>{row.eff}</div>
                     <div className="text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.off}</div>
                     <div className="text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.def}</div>
                   </div>
@@ -234,58 +238,27 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
       </div>
 
       {/* MOBILE LIST */}
-      <div className="md:hidden space-y-4">
+      <div className="md:hidden space-y-3 px-2">
         {filteredData.length > 0 ? (
           filteredData.map((row, idx) => {
-            const isExpanded = expandedRows.has(idx);
-            const statValueClass = "text-sm font-black text-zinc-900 dark:text-zinc-100";
             return (
-              <div key={idx} className="bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-100 dark:border-zinc-800 overflow-hidden">
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100 truncate flex-1 pr-4">{row.player}</h4>
-                    <span className={`text-xl font-black ${accentText} tabular-nums leading-none`}>{row.eff} <span className="text-[8px] font-black uppercase tracking-tighter opacity-40 ml-0.5">EFF</span></span>
-                  </div>
+              <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-2xl p-4 shadow-sm">
+                <div className="mb-3 border-b border-zinc-50 dark:border-zinc-900/50 pb-2">
+                  <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">{row.player}</h4>
+                </div>
+                
+                <div className="grid grid-cols-4 gap-y-3">
+                  {/* Row 1: Totals */}
+                  <StatGroup label="PTS" value={row.pts} />
+                  <StatGroup label="AST" value={row.ast} />
+                  <StatGroup label="REB" value={row.reb} />
+                  <StatGroup label="STL" value={row.stl} />
                   
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="flex flex-col items-center p-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
-                      <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mb-1">PTS</span>
-                      <span className={statValueClass}>{row.pts}</span>
-                    </div>
-                    <div className="flex flex-col items-center p-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
-                      <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mb-1">AST</span>
-                      <span className={statValueClass}>{row.ast}</span>
-                    </div>
-                    <div className="flex flex-col items-center p-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
-                      <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mb-1">REB</span>
-                      <span className={statValueClass}>{row.reb}</span>
-                    </div>
-                    <div className="flex flex-col items-center p-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-100 dark:border-zinc-700/50">
-                      <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mb-1">STL</span>
-                      <span className={statValueClass}>{row.stl}</span>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => toggleRow(idx)}
-                    className="w-full mt-4 flex items-center justify-between px-1 text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors"
-                  >
-                    <span>Advanced Columns</span>
-                    <svg className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="6 9 12 15 18 9"/></svg>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="mt-3 pt-3 border-t border-dashed border-zinc-200 dark:border-zinc-800 grid grid-cols-2 gap-4 animate-page-enter">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">OFF IMPACT</span>
-                        <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{row.off}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">DEF IMPACT</span>
-                        <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{row.def}</span>
-                      </div>
-                    </div>
-                  )}
+                  {/* Row 2: Advanced & Value */}
+                  <StatGroup label="EFF" value={row.eff} />
+                  <StatGroup label="OFF" value={row.off} />
+                  <StatGroup label="DEF" value={row.def} />
+                  <StatGroup label="VAL" value={formatCurrency(row.val)} />
                 </div>
               </div>
             );

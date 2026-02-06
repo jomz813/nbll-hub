@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import FluidBackground from './FluidBackground';
 import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
@@ -9,14 +9,15 @@ interface LandingPageProps {
 }
 
 const HERO_TITLES = [
-  "nah drexel is so strong and veiny rn",
-  "pansho is lowkey moving different today",
-  "$5 to sleep on call with punkmonk monday - friday",
-  "rahbizzy is the greatest jumpstealer of all time",
-  "qotd: who has the most aura? answer: blixer",
-  "dm cola for sinful freaky pics and vids",
-  "i think it's safe to say we all have a crush on coves",
-  "why is polar the main character of basketball legends",
+  "soulz has the most points in nbll history with 4,307 and counting",
+  "marsh has the most steals in nbll history with 423 and counting",
+  "taser was the first to reach the 1,000 points milestone",
+  "ghost holds both titles for the most assists AND rebounds in a career",
+  "pansho and taser are tied for the most rings with 5 each",
+  "rah holds the most nbll records with 6",
+  "pansho has an 83% chance to win the finals when he appears in one",
+  "soulz's 71.2 ppg in s11 is the highest of all time",
+  "phattie's 5.4 spg in s11 is the highest of all time",
 ];
 
 const RahBizzyCoins: React.FC<{ reducedMotion: boolean }> = ({ reducedMotion }) => {
@@ -71,206 +72,14 @@ const RahBizzyCoins: React.FC<{ reducedMotion: boolean }> = ({ reducedMotion }) 
   );
 };
 
-const FakeCheckoutOverlay: React.FC<{ 
-  onClose: () => void; 
-  colors: any; 
-  reducedMotion: boolean; 
-}> = ({ onClose, colors, reducedMotion }) => {
-  const [qty, setQty] = useState(1);
-  const [showJoke, setShowJoke] = useState(false);
-  const nameInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    // Only focus if not mobile to prevent keyboard pop-up on hidden input
-    if (nameInputRef.current && window.innerWidth >= 640) {
-      nameInputRef.current.focus();
-    }
-  }, []);
-
-  const total = (qty * 5).toFixed(2);
-  const accentBg = colors.bg; 
-
-  const handlePay = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowJoke(true);
-  };
-
-  return (
-    <div 
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4"
-      onClick={(e) => { e.stopPropagation(); onClose(); }}
-      role="dialog"
-      aria-label="Mock Checkout"
-    >
-      <div 
-        className={`
-          relative 
-          w-full max-w-[min(1100px,calc(100vw-64px))]
-          bg-white dark:bg-zinc-950 
-          border border-zinc-200 dark:border-zinc-800 
-          rounded-2xl shadow-2xl 
-          flex flex-col text-left
-          overflow-hidden
-          ${reducedMotion ? 'animate-fade-in-fast' : 'animate-scale-up-center'}
-        `}
-        style={{ maxHeight: 'calc(100vh - 160px)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="shrink-0 px-5 py-3 md:px-6 md:py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-          <div>
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">Checkout</h3>
-            <p className="text-[10px] font-medium text-zinc-500">Secure Payment • PunkMonk Services</p>
-          </div>
-          <button 
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}
-            className="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-
-        {/* Content Body - No Scrollbars, Compact Layout */}
-        <form onSubmit={handlePay} className="p-5 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-            
-            {/* LEFT COLUMN */}
-            <div className="flex flex-col gap-5 md:gap-6 justify-center">
-                {/* Product */}
-                <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                        <div className="w-full text-left">
-                            <h4 className="text-sm md:text-base font-bold text-zinc-900 dark:text-zinc-100 leading-tight">Sleep on call with punkmonk</h4>
-                            <p className="text-[10px] md:text-xs text-zinc-500 mt-1">Schedule: Monday – Friday</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                            <span className="text-sm md:text-base font-bold text-zinc-900 dark:text-zinc-100">$5.00</span>
-                        </div>
-                    </div>
-                    <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Quantity</label>
-                        <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="w-6 h-6 flex items-center justify-center rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm hover:scale-105 active:scale-95 transition-transform text-zinc-700 dark:text-zinc-200 font-bold text-xs">-</button>
-                            <span className="w-6 text-center font-bold text-sm text-zinc-900 dark:text-zinc-100 tabular-nums">{qty}</span>
-                            <button type="button" onClick={() => setQty(qty + 1)} className="w-6 h-6 flex items-center justify-center rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm hover:scale-105 active:scale-95 transition-transform text-zinc-700 dark:text-zinc-200 font-bold text-xs">+</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Customer Fields - Hidden on mobile */}
-                <div className="space-y-3 hidden sm:block">
-                    <div className="space-y-1 w-full text-left">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Customer Info</label>
-                        <input 
-                            ref={nameInputRef}
-                            type="text" 
-                            placeholder="eg. Rah Bizzy" 
-                            className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 transition-all placeholder:text-zinc-400"
-                        />
-                    </div>
-                    <input 
-                        type="email" 
-                        placeholder="pansho@freakyballs.com" 
-                        className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 transition-all placeholder:text-zinc-400"
-                    />
-                </div>
-            </div>
-
-            {/* RIGHT COLUMN */}
-            <div className="flex flex-col gap-5 md:gap-6 justify-center border-t md:border-t-0 md:border-l border-zinc-100 dark:border-zinc-800 pt-5 md:pt-0 md:pl-10">
-                {/* Payment */}
-                <div className="space-y-3 w-full text-left">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Payment Method</label>
-                    <div className="relative">
-                        <input 
-                            type="text" 
-                            value="6767 6767 6767 6767" 
-                            disabled 
-                            className="w-full px-3 py-2.5 pl-10 bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-500 font-mono cursor-not-allowed select-none"
-                        />
-                        <svg className="absolute left-3 top-3 w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <input type="text" placeholder="MM / YY" disabled className="w-full px-3 py-2.5 bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-400 font-mono cursor-not-allowed text-center" />
-                        <input type="text" placeholder="CVC" disabled className="w-full px-3 py-2.5 bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-400 font-mono cursor-not-allowed text-center" />
-                    </div>
-                </div>
-
-                {/* Summary */}
-                <div className="space-y-2 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
-                    <div className="flex justify-between text-xs font-medium text-zinc-500">
-                        <span>Subtotal</span>
-                        <span>${total}</span>
-                    </div>
-                    <div className="flex justify-between text-xs font-medium text-zinc-500">
-                        <span>Processing</span>
-                        <span className="line-through opacity-50">$0.00</span>
-                    </div>
-                    <div className="flex justify-between text-base font-black text-zinc-900 dark:text-zinc-100 pt-1">
-                        <span>Total</span>
-                        <span>${total}</span>
-                    </div>
-                </div>
-
-                {/* Actions */}
-                <div className="pt-2">
-                    {showJoke ? (
-                        <div className="w-full py-3 text-center bg-zinc-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-zinc-500 animate-pulse border border-zinc-200 dark:border-zinc-700">
-                            completed! share this screen in punkmonk's dms to redeem!
-                        </div>
-                    ) : (
-                        <button 
-                            onClick={handlePay}
-                            className={`w-full py-3 rounded-xl font-bold text-white shadow-lg shadow-black/5 hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${accentBg}`}
-                        >
-                            <span>Pay ${total}</span>
-                        </button>
-                    )}
-                    <button 
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}
-                        className="w-full py-2 mt-2 text-[10px] md:text-xs font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors uppercase tracking-widest"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange }) => {
-  const { settings, getThemeColors } = useSettings();
-  const themeColors = getThemeColors();
+  const { settings } = useSettings();
   
   // Randomly select title on initial render
   const [heroTitle] = useState(() => {
     const randomIndex = Math.floor(Math.random() * HERO_TITLES.length);
     return HERO_TITLES[randomIndex];
   });
-
-  // PunkMonk Easter Egg Logic
-  const TARGET_TITLE = "$5 to sleep on call with punkmonk monday - friday";
-  const isPunkMonkTarget = heroTitle === TARGET_TITLE;
-  const [isPunkMonkActive, setIsPunkMonkActive] = useState(false);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    if (!isPunkMonkActive) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsPunkMonkActive(false);
-        // Restore focus to title on escape
-        requestAnimationFrame(() => titleRef.current?.focus());
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isPunkMonkActive]);
 
   // Lock scroll on Home page
   useEffect(() => {
@@ -292,32 +101,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
         <div className="max-w-5xl space-y-10 animate-fade-in-up">
           {/* Main Headline Group */}
           <div className="space-y-3 relative group">
-            
-            {/* Easter Egg Overlay Panel */}
-            {isPunkMonkActive && (
-               <FakeCheckoutOverlay 
-                 onClose={() => setIsPunkMonkActive(false)}
-                 colors={themeColors}
-                 reducedMotion={settings.reducedMotion}
-               />
-            )}
-
             <h1 
-              ref={titleRef}
-              onClick={isPunkMonkTarget ? (e) => { e.stopPropagation(); setIsPunkMonkActive(true); } : undefined}
-              onKeyDown={isPunkMonkTarget ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsPunkMonkActive(true); } } : undefined}
-              role={isPunkMonkTarget ? "button" : undefined}
-              tabIndex={isPunkMonkTarget ? 0 : undefined}
-              className={`
-                text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[1.05] text-white 
-                transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]
-                ${isPunkMonkTarget 
-                  ? 'cursor-pointer hover:scale-[1.01] hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-700/50 rounded-xl' 
-                  : 'hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none'
-                }
-                ${isPunkMonkActive ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-              `}
-              aria-hidden={isPunkMonkActive}
+              className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[1.05] text-white transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none"
             >
               {heroTitle}
             </h1>
@@ -349,32 +134,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
         }
         .animate-fade-in-up {
           animation: fade-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        /* Easter Egg Animations */
-        @keyframes scale-up-center {
-          0% { opacity: 0; transform: scale(0.95); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        .animate-scale-up-center {
-          animation: scale-up-center 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes fade-in-fast {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fade-in-fast {
-          animation: fade-in-fast 0.2s ease-out forwards;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(161, 161, 170, 0.3);
-          border-radius: 10px;
         }
       `}</style>
     </div>

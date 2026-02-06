@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { hallOfFameMembers, HOFMember } from '../data/hof';
 
@@ -76,7 +75,7 @@ const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
       >
         {/* Front Face */}
         <div className="absolute inset-0 backface-hidden bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 rounded-[2rem] overflow-hidden flex flex-col transition-colors">
-           {/* Image Section - Now takes 100% space */}
+           {/* Image Section */}
            <div className="relative h-full bg-zinc-50 dark:bg-zinc-800 overflow-hidden shrink-0">
               <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 dark:from-zinc-800 dark:via-zinc-900 dark:to-black opacity-50" />
               {member.image ? (
@@ -180,7 +179,7 @@ const HallOfFamePage: React.FC = () => {
       <div className="space-y-10">
         <div className="flex items-center gap-4">
           <h3 className="text-3xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">Inducted Members</h3>
-          <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-1" />
+          <div className="h-px bg-zinc-100 dark:border-zinc-800 flex-1" />
         </div>
 
         {/* 1 col mobile, 2 col tablet, 3 col desktop */}
@@ -192,6 +191,34 @@ const HallOfFamePage: React.FC = () => {
       </div>
 
       <HOFEligibility />
+
+      <style>{`
+        @keyframes page-enter {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-page-enter {
+          animation: page-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Flip Card Support */
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+        .transform-style-3d {
+          transform-style: preserve-3d;
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+        .transform-style-3d {
+          transform-style: preserve-3d;
+        }
+      `}</style>
     </div>
   );
 };
