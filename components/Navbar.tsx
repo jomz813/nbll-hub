@@ -38,6 +38,20 @@ interface Particle {
   duration: number;
 }
 
+interface SearchResultItem {
+  id: string;
+  name: string;
+  tabId: TabID;
+  type: string;
+  tag: string;
+  category?: string;
+}
+
+interface SearchResultGroup {
+  group: string;
+  items: SearchResultItem[];
+}
+
 /**
  * Helper component to highlight matching search text
  */
@@ -185,7 +199,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
     const q = query.toLowerCase();
 
     // 1. Pages
-    const matchedPages = PAGES.filter(p => 
+    const matchedPages: SearchResultItem[] = PAGES.filter(p => 
       p.label.toLowerCase().includes(q) || p.keywords?.some(k => k.toLowerCase().includes(q))
     ).map(p => ({ 
       name: p.label, 
@@ -197,11 +211,11 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
     }));
     
     // 2. Players
-    const matchedPlayers = dynamicPlayers.filter(p => p.name.toLowerCase().includes(q))
+    const matchedPlayers: SearchResultItem[] = dynamicPlayers.filter(p => p.name.toLowerCase().includes(q))
       .map(p => ({ name: p.name, tabId: 'stats' as TabID, type: 'Player', id: `player-${p.slug}`, tag: 'LEGEND' }));
 
     // 3. Records
-    const matchedRecords = recordsData.flatMap(section => 
+    const matchedRecords: SearchResultItem[] = recordsData.flatMap(section => 
       section.items.filter(item => item.title.toLowerCase().includes(q) || item.valueLabel.toLowerCase().includes(q))
         .map(item => ({
           name: item.title,
@@ -213,7 +227,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
         }))
     );
 
-    const combined = [];
+    const combined: SearchResultGroup[] = [];
     if (matchedPages.length) combined.push({ group: 'PAGES', items: matchedPages });
     if (matchedRecords.length) combined.push({ group: 'RECORDS', items: matchedRecords });
     if (matchedPlayers.length) combined.push({ group: 'PLAYERS', items: matchedPlayers });
@@ -223,7 +237,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
 
   const flatResults = useMemo(() => searchResults.flatMap(g => g.items), [searchResults]);
 
-  const handleSelectResult = (item: any) => {
+  const handleSelectResult = (item: SearchResultItem) => {
     onTabChange(item.tabId);
     closeSearch();
   };
