@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
@@ -36,6 +36,11 @@ const PlayersPage: React.FC = () => {
   // Avatar state
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
+
+  // Dynamic Font Size for mobile usernames
+  const [mobileFontSize, setMobileFontSize] = useState(48);
+  const nameRef = useRef<HTMLHeadingElement>(null);
+  const nameContainerRef = useRef<HTMLDivElement>(null);
 
   // Refs for search interaction and profile capture
   const pillAreaRef = useRef<HTMLDivElement>(null);
@@ -95,6 +100,30 @@ const PlayersPage: React.FC = () => {
       });
   }, [selectedPlayer?.player]);
 
+  // Fit text logic for mobile
+  useLayoutEffect(() => {
+    if (window.innerWidth > 768 || !selectedPlayer || !nameRef.current || !nameContainerRef.current) return;
+
+    const fitText = () => {
+      let size = 48; // Max size
+      const minSize = 24; // Min size
+      const containerWidth = nameContainerRef.current!.offsetWidth;
+      
+      nameRef.current!.style.fontSize = `${size}px`;
+      
+      // Binary search or loop to find the best fit
+      while (nameRef.current!.scrollWidth > containerWidth && size > minSize) {
+        size -= 1;
+        nameRef.current!.style.fontSize = `${size}px`;
+      }
+      setMobileFontSize(size);
+    };
+
+    fitText();
+    window.addEventListener('resize', fitText);
+    return () => window.removeEventListener('resize', fitText);
+  }, [selectedPlayer?.player]);
+
   const filteredPlayers = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return players.filter(p => p.player.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 8);
@@ -108,7 +137,6 @@ const PlayersPage: React.FC = () => {
   const playerDetails = useMemo(() => {
     if (!selectedPlayer || !awardsData) return null;
     
-    // Normalize selected player name to match fixed awards data mapping
     const lookupName = normalizeName(selectedPlayer.player);
     const awards = awardsData.byPlayer[lookupName] || {};
     
@@ -118,7 +146,6 @@ const PlayersPage: React.FC = () => {
     );
     const highestBadges = getHighestBadgesByCategory(selectedPlayer, awards, allTimeBadges);
 
-    // Compute Accolades
     const accolades: { label: string; count?: string }[] = [];
     const rings = parseFloat(String(awards['rings'] || 0));
     if (!isNaN(rings) && rings > 0) {
@@ -445,7 +472,7 @@ const PlayersPage: React.FC = () => {
              {/* Desktop Decorative Background */}
              <div className="hidden md:block absolute inset-0 opacity-[0.02] pointer-events-none select-none overflow-hidden" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
              
-             {/* Mobile-only Background Avatar Cover */}
+             {/* Mobile-only Background Avatar Cover (Adjusted to contain) */}
              <div className="md:hidden absolute inset-0 z-0">
                {avatarLoading ? (
                  <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
@@ -453,7 +480,7 @@ const PlayersPage: React.FC = () => {
                  </div>
                ) : avatarUrl ? (
                  <>
-                   <img src={avatarUrl} alt="" className="w-full h-full object-cover scale-150 translate-y-[10%]" />
+                   <img src={avatarUrl} alt="" className="w-full h-full object-contain" />
                    <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent dark:from-black/80 dark:via-black/40 to-black/20 md:from-transparent md:to-transparent" />
                  </>
                ) : (
@@ -481,7 +508,7 @@ const PlayersPage: React.FC = () => {
                </div>
 
                {/* Name and HOF Info Container */}
-               <div className="flex flex-col gap-3 md:gap-4 w-full text-left">
+               <div className="flex flex-col gap-3 md:gap-4 w-full text-left min-w-0">
                   <div className="flex items-center flex-wrap gap-2 md:gap-3">
                     {playerDetails.isHOF && (
                       <span className={`px-4 py-1.5 ${accentBg} text-white text-[10px] font-black uppercase tracking-[0.25em] rounded-full shadow-lg shadow-current/10 border border-white/10`}>Hall of Fame</span>
@@ -489,11 +516,15 @@ const PlayersPage: React.FC = () => {
                   </div>
                   
                   {/* Readability wrapper on mobile anchored bottom-left */}
-                  <div className="relative md:bg-transparent w-fit max-w-full min-w-0">
+                  <div ref={nameContainerRef} className="relative md:bg-transparent w-full max-w-full">
                     {/* Subtle localized background gradient for readability on mobile */}
                     <div className="md:hidden absolute -inset-6 bg-gradient-to-r from-white/90 dark:from-black/80 to-transparent blur-2xl -z-10" />
                     
-                    <h3 className="text-[clamp(1.25rem,8.5vw,3.5rem)] md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] md:leading-[0.9] whitespace-nowrap overflow-hidden">
+                    <h3 
+                      ref={nameRef}
+                      className="text-4xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] md:leading-[0.9] whitespace-nowrap overflow-hidden transition-[font-size] duration-75"
+                      style={{ fontSize: window.innerWidth <= 768 ? `${mobileFontSize}px` : undefined }}
+                    >
                       {selectedPlayer.player}
                     </h3>
                   </div>
@@ -539,7 +570,6 @@ const PlayersPage: React.FC = () => {
                         <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest block">{ach.category}</span>
                         <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest line-clamp-1">{ach.requirementText}</p>
                       </div>
-                      {/* Premium touch: subtle corner accent */}
                       <div className={`absolute top-0 right-0 w-12 h-12 bg-gradient-to-bl from-zinc-50 dark:from-zinc-900 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-tr-[2rem] pointer-events-none`} />
                     </div>
                   ))}
