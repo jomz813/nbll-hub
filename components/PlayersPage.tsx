@@ -283,10 +283,13 @@ const PlayersPage: React.FC = () => {
           <div className="relative flex items-center gap-2.5 h-full" ref={pillAreaRef}>
             <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
               <div role="tablist" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1.5 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0 w-[280px] justify-center">
-                <button className={`relative w-full h-full rounded-full font-black uppercase tracking-widest text-[10px] text-white z-10 transition-all flex items-center justify-center`}>
-                  <span className="relative z-20">all-time</span>
-                  <motion.div layoutId="db-active-pill" className={`absolute inset-0 ${accentBg} rounded-full shadow-md z-10`} transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.6 }} />
-                </button>
+                <div className="relative flex w-full h-full items-center justify-center">
+                  <button
+                    className="relative w-full rounded-full font-black uppercase tracking-widest text-[10px] text-zinc-400 dark:text-zinc-500 z-10 px-6 py-2 transition-all flex items-center justify-center cursor-default pointer-events-none"
+                  >
+                    <span className="relative z-20">all-time</span>
+                  </button>
+                </div>
               </div>
               <button onClick={() => setIsSearchOpen(true)} className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all`}><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
             </div>
@@ -408,7 +411,7 @@ const PlayersPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="py-12 border-2 border-dashed border-zinc-50 dark:border-zinc-900 rounded-[2rem] flex items-center justify-center">
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">No verified milestones archived</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">N/A</span>
                 </div>
               )}
             </section>
@@ -464,7 +467,7 @@ const PlayersPage: React.FC = () => {
                     </div>
                   )) : (
                     <div className="w-full py-12 border-2 border-dashed border-zinc-50 dark:border-zinc-900 rounded-[2rem] flex items-center justify-center">
-                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">no verified accolades found</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">N/A</span>
                     </div>
                   );
                 })()}
@@ -490,21 +493,11 @@ const PlayersPage: React.FC = () => {
                   </div>
                 )) : (
                   <div className="py-12 border-2 border-dashed border-zinc-50 dark:border-zinc-900 rounded-[2rem] flex items-center justify-center">
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">No all-time records currently held</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">N/A</span>
                   </div>
                 )}
               </div>
             </section>
-          </div>
-          
-          {/* Footer Decoration */}
-          <div className="px-12 py-6 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-900 flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-[0.5em] text-zinc-400">archive database // nbll hub</span>
-            <div className="flex gap-2">
-              <div className="w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-              <div className="w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-              <div className="w-1 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-            </div>
           </div>
         </div>
       ) : (

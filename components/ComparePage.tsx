@@ -8,11 +8,63 @@ import { toPng } from 'html-to-image';
 
 const SEASONS: SeasonID[] = ['s10', 's11', 's12', 'all-time'];
 
+// In-memory cache for avatar URLs to prevent redundant requests
+const AVATAR_CACHE: Record<string, string | null> = {};
+
 const DropdownIcon = () => (
   <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="6 9 12 15 18 9" />
   </svg>
 );
+
+const PlayerAvatar: React.FC<{ username: string | null }> = ({ username }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!username) {
+      setUrl(null);
+      return;
+    }
+
+    if (AVATAR_CACHE[username] !== undefined) {
+      setUrl(AVATAR_CACHE[username]);
+      return;
+    }
+
+    setLoading(true);
+    fetch(`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}`)
+      .then(res => res.json())
+      .then(data => {
+        const imageUrl = data.imageUrl || null;
+        AVATAR_CACHE[username] = imageUrl;
+        setUrl(imageUrl);
+      })
+      .catch(() => {
+        AVATAR_CACHE[username] = null;
+        setUrl(null);
+      })
+      .finally(() => setLoading(false));
+  }, [username]);
+
+  if (!username) return null;
+
+  return (
+    <div className="relative shrink-0 h-16 md:h-24 flex items-center justify-center transition-all duration-300">
+      {loading ? (
+        <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-400 animate-spin rounded-full" />
+      ) : url ? (
+        <img src={url} alt={username} className="h-full w-auto object-contain" />
+      ) : (
+        <div className="opacity-10">
+          <svg className="w-8 h-8 md:w-12 md:h-12 text-zinc-400 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ComparePage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
@@ -45,39 +97,34 @@ const ComparePage: React.FC = () => {
 
   // Determine height of the table for empty state placeholder
   const expectedTableHeight = useMemo(() => {
-    // These estimates match the rendered component's vertical footprint per season
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
     const rowH = isMobile ? 45 : 65;
-    const headerH = isMobile ? 90 : 130;
+    const headerH = isMobile ? 120 : 160;
     const sectionH = isMobile ? 36 : 48;
 
-    let rows = 4; // Base stats (PTS, AST, REB, STL)
-    let sections = 1; // "Stats" header
+    let rows = 4;
+    let sections = 1;
 
     if (season === 's10') {
-      // Just stats
     } else if (season === 'all-time') {
-      rows += 3; // Ratings (EFF, OFF, DEF)
-      sections += 1; // "Ratings" header
+      rows += 3;
+      sections += 1;
       if (awardsData) {
         rows += awardsData.categories.length;
-        sections += 1; // "Awards" header
+        sections += 1;
       } else {
-        // Fallback guess for awards if not loaded
         rows += 6; 
         sections += 1;
       }
     } else {
-      // s11, s12
-      rows += 5; // Averages (GP, PPG, APG, RPG, SPG)
-      rows += 3; // Ratings (EFF, OFF, DEF)
-      sections += 2; // "Averages", "Ratings" headers
+      rows += 5;
+      rows += 3;
+      sections += 2;
     }
 
     return headerH + (rows * rowH) + (sections * sectionH);
   }, [season, awardsData]);
 
-  // Derive stats for selected players from the current dataset
   const selectedStats = useMemo(() => {
     return selectedNames.map(name => {
       if (!name) return null;
@@ -337,6 +384,8 @@ const ComparePage: React.FC = () => {
   const isMaxPlayers = selectedNames.every(s => s !== null);
   const hasSelection = selectedNames.some(s => s !== null);
 
+  const seasonLabel = season === 'all-time' ? 'ALL-TIME' : season.toUpperCase();
+
   const ComparisonRow = ({ label, leftVal, rightVal, key }: { label: string, leftVal: any, rightVal: any, key?: React.Key }) => {
     const leftHighlight = getWinnerClass(leftVal, rightVal, true);
     const rightHighlight = getWinnerClass(leftVal, rightVal, false);
@@ -397,7 +446,7 @@ const ComparePage: React.FC = () => {
 
   const SectionHeader = ({ title }: { title: string }) => (
     <div className="bg-zinc-50 dark:bg-zinc-900/50 border-y border-zinc-100 dark:border-zinc-900 py-2 md:py-3 text-center">
-      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-900 dark:text-zinc-500">{title}</span>
+      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-900 dark:text-zinc-500">{seasonLabel} {title}</span>
     </div>
   );
 
@@ -666,40 +715,39 @@ const ComparePage: React.FC = () => {
 
       {hasSelection ? (
         <div ref={compareRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-xl z-10">
-           <div className="absolute top-3 right-3 z-30 pointer-events-none hidden md:block">
-             <div className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800/80 backdrop-blur-sm rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                <span className="text-[8px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{season}</span>
-             </div>
-           </div>
-           <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-[1fr_120px_1fr] items-center bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
-              <div className="p-4 md:p-8 text-left md:text-right flex flex-col items-start md:items-end gap-1 min-w-0">
+           <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-[1fr_120px_1fr] items-stretch bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
+              {/* Left Player Area */}
+              <div className="px-4 py-2 md:px-8 md:py-4 flex items-center justify-start min-w-0">
                  <button
                    onClick={() => handleNameClick(0)}
                    disabled={!selectedNames[0]}
-                   className={`w-full text-left md:text-right focus:outline-none flex flex-col items-start md:items-end gap-1 min-w-0 group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
+                   className={`flex flex-row items-center gap-3 focus:outline-none min-w-0 group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity justify-start' : 'cursor-default'}`}
                    title={selectedNames[0] ? "Click to remove" : ""}
                  >
-                   <span className={`text-xs md:text-sm font-black tracking-tight text-zinc-900 dark:text-zinc-100 truncate w-full uppercase ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                   <PlayerAvatar username={selectedNames[0]} />
+                   <span className={`text-xl md:text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 truncate uppercase ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
                      {selectedNames[0] ? selectedNames[0] : '...'}
                    </span>
                  </button>
               </div>
+
+              {/* VS Divider */}
               <div className="px-2 md:px-0 text-center flex items-center justify-center shrink-0">
-                 <span className="hidden md:block text-[9px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-700 italic">VS</span>
-                 <div className="md:hidden px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                    <span className="text-[8px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{season}</span>
-                 </div>
+                 <span className="text-[9px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-700 italic">VS</span>
               </div>
-              <div className="p-4 md:p-8 text-right md:text-left flex flex-col items-end md:items-start gap-1 min-w-0">
+
+              {/* Right Player Area */}
+              <div className="px-4 py-2 md:px-8 md:py-4 flex items-center justify-end min-w-0 text-right">
                  <button
                    onClick={() => handleNameClick(1)}
                    disabled={!selectedNames[1]}
-                   className={`w-full text-right md:text-left focus:outline-none flex flex-col items-end md:items-start gap-1 min-w-0 group/name1 ${selectedNames[1] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
+                   className={`flex flex-row items-center gap-3 focus:outline-none min-w-0 group/name1 ${selectedNames[1] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity justify-end' : 'cursor-default'}`}
                    title={selectedNames[1] ? "Click to remove" : ""}
                  >
-                   <span className={`text-xs md:text-sm font-black tracking-tight text-zinc-900 dark:text-zinc-100 truncate w-full uppercase ${selectedNames[1] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                   <span className={`text-xl md:text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 truncate uppercase ${selectedNames[1] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
                      {selectedNames[1] ? selectedNames[1] : '...'}
                    </span>
+                   <PlayerAvatar username={selectedNames[1]} />
                  </button>
               </div>
            </div>

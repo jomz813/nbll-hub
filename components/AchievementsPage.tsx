@@ -279,10 +279,9 @@ const AchievementsPage: React.FC = () => {
               <div role="tablist" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1.5 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0 w-[280px] justify-center">
                 <div className="relative flex w-full h-full items-center justify-center">
                   <button
-                    className={`relative w-full rounded-full font-black uppercase tracking-widest text-[10px] text-white z-10 px-6 py-2 transition-all flex items-center justify-center`}
+                    className="relative w-full rounded-full font-black uppercase tracking-widest text-[10px] text-zinc-400 dark:text-zinc-500 z-10 px-6 py-2 transition-all flex items-center justify-center cursor-default pointer-events-none"
                   >
                     <span className="relative z-20">all-time</span>
-                    <motion.div layoutId="ach-active-pill" className={`absolute inset-0 ${accentBg} rounded-full shadow-md z-10`} transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.6 }} />
                   </button>
                 </div>
               </div>
