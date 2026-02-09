@@ -11,6 +11,12 @@ const SEASONS: SeasonID[] = ['s10', 's11', 's12', 'all-time'];
 // In-memory cache for avatar URLs to prevent redundant requests
 const AVATAR_CACHE: Record<string, string | null> = {};
 
+// Standardization helper matching the one in awards.ts for robust lookups
+const normalizeName = (name: string | null): string => {
+  if (!name) return '';
+  return String(name).trim().toLowerCase().replace(/\s+/g, '');
+};
+
 const DropdownIcon = () => (
   <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="6 9 12 15 18 9" />
@@ -393,13 +399,13 @@ const ComparePage: React.FC = () => {
     return (
       <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0">
         <div className={`py-3 md:py-5 px-4 text-right transition-colors ${leftHighlight}`}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftHighlight)}`}>{leftVal === 0 || leftVal === null ? '—' : leftVal}</span>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftHighlight)}`}>{leftVal === 0 || leftVal === null || leftVal === undefined || leftVal === '' ? '—' : leftVal}</span>
         </div>
         <div className="py-3 md:py-5 text-center bg-zinc-50/30 dark:bg-zinc-900/10 h-full flex items-center justify-center border-x border-zinc-100 dark:border-zinc-900">
           <span className="text-[8px] md:text-[10px] font-black text-zinc-900 dark:text-zinc-600 uppercase tracking-widest whitespace-nowrap px-1">{label}</span>
         </div>
         <div className={`py-3 md:py-5 px-4 text-left transition-colors ${rightHighlight}`}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightHighlight)}`}>{rightVal === 0 || rightVal === null ? '—' : rightVal}</span>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightHighlight)}`}>{rightVal === 0 || rightVal === null || rightVal === undefined || rightVal === '' ? '—' : rightVal}</span>
         </div>
       </div>
     );
@@ -776,12 +782,25 @@ const ComparePage: React.FC = () => {
                     <>
                       <SectionHeader title="Awards" />
                       {awardsData.categories.map(cat => {
+                        const normCat = cat.toLowerCase().trim();
                         const isBool = ['ROTY', 'HOF'].includes(cat.toUpperCase());
-                        const leftRaw = selectedNames[0] ? awardsData.byPlayer[selectedNames[0].toLowerCase()]?.[cat] : null;
-                        const rightRaw = selectedNames[1] ? awardsData.byPlayer[selectedNames[1].toLowerCase()]?.[cat] : null;
+                        
+                        const normPlayer1 = normalizeName(selectedNames[0]);
+                        const normPlayer2 = normalizeName(selectedNames[1]);
+                        
+                        const leftRaw = normPlayer1 ? awardsData.byPlayer[normPlayer1]?.[normCat] : null;
+                        const rightRaw = normPlayer2 ? awardsData.byPlayer[normPlayer2]?.[normCat] : null;
+
+                        // Filter: If both are effectively 0/null/empty, skip the row
+                        const leftNum = parseValue(leftRaw);
+                        const rightNum = parseValue(rightRaw);
+                        if (!isBool && leftNum === 0 && rightNum === 0) return null;
+                        if (isBool && !isYes(leftRaw) && !isYes(rightRaw)) return null;
+
                         if (isBool) return <BooleanComparisonRow key={cat} label={cat} leftRaw={leftRaw} rightRaw={rightRaw} />;
-                        const leftVal = selectedNames[0] ? (parseValue(leftRaw) || 0) : 0;
-                        const rightVal = selectedNames[1] ? (parseValue(rightRaw) || 0) : null;
+                        
+                        const leftVal = normPlayer1 ? (leftRaw || 0) : 0;
+                        const rightVal = normPlayer2 ? (rightRaw || 0) : null;
                         return <ComparisonRow key={cat} label={cat} leftVal={leftVal} rightVal={rightVal} />;
                       })}
                     </>

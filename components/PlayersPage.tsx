@@ -6,6 +6,7 @@ import { fetchAwards, AwardsData } from '../data/awards';
 import { recordsData } from '../data/records';
 import { generateAllTimeBadges, getHighestBadgesByCategory } from '../data/achievementsEngine';
 import { useSettings } from '../context/SettingsContext';
+import { toPng } from 'html-to-image';
 
 // In-memory cache for avatar URLs
 const AVATAR_CACHE: Record<string, string | null> = {};
@@ -26,6 +27,7 @@ const PlayersPage: React.FC = () => {
   const [players, setPlayers] = useState<PlayerStats[]>([]);
   const [awardsData, setAwardsData] = useState<AwardsData | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -35,12 +37,13 @@ const PlayersPage: React.FC = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
-  // Refs for search interaction
+  // Refs for search interaction and profile capture
   const pillAreaRef = useRef<HTMLDivElement>(null);
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
   const resultsDropdownRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -115,7 +118,29 @@ const PlayersPage: React.FC = () => {
     );
     const highestBadges = getHighestBadgesByCategory(selectedPlayer, awards, allTimeBadges);
 
-    return { awards, isHOF, heldRecords, highestBadges };
+    // Compute Accolades
+    const accolades: { label: string; count?: string }[] = [];
+    const rings = parseFloat(String(awards['rings'] || 0));
+    if (!isNaN(rings) && rings > 0) {
+      accolades.push({ label: 'RINGS', count: `${rings}X` });
+    }
+    const roty = String(awards['roty'] ?? awards['ROTY'] ?? '').toLowerCase().trim();
+    if (['yes', 'y', 'true', '1'].includes(roty)) {
+      accolades.push({ label: 'ROTY' });
+    }
+    if (isHOF) {
+      accolades.push({ label: 'HALL OF FAME' });
+    }
+    Object.entries(awards).forEach(([cat, val]) => {
+      const normCat = cat.toUpperCase().trim();
+      if (['ROTY', 'HOF', 'PLAYER', 'USERNAME', 'RINGS'].includes(normCat)) return;
+      const num = parseFloat(String(val));
+      if (!isNaN(num) && num > 0) {
+        accolades.push({ label: normCat, count: `${num}X` });
+      }
+    });
+
+    return { awards, isHOF, heldRecords, highestBadges, accolades };
   }, [selectedPlayer, awardsData, allTimeBadges]);
 
   const handleSelectPlayer = (p: PlayerStats) => {
@@ -140,6 +165,75 @@ const PlayersPage: React.FC = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
     setShowResults(false);
+  };
+
+  const handleExport = async () => {
+    const target = profileRef.current;
+    if (!target || !selectedPlayer || isExporting) return;
+    
+    setIsExporting(true);
+    closeSearch(); 
+
+    const originalHeight = target.style.height;
+    const originalMaxHeight = target.style.maxHeight;
+    const originalOverflow = target.style.overflow;
+    const originalPaddingBottom = target.style.paddingBottom;
+
+    try {
+      target.style.height = 'auto';
+      target.style.maxHeight = 'none';
+      target.style.overflow = 'visible';
+      target.style.paddingBottom = '48px';
+
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      const filename = `nbll-player-${selectedPlayer.player.toLowerCase().replace(/\s+/g, '-')}.png`;
+
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      const bgColor = isDarkMode ? '#09090b' : '#ffffff';
+
+      const width = target.scrollWidth;
+      const height = target.scrollHeight;
+
+      const dataUrl = await toPng(target, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: bgColor,
+        width: width,
+        height: height,
+        skipFonts: true,
+        fontEmbedCSS: "", 
+        filter: (node: any) => {
+          if (node.tagName === 'LINK' && node.rel === 'stylesheet') {
+            const href = node.getAttribute('href') || '';
+            if (href.includes('fonts.googleapis') || href.includes('fonts.gstatic')) {
+              return false;
+            }
+          }
+          return true;
+        },
+        style: {
+          borderRadius: '0px',
+          paddingBottom: '48px',
+          height: `${height}px`
+        }
+      });
+
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to export image:', err);
+    } finally {
+      if (target) {
+        target.style.height = originalHeight;
+        target.style.maxHeight = originalMaxHeight;
+        target.style.overflow = originalOverflow;
+        target.style.paddingBottom = originalPaddingBottom;
+      }
+      setIsExporting(false);
+    }
   };
 
   useEffect(() => {
@@ -171,18 +265,10 @@ const PlayersPage: React.FC = () => {
     }
   }, [isSearchOpen]);
 
-  const formatCurrency = (val: number) => {
-    if (!val) return '—';
-    if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(1)}B`;
-    if (val >= 1_000_000) return `$${(val / 1_000).toFixed(1)}M`;
-    if (val >= 1_000) return `$${(val / 1_000).toFixed(1)}K`;
-    return `$${val.toFixed(0)}`;
-  };
-
-  const StatBox = ({ label, value, isBold = false }: { label: string, value: any, isBold?: boolean }) => (
+  const StatBox = ({ label, value }: { label: string, value: any }) => (
     <div className="flex flex-col px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-xl border border-zinc-100 dark:border-zinc-800/40">
       <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-0.5">{label}</span>
-      <span className={`text-base md:text-xl tabular-nums tracking-tight ${isBold ? `${accentText} font-black` : 'text-zinc-900 dark:text-zinc-100 font-bold'}`}>
+      <span className={`text-base md:text-xl tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100 font-black`}>
         {value === 0 || value === null || value === '' ? '—' : value}
       </span>
     </div>
@@ -267,6 +353,20 @@ const PlayersPage: React.FC = () => {
               clear player
             </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+            <button 
+              onClick={handleExport}
+              disabled={!selectedPlayer || isExporting}
+              className={`w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-90 transition-all shrink-0 ${!selectedPlayer || isExporting ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
+              {isExporting ? (
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              )}
+            </button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button onClick={handleRandomPlayer} className="w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-90 transition-all shrink-0">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/></svg>
             </button>
@@ -277,6 +377,21 @@ const PlayersPage: React.FC = () => {
         <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1 gap-2.5 z-50">
           <div className="flex items-center bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-full overflow-hidden shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300">
             <button onClick={handleRandomPlayer} className={`w-10 h-full flex items-center justify-center ${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 group/btn`} title="random"><svg className="w-4 h-4 transition-all duration-300 group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/></svg></button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
+            <button 
+              onClick={handleExport}
+              disabled={!selectedPlayer || isExporting}
+              className={`w-10 h-full flex items-center justify-center ${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${!selectedPlayer || isExporting ? 'opacity-30 cursor-not-allowed' : ''} group/btn`}
+              title="export"
+            >
+              {isExporting ? (
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              ) : (
+                <svg className="w-4 h-4 transition-all duration-300 group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              )}
+            </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
             <button onClick={handleClearPlayer} disabled={!selectedPlayer} className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${selectedPlayer ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`} title="clear"><svg className={`w-4 h-4 transition-all duration-300 ${selectedPlayer ? 'group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
           </div>
@@ -323,15 +438,32 @@ const PlayersPage: React.FC = () => {
       </div>
 
       {selectedPlayer && playerDetails ? (
-        <div className="relative bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 flex flex-col">
+        <div ref={profileRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 flex flex-col">
           
           {/* Identity Header */}
-          <div className="relative p-8 md:p-12 bg-zinc-50/50 dark:bg-zinc-900/10 border-b border-zinc-100 dark:border-zinc-900">
-             <div className="absolute inset-0 opacity-[0.02] pointer-events-none select-none overflow-hidden" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="relative p-8 md:p-12 bg-zinc-50/50 dark:bg-zinc-900/10 border-b border-zinc-100 dark:border-zinc-900 overflow-hidden min-h-[220px] flex items-end md:items-center">
+             {/* Desktop Decorative Background */}
+             <div className="hidden md:block absolute inset-0 opacity-[0.02] pointer-events-none select-none overflow-hidden" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
              
-             <div className="relative flex flex-col md:flex-row md:items-center gap-8 md:gap-12">
-               {/* Profile Avatar */}
-               <div className="relative shrink-0 w-28 h-28 md:w-40 md:h-40 group">
+             {/* Mobile-only Background Avatar Cover */}
+             <div className="md:hidden absolute inset-0 z-0">
+               {avatarLoading ? (
+                 <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
+                    <div className={`w-8 h-8 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
+                 </div>
+               ) : avatarUrl ? (
+                 <>
+                   <img src={avatarUrl} alt="" className="w-full h-full object-cover scale-150 translate-y-[10%]" />
+                   <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent dark:from-black/80 dark:via-black/40 to-black/20 md:from-transparent md:to-transparent" />
+                 </>
+               ) : (
+                 <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900/50" />
+               )}
+             </div>
+
+             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8 md:gap-12 w-full">
+               {/* Profile Avatar (Desktop Only) */}
+               <div className="hidden md:block relative shrink-0 w-28 h-28 md:w-40 md:h-40 group">
                  <div className={`absolute inset-0 bg-white dark:bg-zinc-950 border-2 ${accentBorder} rounded-3xl md:rounded-[2.5rem] shadow-xl overflow-hidden z-10`}>
                     {avatarLoading ? (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -345,19 +477,23 @@ const PlayersPage: React.FC = () => {
                       </div>
                     )}
                  </div>
-                 {/* Decorative background depth */}
                  <div className="absolute -inset-2 bg-zinc-100 dark:bg-zinc-900 rounded-[2.8rem] blur-xl opacity-50" />
                </div>
 
-               <div className="flex flex-col gap-4">
-                  <div className="flex items-center flex-wrap gap-3">
+               {/* Name and HOF Info Container */}
+               <div className="flex flex-col gap-3 md:gap-4 w-full text-left">
+                  <div className="flex items-center flex-wrap gap-2 md:gap-3">
                     {playerDetails.isHOF && (
-                      <span className={`px-4 py-1.5 ${accentBg} text-white text-[10px] font-black uppercase tracking-[0.25em] rounded-full shadow-lg shadow-current/10`}>Hall of Fame</span>
+                      <span className={`px-4 py-1.5 ${accentBg} text-white text-[10px] font-black uppercase tracking-[0.25em] rounded-full shadow-lg shadow-current/10 border border-white/10`}>Hall of Fame</span>
                     )}
                   </div>
                   
-                  <div className="space-y-1">
-                    <h3 className="text-5xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[0.9]">
+                  {/* Readability wrapper on mobile anchored bottom-left */}
+                  <div className="relative md:bg-transparent w-fit max-w-full min-w-0">
+                    {/* Subtle localized background gradient for readability on mobile */}
+                    <div className="md:hidden absolute -inset-6 bg-gradient-to-r from-white/90 dark:from-black/80 to-transparent blur-2xl -z-10" />
+                    
+                    <h3 className="text-[clamp(1.25rem,8.5vw,3.5rem)] md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] md:leading-[0.9] whitespace-nowrap overflow-hidden">
                       {selectedPlayer.player}
                     </h3>
                   </div>
@@ -369,30 +505,29 @@ const PlayersPage: React.FC = () => {
             {/* Unified Stats Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                <section>
-                 <SectionHeading title="Performance Totals" />
+                 <SectionHeading title="ALL-TIME STATS" />
                  <div className="grid grid-cols-2 gap-4">
-                    <StatBox label="PTS" value={selectedPlayer.pts.toLocaleString()} isBold />
-                    <StatBox label="AST" value={selectedPlayer.ast.toLocaleString()} isBold />
-                    <StatBox label="REB" value={selectedPlayer.reb.toLocaleString()} isBold />
-                    <StatBox label="STL" value={selectedPlayer.stl.toLocaleString()} isBold />
+                    <StatBox label="PTS" value={selectedPlayer.pts.toLocaleString()} />
+                    <StatBox label="AST" value={selectedPlayer.ast.toLocaleString()} />
+                    <StatBox label="REB" value={selectedPlayer.reb.toLocaleString()} />
+                    <StatBox label="STL" value={selectedPlayer.stl.toLocaleString()} />
                  </div>
                </section>
 
                <section>
-                 <SectionHeading title="Impact Metrics" />
-                 <div className="grid grid-cols-2 gap-4">
+                 <SectionHeading title="RATINGS" />
+                 <div className="grid grid-cols-3 gap-4">
                     <StatBox label="EFF" value={selectedPlayer.eff} />
                     <StatBox label="OFF" value={selectedPlayer.off} />
                     <StatBox label="DEF" value={selectedPlayer.def} />
-                    <StatBox label="VAL/AAV" value={formatCurrency(selectedPlayer.val as number)} />
                  </div>
                </section>
             </div>
 
             {/* Badges Section */}
-            <section>
-              <SectionHeading title="Stat Milestones" />
-              {playerDetails.highestBadges.length > 0 ? (
+            {playerDetails.highestBadges.length > 0 && (
+              <section>
+                <SectionHeading title="MILESTONES" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {playerDetails.highestBadges.map(ach => (
                     <div key={ach.id} className="relative group p-6 rounded-[2rem] bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -409,49 +544,15 @@ const PlayersPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="py-12 border-2 border-dashed border-zinc-50 dark:border-zinc-900 rounded-[2rem] flex items-center justify-center">
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">N/A</span>
-                </div>
-              )}
-            </section>
+              </section>
+            )}
 
             {/* Verified Awards */}
-            <section>
-              <SectionHeading title="League Accolades" />
-              <div className="flex flex-wrap gap-3">
-                {(() => {
-                  const items: { label: string; count?: string }[] = [];
-                  
-                  // Access standardized lowercase 'rings' key
-                  const rings = parseFloat(String(playerDetails.awards['rings'] || 0));
-                  if (!isNaN(rings) && rings > 0) {
-                    items.push({ label: 'RINGS', count: `${rings}X` });
-                  }
-                  
-                  // Standardized lowercase roty check
-                  const roty = String(playerDetails.awards['roty'] ?? playerDetails.awards['ROTY'] ?? '').toLowerCase().trim();
-                  if (['yes', 'y', 'true', '1'].includes(roty)) {
-                    items.push({ label: 'ROTY' });
-                  }
-
-                  if (playerDetails.isHOF) {
-                    items.push({ label: 'HALL OF FAME' });
-                  }
-
-                  // Loop through all awards data from Fixed parser
-                  Object.entries(playerDetails.awards).forEach(([cat, val]) => {
-                    const normCat = cat.toUpperCase().trim();
-                    // Avoid duplicating core fields handled above
-                    if (['ROTY', 'HOF', 'PLAYER', 'USERNAME', 'RINGS'].includes(normCat)) return;
-                    
-                    const num = parseFloat(String(val));
-                    if (!isNaN(num) && num > 0) {
-                      items.push({ label: normCat, count: `${num}X` });
-                    }
-                  });
-
-                  return items.length > 0 ? items.map((item, i) => (
+            {playerDetails.accolades.length > 0 && (
+              <section>
+                <SectionHeading title="ACCOLADES" />
+                <div className="flex flex-wrap gap-3">
+                  {playerDetails.accolades.map((item, i) => (
                     <div 
                       key={i} 
                       className="flex items-center gap-3 px-4 py-2.5 bg-zinc-900 dark:bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg hover:border-zinc-700 transition-all duration-300 group"
@@ -465,39 +566,33 @@ const PlayersPage: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  )) : (
-                    <div className="w-full py-12 border-2 border-dashed border-zinc-50 dark:border-zinc-900 rounded-[2rem] flex items-center justify-center">
-                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">N/A</span>
-                    </div>
-                  );
-                })()}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Records Section */}
-            <section>
-              <SectionHeading title="Records Registry" />
-              <div className="space-y-4">
-                {playerDetails.heldRecords.length > 0 ? playerDetails.heldRecords.map((rec, i) => (
-                  <div key={i} className="flex items-center justify-between p-6 bg-zinc-50/50 dark:bg-zinc-900/20 rounded-3xl border border-zinc-100 dark:border-zinc-900 group hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 group-hover:translate-x-1 transition-transform">{rec.title}</span>
-                      {rec.context && rec.context !== '—' && (
-                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{rec.context}</span>
-                      )}
+            {playerDetails.heldRecords.length > 0 && (
+              <section>
+                <SectionHeading title="RECORDS" />
+                <div className="space-y-4">
+                  {playerDetails.heldRecords.map((rec, i) => (
+                    <div key={i} className="flex items-center justify-between p-6 bg-zinc-50/50 dark:bg-zinc-900/20 rounded-3xl border border-zinc-100 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 group-hover:translate-x-1 transition-transform">{rec.title}</span>
+                        {rec.context && rec.context !== '—' && (
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{rec.context}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className={`text-2xl font-black ${accentText} tabular-nums leading-none`}>{rec.value}</span>
+                        <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mt-1">{rec.valueLabel}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <span className={`text-2xl font-black ${accentText} tabular-nums leading-none`}>{rec.value}</span>
-                      <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mt-1">{rec.valueLabel}</span>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="py-12 border-2 border-dashed border-zinc-50 dark:border-zinc-900 rounded-[2rem] flex items-center justify-center">
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 dark:text-zinc-700">N/A</span>
-                  </div>
-                )}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         </div>
       ) : (
