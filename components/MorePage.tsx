@@ -10,7 +10,7 @@ interface MorePageProps {
   accentShadow: string;
 }
 
-const COMING_SOON_LABELS = ['achievements', 'milestones', 'leaders'];
+const COMING_SOON_LABELS: string[] = ['glossary'];
 
 const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, accentBgSoft, accentShadow }) => {
   const [easterEggIndex, setEasterEggIndex] = useState(0);

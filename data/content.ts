@@ -11,11 +11,6 @@ export interface TabContent {
 }
 
 export const contentMap: Record<string, TabContent> = {
-  schedule: {
-    title: 'empty page',
-    description: '',
-    items: [] 
-  },
   stats: {
     title: 'player statistics',
     description: '',
@@ -49,8 +44,8 @@ export const contentMap: Record<string, TabContent> = {
     description: '',
     items: [
       { label: 'Achievements', category: 'Legacy' },
-      { label: 'Milestones', category: 'Legacy' },
-      { label: 'Leaders', category: 'Season' },
+      { label: 'Players', category: 'Database' },
+      { label: 'Glossary', category: 'Reference' },
       { label: 'History', category: 'Archives' },
       { label: 'Rules', category: 'Official' },
       { label: 'Credits', category: 'Team' }
@@ -77,6 +72,11 @@ export const contentMap: Record<string, TabContent> = {
   compare: {
     title: 'Player Comparison',
     description: 'Reference-style side-by-side stats.',
+    items: []
+  },
+  players: {
+    title: 'player database',
+    description: 'All-time career profiles and accolades.',
     items: []
   }
 };

@@ -9,7 +9,7 @@ import RouteTransition from './components/RouteTransition';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 
-export type TabID = 'home' | 'schedule' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | 'compare' | string;
+export type TabID = 'home' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | 'compare' | 'achievements' | string;
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabID>('home');

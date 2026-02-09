@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react';
+
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import FluidBackground from './FluidBackground';
 import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
+import { fetchS12Stats, S12Row } from '../data/s12Stats';
 
 interface LandingPageProps {
   onSearchTrigger: () => void;
@@ -9,28 +11,31 @@ interface LandingPageProps {
 }
 
 const HERO_TITLES = [
-  "soulz has the most points in nbll history with 4,307 and counting",
+   "soulz has the most points in nbll history with 4,307 and counting",
   "marsh has the most steals in nbll history with 423 and counting",
   "taser was the first to reach the 1,000 points milestone",
-  "ghost holds both titles for the most assists AND rebounds in a career",
+  "ghost holds titles for both the most assists and most rebounds ever",
   "pansho and taser are tied for the most rings with 5 each",
   "rah holds the most nbll records with 6",
   "pansho has an 83% chance to win the finals when he appears in one",
   "soulz's 71.2 ppg in s11 is the highest of all time",
   "phattie's 5.4 spg in s11 is the highest of all time",
+  "marsh recorded a record-breaking 423 steals over his career",
 ];
+
+const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
 const RahBizzyCoins: React.FC<{ reducedMotion: boolean }> = ({ reducedMotion }) => {
   const coins = useMemo(() => {
     const count = reducedMotion ? 3 : 18;
     return Array.from({ length: count }).map((_, i) => ({
       id: i,
-      left: `${Math.random() * 90 + 5}%`, // 5% to 95%
-      size: `${Math.random() * 20 + 12}px`, // 12px to 32px
-      duration: `${Math.random() * 15 + 10}s`, // 10s to 25s
-      delay: `-${Math.random() * 25}s`, // Negative delay to start mid-animation
-      sway: `${Math.random() * 100 - 50}px`, // -50px to 50px sway
-      topStatic: `${Math.random() * 60 + 20}%` // For reduced motion
+      left: `${Math.random() * 90 + 5}%`,
+      size: `${Math.random() * 20 + 12}px`,
+      duration: `${Math.random() * 15 + 10}s`,
+      delay: `-${Math.random() * 25}s`,
+      sway: `${Math.random() * 100 - 50}px`,
+      topStatic: `${Math.random() * 60 + 20}%`
     }));
   }, [reducedMotion]);
 
@@ -48,7 +53,6 @@ const RahBizzyCoins: React.FC<{ reducedMotion: boolean }> = ({ reducedMotion }) 
             left: coin.left,
             width: coin.size,
             height: coin.size,
-            // If reduced motion, use static top/bottom. If animation, bottom starts at -10%
             top: reducedMotion ? coin.topStatic : undefined,
             bottom: reducedMotion ? undefined : '-10%',
             animationDuration: coin.duration,
@@ -74,12 +78,66 @@ const RahBizzyCoins: React.FC<{ reducedMotion: boolean }> = ({ reducedMotion }) 
 
 const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange }) => {
   const { settings } = useSettings();
+  const [dynamicTitles, setDynamicTitles] = useState<string[]>([]);
   
-  // Randomly select title on initial render
-  const [heroTitle] = useState(() => {
-    const randomIndex = Math.floor(Math.random() * HERO_TITLES.length);
-    return HERO_TITLES[randomIndex];
-  });
+  // Use lazy initializer to pick exactly ONE title on first render and keep it stable.
+  // This prevents the "stutter" where the title changes shortly after the page loads.
+  const [heroTitle, setHeroTitle] = useState(() => pickRandom(HERO_TITLES));
+
+  // Fetch S12 stats in the background to populate the rotation pool.
+  useEffect(() => {
+    let active = true;
+    const loadS12Leaders = async () => {
+      try {
+        const stats = await fetchS12Stats();
+        if (active && stats && stats.length > 0) {
+          const getLeader = (data: S12Row[], key: keyof S12Row) => {
+            return [...data].sort((a, b) => (b[key] as number) - (a[key] as number))[0];
+          };
+
+          const ptsL = getLeader(stats, 'pts');
+          const astL = getLeader(stats, 'ast');
+          const rebL = getLeader(stats, 'reb');
+          const stlL = getLeader(stats, 'stl');
+          const ppgL = getLeader(stats, 'ppg');
+
+          const s12LeaderTitles = [
+            `${ptsL.player} currently leads the league in points with ${Math.round(ptsL.pts)}`,
+            `${astL.player} currently leads the league in assists with ${Math.round(astL.ast)}`,
+            `${rebL.player} currently leads the league in rebounds with ${Math.round(rebL.reb)}`,
+            `${stlL.player} currently leads the league in steals with ${Math.round(stlL.stl)}`,
+            `${ppgL.player} currently leads the league in points per game with ${ppgL.ppg.toFixed(1)}`,
+          ];
+
+          setDynamicTitles(s12LeaderTitles);
+          // Note: We do NOT call setHeroTitle here anymore.
+          // The title will only change once the 10-second interval triggers.
+        }
+      } catch (err) {
+        console.error("Failed to load S12 leader titles", err);
+      }
+    };
+
+    loadS12Leaders();
+    return () => { active = false; };
+  }, []);
+
+  // Title rotation interval - ensures the page feels alive without jarring "stutters" on load.
+  useEffect(() => {
+    const rotationInterval = setInterval(() => {
+      const fullPool = [...HERO_TITLES, ...dynamicTitles];
+      setHeroTitle((current) => {
+        let next = pickRandom(fullPool);
+        // Avoid repeating the same title
+        while (next === current && fullPool.length > 1) {
+          next = pickRandom(fullPool);
+        }
+        return next;
+      });
+    }, 10000); // 10 seconds per title
+
+    return () => clearInterval(rotationInterval);
+  }, [dynamicTitles]);
 
   // Lock scroll on Home page
   useEffect(() => {
@@ -102,7 +160,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
           {/* Main Headline Group */}
           <div className="space-y-3 relative group">
             <h1 
-              className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[1.05] text-white transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none"
+              key={heroTitle} // Keying by content triggers the animation on change
+              className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[1.05] text-white transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none animate-title-fade"
             >
               {heroTitle}
             </h1>
@@ -110,7 +169,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
 
           {/* CTA Buttons Stack */}
           <div className="flex flex-col items-center gap-4 pt-6">
-            {/* Join Discord Button */}
             <a
               href="https://discord.gg/nbll"
               target="_blank"
@@ -132,8 +190,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
           from { opacity: 0; transform: translateY(40px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes title-fade {
+          from { opacity: 0; filter: blur(10px); }
+          to { opacity: 1; filter: blur(0px); }
+        }
         .animate-fade-in-up {
           animation: fade-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-title-fade {
+          animation: title-fade 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
     </div>

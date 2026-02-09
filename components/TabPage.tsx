@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { TabID } from '../App';
 import { contentMap, TabContent } from '../data/content';
-import SchedulePage from './SchedulePage';
 import StatsPage from './StatsPage';
 import HallOfFamePage from './HallOfFamePage';
 import RulesPage from './RulesPage';
@@ -13,6 +12,8 @@ import MenuGridPage from './MenuGridPage';
 import RecordsPage from './RecordsPage';
 import HistoryPage from './HistoryPage';
 import ComparePage from './ComparePage';
+import AchievementsPage from './AchievementsPage';
+import PlayersPage from './PlayersPage';
 import { useSettings } from '../context/SettingsContext';
 
 interface TabPageProps {
@@ -29,7 +30,10 @@ const getParentTab = (tabId: TabID): TabID => {
     'credits': 'more',
     'records': 'legacy',
     'hall-of-fame': 'legacy',
-    'league-history': 'more'
+    'league-history': 'more',
+    'achievements': 'more',
+    'players': 'more',
+    'glossary': 'more'
   };
   return parentMap[tabId] || tabId;
 };
@@ -48,11 +52,10 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     window.scrollTo(0, 0);
   }, [tabId]);
 
-  const subPages: TabID[] = ['partner-hub', 'rules', 'hall-of-fame', 'league-history', 'credits', 'records'];
+  const subPages: TabID[] = ['partner-hub', 'rules', 'hall-of-fame', 'league-history', 'credits', 'records', 'achievements', 'players', 'glossary'];
   const isSubPage = subPages.includes(tabId);
   
   // Always use neutral theme colors for the TabPage shell (like the back button)
-  // to prevent the "gold" theme from bleeding into the navigation UI.
   const colors = getThemeColors(false);
 
   const accentText = colors.text;
@@ -90,11 +93,14 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
       'history': 'league-history',
       'credits': 'credits',
       'records': 'records',
-      'compare': 'compare'
+      'compare': 'compare',
+      'achievements': 'achievements',
+      'players': 'players',
+      'glossary': 'glossary'
     };
     
     const target = slugMap[label.toLowerCase()] || label.toLowerCase() as TabID;
-    const validTabs: TabID[] = ['schedule', 'stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'credits', 'records', 'compare'];
+    const validTabs: TabID[] = ['stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'credits', 'records', 'compare', 'achievements', 'players', 'glossary'];
     
     if (onTabChange && validTabs.includes(target)) {
       onTabChange(target);
@@ -108,9 +114,6 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     if (tabId === 'rules') {
       return <RulesPage />;
     }
-    if (tabId === 'schedule') {
-      return <SchedulePage />;
-    }
     if (tabId === 'stats') {
       return <StatsPage />;
     }
@@ -122,6 +125,12 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     }
     if (tabId === 'compare') {
       return <ComparePage />;
+    }
+    if (tabId === 'achievements') {
+      return <AchievementsPage />;
+    }
+    if (tabId === 'players') {
+      return <PlayersPage />;
     }
     if (tabId === 'more') {
       return (
@@ -161,8 +170,8 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
           {isSubPage ? (getParentTab(tabId) === 'legacy' ? 'legacy' : 'more') : 'home'}
         </button>
 
-        {/* Content Header - Exclude tabs that handle their own specialized layout */}
-        {tabId !== 'stats' && tabId !== 'legacy' && tabId !== 'hall-of-fame' && tabId !== 'records' && tabId !== 'compare' && (
+        {/* Content Header */}
+        {tabId !== 'stats' && tabId !== 'legacy' && tabId !== 'hall-of-fame' && tabId !== 'records' && tabId !== 'compare' && tabId !== 'achievements' && tabId !== 'players' && (
           <div>
             <h2 className={`text-4xl md:text-6xl font-black tracking-tighter ${colors.text === 'text-[#3B82F6]' ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}>
               {page.title.toLowerCase()}

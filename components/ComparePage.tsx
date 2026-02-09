@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { fetchSeasonStats, PlayerStats, SeasonID } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
@@ -42,6 +43,40 @@ const ComparePage: React.FC = () => {
   const resultsDropdownRef = useRef<HTMLDivElement>(null);
   const compareRef = useRef<HTMLDivElement>(null);
 
+  // Determine height of the table for empty state placeholder
+  const expectedTableHeight = useMemo(() => {
+    // These estimates match the rendered component's vertical footprint per season
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    const rowH = isMobile ? 45 : 65;
+    const headerH = isMobile ? 90 : 130;
+    const sectionH = isMobile ? 36 : 48;
+
+    let rows = 4; // Base stats (PTS, AST, REB, STL)
+    let sections = 1; // "Stats" header
+
+    if (season === 's10') {
+      // Just stats
+    } else if (season === 'all-time') {
+      rows += 3; // Ratings (EFF, OFF, DEF)
+      sections += 1; // "Ratings" header
+      if (awardsData) {
+        rows += awardsData.categories.length;
+        sections += 1; // "Awards" header
+      } else {
+        // Fallback guess for awards if not loaded
+        rows += 6; 
+        sections += 1;
+      }
+    } else {
+      // s11, s12
+      rows += 5; // Averages (GP, PPG, APG, RPG, SPG)
+      rows += 3; // Ratings (EFF, OFF, DEF)
+      sections += 2; // "Averages", "Ratings" headers
+    }
+
+    return headerH + (rows * rowH) + (sections * sectionH);
+  }, [season, awardsData]);
+
   // Derive stats for selected players from the current dataset
   const selectedStats = useMemo(() => {
     return selectedNames.map(name => {
@@ -62,8 +97,6 @@ const ComparePage: React.FC = () => {
 
         setPlayers(statsData);
         setAwardsData(fetchedAwards);
-        // Persistence: Do NOT clear selectedNames here. 
-        // The memoized selectedStats will update automatically.
       } catch (e: any) {
         if (e.name !== 'AbortError') console.error(e);
       } finally {
@@ -116,14 +149,11 @@ const ComparePage: React.FC = () => {
 
   const handleRandomMatchup = () => {
     if (players.length < 2) return;
-    
-    // Select 2 unique random indices
     const pool = [...players];
     const idx1 = Math.floor(Math.random() * pool.length);
     const p1 = pool.splice(idx1, 1)[0];
     const idx2 = Math.floor(Math.random() * pool.length);
     const p2 = pool[idx2];
-    
     setSelectedNames([p1.player, p2.player]);
     if (isSearchOpen) closeSearch();
   };
@@ -270,20 +300,12 @@ const ComparePage: React.FC = () => {
   const getWinnerClass = (left: any, right: any, isLeft: boolean) => {
     const lNum = parseValue(left);
     const rNum = parseValue(right);
-    
-    // Ignore if both are 0 or nullish
     if (lNum === 0 && rNum === 0) return '';
-    
     const highlight = settings.rahBizzyTheme ? 'bg-[#3B82F6]/15' : 'bg-[#D60A07]/15';
-    
-    // Tie: highlight both
     if (lNum === rNum) return highlight;
-    
-    // Win logic
     const leftWins = lNum > rNum;
     if (isLeft && leftWins) return highlight;
     if (!isLeft && !leftWins) return highlight;
-    
     return '';
   };
 
@@ -315,7 +337,7 @@ const ComparePage: React.FC = () => {
   const isMaxPlayers = selectedNames.every(s => s !== null);
   const hasSelection = selectedNames.some(s => s !== null);
 
-  const ComparisonRow = ({ label, leftVal, rightVal }: { label: string, leftVal: any, rightVal: any }) => {
+  const ComparisonRow = ({ label, leftVal, rightVal, key }: { label: string, leftVal: any, rightVal: any, key?: React.Key }) => {
     const leftHighlight = getWinnerClass(leftVal, rightVal, true);
     const rightHighlight = getWinnerClass(leftVal, rightVal, false);
     const getValColorClass = (highlight: string) => highlight ? 'text-zinc-900 dark:text-zinc-100 font-extrabold' : 'text-zinc-900 dark:text-zinc-400 font-semibold';
@@ -340,14 +362,12 @@ const ComparePage: React.FC = () => {
     return ['yes', 'y', 'true', '1'].includes(s);
   };
 
-  const BooleanComparisonRow = ({ label, leftRaw, rightRaw }: { label: string, leftRaw: any, rightRaw: any }) => {
+  const BooleanComparisonRow = ({ label, leftRaw, rightRaw, key }: { label: string, leftRaw: any, rightRaw: any, key?: React.Key }) => {
     const leftIsYes = isYes(leftRaw);
     const rightIsYes = isYes(rightRaw);
-    
     const highlight = settings.rahBizzyTheme ? 'bg-[#3B82F6]/15' : 'bg-[#D60A07]/15';
     let leftHighlight = '';
     let rightHighlight = '';
-    
     if (leftIsYes && rightIsYes) {
       leftHighlight = highlight;
       rightHighlight = highlight;
@@ -356,13 +376,10 @@ const ComparePage: React.FC = () => {
     } else if (rightIsYes) {
       rightHighlight = highlight;
     }
-
     const getValColorClass = (isYesVal: boolean, hasHighlight: string) => {
-      // Bold if it's "yes" and has a highlight (covers wins and "yes" ties)
       if (isYesVal && hasHighlight) return 'text-zinc-900 dark:text-zinc-100 font-extrabold';
       return 'text-zinc-900 dark:text-zinc-400 font-semibold';
     };
-    
     return (
       <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0">
         <div className={`py-3 md:py-5 px-4 text-right transition-colors ${leftHighlight}`}>
@@ -408,7 +425,7 @@ const ComparePage: React.FC = () => {
   return (
     <div className="space-y-6 md:space-y-10 pb-20 animate-page-enter">
       {/* Header Row */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 md:mb-12 items-start relative z-[60]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4 md:mb-12 items-start relative z-[60]">
         <div className="flex items-center justify-between w-full md:w-auto relative min-h-[4rem]">
           <motion.h2 
             initial={false}
@@ -422,7 +439,7 @@ const ComparePage: React.FC = () => {
             compare players
           </motion.h2>
 
-          {/* Mobile Search Button Overlay (Always Top Row on Mobile) */}
+          {/* Mobile Search Button Overlay */}
           <div className="md:hidden absolute right-0 flex items-center justify-end">
             <div className="relative" ref={mobileSearchContainerRef}>
               <motion.div 
@@ -467,7 +484,6 @@ const ComparePage: React.FC = () => {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Mobile Search Results */}
               <AnimatePresence>
                 {isSearchOpen && query.trim() && showResults && (
                   <motion.div 
@@ -485,96 +501,95 @@ const ComparePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Controls Row: Always Visible */}
-        <div className="md:hidden flex items-center gap-2 w-full">
-          {/* Season Selector */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 shrink-0">Season</span>
-            <div className="relative w-28">
-              <select value={season} onChange={(e) => setSeason(e.target.value as SeasonID)} className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-lg py-2 pl-3 pr-7 text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 outline-none appearance-none">
+        {/* Unified Mobile Controls Toolbar */}
+        <div className="md:hidden w-full">
+          <div className="w-full h-11 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full flex items-center overflow-hidden px-1">
+            <div className="relative flex items-center px-3 h-full group">
+              <select 
+                value={season} 
+                onChange={(e) => setSeason(e.target.value as SeasonID)} 
+                className="bg-transparent border-none text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-4 relative z-10"
+              >
                 {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2"><DropdownIcon /></div>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
+                <DropdownIcon />
+              </div>
             </div>
-          </div>
-          
-          {/* Reset Table Button (Tightened) */}
-          <button 
-            onClick={resetTable}
-            className="flex-1 min-w-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg py-2 px-1 text-xs font-bold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all outline-none whitespace-nowrap"
-          >
-            reset table
-          </button>
-
-          {/* Random Matchup Button (New for Mobile) */}
-          <button 
-            onClick={handleRandomMatchup}
-            disabled={players.length < 2}
-            className={`shrink-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg py-2 px-3 text-xs font-bold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all outline-none ${players.length < 2 ? 'opacity-30 cursor-not-allowed' : ''}`}
-            aria-label="Random matchup"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
-            </svg>
-          </button>
-
-          {/* Export Button */}
-          <button 
-            onClick={handleExport}
-            disabled={!hasSelection || isExporting}
-            className={`shrink-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-lg py-2 px-3.5 text-xs font-bold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all outline-none ${!hasSelection || isExporting ? 'opacity-30 cursor-not-allowed' : ''}`}
-            aria-label="Export image"
-          >
-            {isExporting ? (
-              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            ) : (
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+            <button 
+              onClick={resetTable}
+              className="flex-1 h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all whitespace-nowrap px-2"
+            >
+              reset table
+            </button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+            <button 
+              onClick={handleRandomMatchup}
+              disabled={players.length < 2}
+              className={`w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-90 transition-all shrink-0 ${players.length < 2 ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
               </svg>
-            )}
-          </button>
+            </button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+            <button 
+              onClick={handleExport}
+              disabled={!hasSelection || isExporting}
+              className={`w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-90 transition-all shrink-0 ${!hasSelection || isExporting ? 'opacity-30 cursor-not-allowed' : ''}`}
+            >
+              {isExporting ? (
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Desktop Controls Area */}
         <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1 gap-2.5 z-50">
-          <button 
-            onClick={handleRandomMatchup}
-            disabled={players.length < 2}
-            className={`w-8 h-8 rounded-full ${accentBg} text-white flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all shrink-0 ${players.length < 2 ? 'opacity-30 cursor-not-allowed' : ''}`}
-            aria-label="Random matchup"
-          >
-             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
-            </svg>
-          </button>
-
-          <button 
-            onClick={handleExport}
-            disabled={!hasSelection || isExporting}
-            className={`w-8 h-8 rounded-full ${accentBg} text-white flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all shrink-0 ${!hasSelection || isExporting ? 'opacity-30 cursor-not-allowed' : ''}`}
-            aria-label="Export image"
-          >
-            {isExporting ? (
-              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            ) : (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          <div className="flex items-center bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-full overflow-hidden shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300">
+            <button 
+              onClick={handleRandomMatchup}
+              disabled={players.length < 2}
+              className={`w-10 h-full flex items-center justify-center ${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${players.length < 2 ? 'opacity-30 cursor-not-allowed' : ''} group/btn`}
+              title="random"
+            >
+               <svg className="w-4 h-4 transition-all duration-300 group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
               </svg>
-            )}
-          </button>
-          
-          <button 
-            onClick={resetTable}
-            className={`w-8 h-8 rounded-full ${accentBg} text-white flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all shrink-0`}
-            aria-label="Reset comparison"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-            </svg>
-          </button>
+            </button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
+            <button 
+              onClick={handleExport}
+              disabled={!hasSelection || isExporting}
+              className={`w-10 h-full flex items-center justify-center ${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${!hasSelection || isExporting ? 'opacity-30 cursor-not-allowed' : ''} group/btn`}
+              title="export"
+            >
+              {isExporting ? (
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              ) : (
+                <svg className="w-4 h-4 transition-all duration-300 group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              )}
+            </button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
+            <button 
+              onClick={resetTable}
+              disabled={!hasSelection}
+              className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${hasSelection ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`}
+              title="reset"
+            >
+              <svg className={`w-4 h-4 transition-all duration-300 ${hasSelection ? 'group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+              </svg>
+            </button>
+          </div>
 
           <div className="relative flex items-center gap-2.5 h-full" ref={pillAreaRef}>
             <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
@@ -597,7 +612,6 @@ const ComparePage: React.FC = () => {
                   })}
                 </div>
               </div>
-
               <button
                 onClick={() => !isMaxPlayers && openSearch()}
                 disabled={isMaxPlayers}
@@ -606,7 +620,6 @@ const ComparePage: React.FC = () => {
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </button>
             </div>
-
             <AnimatePresence>
               {isSearchOpen && (
                 <motion.div
@@ -636,7 +649,6 @@ const ComparePage: React.FC = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-            
             <AnimatePresence>
               {isSearchOpen && query && showResults && (
                 <motion.div 
@@ -654,13 +666,11 @@ const ComparePage: React.FC = () => {
 
       {hasSelection ? (
         <div ref={compareRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-xl z-10">
-           {/* Season Tag - Visible on card (Desktop only) and included in export */}
            <div className="absolute top-3 right-3 z-30 pointer-events-none hidden md:block">
              <div className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800/80 backdrop-blur-sm rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
                 <span className="text-[8px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{season}</span>
              </div>
            </div>
-
            <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-[1fr_120px_1fr] items-center bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
               <div className="p-4 md:p-8 text-left md:text-right flex flex-col items-start md:items-end gap-1 min-w-0">
                  <button
@@ -676,7 +686,6 @@ const ComparePage: React.FC = () => {
               </div>
               <div className="px-2 md:px-0 text-center flex items-center justify-center shrink-0">
                  <span className="hidden md:block text-[9px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-700 italic">VS</span>
-                 {/* Mobile Season Indicator */}
                  <div className="md:hidden px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
                     <span className="text-[8px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{season}</span>
                  </div>
@@ -694,9 +703,7 @@ const ComparePage: React.FC = () => {
                  </button>
               </div>
            </div>
-
            <div className="flex flex-col">
-              {/* Section 1: Always Stats first for all seasons */}
               <SectionHeader title="Stats" />
               {categories.stats.map(cat => (
                 <ComparisonRow 
@@ -706,11 +713,8 @@ const ComparePage: React.FC = () => {
                   rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
                 />
               ))}
-
-              {/* Order depends on season */}
               {season === 'all-time' ? (
                 <>
-                  {/* All-Time: Stats -> Ratings -> Awards */}
                   <SectionHeader title="Ratings" />
                   {categories.ratings.map(cat => (
                     <ComparisonRow 
@@ -720,19 +724,14 @@ const ComparePage: React.FC = () => {
                       rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
                     />
                   ))}
-
                   {showAwards && awardsData && (
                     <>
-                      <SectionHeader title="All-Time Awards" />
+                      <SectionHeader title="Awards" />
                       {awardsData.categories.map(cat => {
                         const isBool = ['ROTY', 'HOF'].includes(cat.toUpperCase());
                         const leftRaw = selectedNames[0] ? awardsData.byPlayer[selectedNames[0].toLowerCase()]?.[cat] : null;
                         const rightRaw = selectedNames[1] ? awardsData.byPlayer[selectedNames[1].toLowerCase()]?.[cat] : null;
-                        
-                        if (isBool) {
-                          return <BooleanComparisonRow key={cat} label={cat} leftRaw={leftRaw} rightRaw={rightRaw} />;
-                        }
-                        
+                        if (isBool) return <BooleanComparisonRow key={cat} label={cat} leftRaw={leftRaw} rightRaw={rightRaw} />;
                         const leftVal = selectedNames[0] ? (parseValue(leftRaw) || 0) : 0;
                         const rightVal = selectedNames[1] ? (parseValue(rightRaw) || 0) : null;
                         return <ComparisonRow key={cat} label={cat} leftVal={leftVal} rightVal={rightVal} />;
@@ -742,7 +741,6 @@ const ComparePage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  {/* S10, S11, S12: Stats -> Averages -> Ratings */}
                   {showAverages && (
                     <>
                       <SectionHeader title="Averages" />
@@ -756,7 +754,6 @@ const ComparePage: React.FC = () => {
                       ))}
                     </>
                   )}
-
                   {showRatings && (
                     <>
                       <SectionHeader title="Ratings" />
@@ -775,9 +772,17 @@ const ComparePage: React.FC = () => {
            </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 md:py-32 text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem] md:rounded-[3rem] px-6">
-          <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">ready to compare</h3>
-        </div>
+        <motion.div 
+          initial={false}
+          animate={{ minHeight: expectedTableHeight }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          className="flex flex-col items-center pt-20 md:pt-32 text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem] md:rounded-[3rem] px-6 transition-all duration-300"
+        >
+          <div className="space-y-1">
+            <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">ready to compare</h3>
+            <p className="text-[10px] md:text-xs font-bold text-zinc-400 dark:text-zinc-600 tracking-widest">search player usernames to start</p>
+          </div>
+        </motion.div>
       )}
     </div>
   );

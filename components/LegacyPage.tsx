@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HallOfFamePage from './HallOfFamePage';
@@ -26,16 +25,13 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ initialSegment = 'hof' }) => {
     { id: 'records', label: 'RECORDS' }
   ];
 
-  const DropdownIcon = () => (
-    <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
+  const isHOF = activeSegment === 'hof';
+  const accentColor = settings.rahBizzyTheme ? 'bg-[#3B82F6]' : 'bg-[#D60A07]';
 
   return (
     <div className="space-y-10 animate-page-enter">
       {/* Header Row */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 items-start">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4 md:mb-12 items-start">
         <div className="flex items-center justify-between w-full md:w-auto relative min-h-[4rem]">
           <h2 
             className={`text-4xl md:text-6xl font-black tracking-tighter shrink-0 select-none ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}
@@ -44,26 +40,7 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ initialSegment = 'hof' }) => {
           </h2>
         </div>
 
-        {/* Mobile Dropdown Selector - Matches Stats page mobile behavior proportions */}
-        <div className="md:hidden flex items-center gap-3 w-fit pr-4">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 shrink-0">Section</span>
-          <div className="relative w-32">
-            <select 
-              value={activeSegment}
-              onChange={(e) => setActiveSegment(e.target.value as Segment)}
-              className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-lg py-2 pl-3 pr-8 text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 outline-none appearance-none"
-            >
-              {segments.map(seg => (
-                <option key={seg.id} value={seg.id}>{seg.label.toLowerCase()}</option>
-              ))}
-            </select>
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-              <DropdownIcon />
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Segmented Control - Styled to match Stats page season selector */}
+        {/* Desktop Segmented Control */}
         <div 
           role="tablist"
           aria-label="Select legacy view"
@@ -99,6 +76,39 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ initialSegment = 'hof' }) => {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* Mobile-only Premium Mini-Nav (Non-Sticky) */}
+      <div className="md:hidden w-full pb-4">
+        <div className="w-full h-11 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden relative flex items-center">
+          {/* Vertical Center Divider */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-5 bg-zinc-200 dark:bg-zinc-800/60 z-10" />
+          
+          {segments.map((seg) => {
+            const isActive = activeSegment === seg.id;
+            return (
+              <button
+                key={seg.id}
+                onClick={() => setActiveSegment(seg.id)}
+                className={`relative flex-1 h-full text-[10px] font-black uppercase tracking-widest transition-colors duration-300 outline-none ${
+                  isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-600'
+                }`}
+              >
+                {seg.label}
+              </button>
+            );
+          })}
+
+          {/* Sliding Bottom Indicator */}
+          <motion.div
+            initial={false}
+            animate={{ x: isHOF ? 0 : '100%' }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            className="absolute bottom-0 left-0 w-1/2 h-[3px] px-4"
+          >
+            <div className={`w-full h-full ${accentColor} rounded-t-full shadow-[0_-2px_10px_rgba(0,0,0,0.1)]`} />
+          </motion.div>
         </div>
       </div>
 

@@ -178,7 +178,9 @@ const HallOfFamePage: React.FC = () => {
       {/* Inducted Members Section */}
       <div className="space-y-10">
         <div className="flex items-center gap-4">
-          <h3 className="text-3xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">Inducted Members</h3>
+          <h3 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">
+            Inducted Members
+          </h3>
           <div className="h-px bg-zinc-100 dark:border-zinc-800 flex-1" />
         </div>
 

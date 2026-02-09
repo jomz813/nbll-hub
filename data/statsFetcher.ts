@@ -20,6 +20,8 @@ export interface PlayerStats {
   eff: number;
   off: number;
   def: number;
+  // Added val property for all-time value analysis as seen in database
+  val?: number;
   // Per game fields (calculated)
   ppg?: number;
   apg?: number;
@@ -41,6 +43,33 @@ const toNumber = (v: any): number => {
   return 0;
 };
 
+/**
+ * Specialized parser for currency strings like "$74.4M", "$10K", etc.
+ * Replicated from allTimeStats.ts logic to maintain consistency across unified fetcher.
+ */
+const parseValAav = (v: any): number => {
+  if (v === null || v === undefined || v === '') return 0;
+  
+  let s = String(v).trim().toUpperCase();
+  // Remove currency symbol and commas
+  s = s.replace('$', '').replace(/,/g, '');
+  
+  let multiplier = 1;
+  if (s.endsWith('M')) {
+    multiplier = 1_000_000;
+    s = s.slice(0, -1);
+  } else if (s.endsWith('K')) {
+    multiplier = 1_000;
+    s = s.slice(0, -1);
+  } else if (s.endsWith('B')) {
+    multiplier = 1_000_000_000;
+    s = s.slice(0, -1);
+  }
+  
+  const num = parseFloat(s);
+  return isNaN(num) ? 0 : num * multiplier;
+};
+
 export const fetchSeasonStats = async (season: SeasonID, signal?: AbortSignal): Promise<PlayerStats[]> => {
   if (cache[season]) return cache[season];
 
@@ -55,9 +84,9 @@ export const fetchSeasonStats = async (season: SeasonID, signal?: AbortSignal): 
       complete: (results) => {
         const stats = results.data
           .map((raw: any) => {
-            const findValue = (keys: string[]) => {
+            const findValue = (keys: string[], parser = toNumber) => {
               const key = Object.keys(raw).find(k => keys.includes(normalizeKey(k)));
-              return key ? toNumber(raw[key]) : 0;
+              return key ? parser(raw[key]) : 0;
             };
 
             const playerKey = Object.keys(raw).find(k => normalizeKey(k) === 'player');
@@ -73,6 +102,8 @@ export const fetchSeasonStats = async (season: SeasonID, signal?: AbortSignal): 
               eff: findValue(['eff', 'efficiency']),
               off: findValue(['off', 'offensiveimpact', 'oimp', 'o']),
               def: findValue(['def', 'defensiveimpact', 'dimp', 'd']),
+              // Added mapping for market value / aav primarily used in all-time datasets
+              val: findValue(['valaav', 'val', 'value'], parseValAav),
             };
 
             // Calculate averages if GP exists
