@@ -1,16 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchSeasonStats, PlayerStats, SeasonID } from '../data/statsFetcher';
+import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
 import { generateAllTimeBadges, getTopBadgeEarners } from '../data/achievementsEngine';
 import { useSettings } from '../context/SettingsContext';
 import { Achievement, AchievementCategory } from '../data/achievements';
-
-const DropdownIcon = () => (
-  <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
 
 const AchievementsPage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
@@ -25,8 +19,11 @@ const AchievementsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
+  
+  // Animation state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [showBadges, setShowBadges] = useState(false);
 
-  // Refs for UI interactions
   const pillAreaRef = useRef<HTMLDivElement>(null);
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
@@ -43,7 +40,6 @@ const AchievementsPage: React.FC = () => {
         setPlayers(stats);
         setAwardsData(awards);
         
-        // Update selected player data if they exist in the dataset
         if (selectedPlayer) {
           const match = stats.find(p => p.player.toLowerCase() === selectedPlayer.player.toLowerCase());
           setSelectedPlayer(match || null);
@@ -57,7 +53,6 @@ const AchievementsPage: React.FC = () => {
     load();
   }, []);
 
-  // Dynamically generate the badge set (All-Time Only)
   const currentBadges = useMemo(() => {
     if (players.length === 0) return [];
     return generateAllTimeBadges(players);
@@ -83,24 +78,32 @@ const AchievementsPage: React.FC = () => {
   }, [players, awardsData, loading, currentBadges]);
 
   const handleSelectPlayer = (p: PlayerStats) => {
+    if (isAnimating) return;
+    if (selectedPlayer?.player === p.player) return;
+
+    // Reset visibility for stagger re-trigger
+    setShowBadges(false);
+    
+    // If reduced motion is on, skip the move animation
+    if (!settings.reducedMotion) {
+      setIsAnimating(true);
+    } else {
+      setShowBadges(true);
+    }
+
     setSelectedPlayer(p);
     setSearchQuery('');
     setIsSearchOpen(false);
   };
 
-  const handleRandomPlayer = () => {
-    if (players.length === 0) return;
-    const randomIdx = Math.floor(Math.random() * players.length);
-    handleSelectPlayer(players[randomIdx]);
-  };
-
   const handleClearPlayer = () => {
+    if (isAnimating) return;
     setSelectedPlayer(null);
+    setShowBadges(false);
     setSearchQuery('');
     if (isSearchOpen) setIsSearchOpen(false);
   };
 
-  // Keyboard and outside click handling for search
   useEffect(() => {
     if (isSearchOpen) {
       const timer = setTimeout(() => {
@@ -120,7 +123,6 @@ const AchievementsPage: React.FC = () => {
         setIsSearchOpen(false);
       }
     };
-
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (pillAreaRef.current && !pillAreaRef.current.contains(target) && 
@@ -128,12 +130,10 @@ const AchievementsPage: React.FC = () => {
         if (isSearchOpen) setIsSearchOpen(false);
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     if (isSearchOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
@@ -152,6 +152,49 @@ const AchievementsPage: React.FC = () => {
     return sorted;
   }, [currentBadges]);
 
+  // Fix: added 'as any' cast to ease array to fix "number[] not assignable to Easing" error
+  const selectionTransition = {
+    layout: {
+      duration: 0.45,
+      ease: [0.16, 1, 0.3, 1] as any
+    },
+    opacity: { duration: 0.2 }
+  };
+
+  // Framer Motion Variants
+  const badgeContainerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.04,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  // Fix: added 'as any' cast to ease array in Variants definition to fix type mismatch
+  const badgeItemVariants = {
+    hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+    show: { 
+      opacity: 1, 
+      y: 0, 
+      filter: 'blur(0px)',
+      transition: { 
+        duration: 0.4, 
+        ease: [0.16, 1, 0.3, 1] as any
+      } 
+    }
+  };
+
+  const selectionTransitionConfig = {
+    layout: {
+      duration: 0.45,
+      ease: [0.16, 1, 0.3, 1] as any
+    },
+    opacity: { duration: 0.2 }
+  };
+
   return (
     <div className="space-y-6 md:space-y-10 pb-20 animate-page-enter">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4 md:mb-12 items-start relative z-[60]">
@@ -162,7 +205,8 @@ const AchievementsPage: React.FC = () => {
               opacity: isSearchOpen && window.innerWidth <= 768 ? 0 : 1,
               x: isSearchOpen && window.innerWidth <= 768 ? -20 : 0
             }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            // Fix: added 'as any' to ease array to fix reported line 400 error
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as any }}
             className={`text-4xl md:text-6xl font-black tracking-tighter shrink-0 select-none pointer-events-none md:pointer-events-auto ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}
           >
             achievements
@@ -173,7 +217,8 @@ const AchievementsPage: React.FC = () => {
               <motion.div 
                 initial={false}
                 animate={{ width: isSearchOpen ? 'calc(100vw - 32px)' : '3rem' }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                // Fix: added 'as any' to ease array for consistency
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as any }}
                 className={`flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-12 shadow-sm relative z-20 overflow-hidden`}
               >
                 <button 
@@ -207,6 +252,8 @@ const AchievementsPage: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
+                    // Fix: added 'as any' cast for type compatibility
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as any }}
                     className="absolute top-full right-0 mt-3 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl z-50 overflow-hidden"
                   >
                     <div className="max-h-[320px] overflow-y-auto no-scrollbar py-2">
@@ -232,15 +279,19 @@ const AchievementsPage: React.FC = () => {
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button 
               onClick={handleClearPlayer}
-              disabled={!selectedPlayer}
-              className={`flex-1 h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all whitespace-nowrap px-2 ${!selectedPlayer ? 'opacity-30 cursor-not-allowed' : ''}`}
+              disabled={!selectedPlayer || isAnimating}
+              className={`flex-1 h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all whitespace-nowrap px-2 ${(!selectedPlayer || isAnimating) ? 'opacity-30 cursor-not-allowed' : ''}`}
             >
               clear player
             </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button 
-              onClick={handleRandomPlayer}
+              onClick={() => {
+                const randomIdx = Math.floor(Math.random() * players.length);
+                if (players[randomIdx]) handleSelectPlayer(players[randomIdx]);
+              }}
               className="w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-90 transition-all shrink-0"
+              disabled={isAnimating}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
@@ -252,7 +303,11 @@ const AchievementsPage: React.FC = () => {
         <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1 gap-2.5 z-50">
           <div className="flex items-center bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-full overflow-hidden shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300">
             <button 
-              onClick={handleRandomPlayer}
+              onClick={() => {
+                const randomIdx = Math.floor(Math.random() * players.length);
+                if (players[randomIdx]) handleSelectPlayer(players[randomIdx]);
+              }}
+              disabled={isAnimating}
               className={`w-10 h-full flex items-center justify-center ${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 group/btn`}
               title="random"
             >
@@ -263,8 +318,8 @@ const AchievementsPage: React.FC = () => {
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
             <button 
               onClick={handleClearPlayer}
-              disabled={!selectedPlayer}
-              className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${selectedPlayer ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`}
+              disabled={!selectedPlayer || isAnimating}
+              className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${selectedPlayer && !isAnimating ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`}
               title="clear player"
             >
               <svg className={`w-4 h-4 transition-all duration-300 ${selectedPlayer ? 'group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -287,7 +342,8 @@ const AchievementsPage: React.FC = () => {
 
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0`}
+                disabled={isAnimating}
+                className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${isAnimating ? 'opacity-30 pointer-events-none' : ''}`}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </button>
@@ -299,7 +355,8 @@ const AchievementsPage: React.FC = () => {
                   initial={{ opacity: 0, scaleX: 0.8 }}
                   animate={{ opacity: 1, scaleX: 1 }}
                   exit={{ opacity: 0, scaleX: 0.8 }}
-                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  // Fix: added 'as any' cast for type compatibility in reported line 509 transition
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] as any }}
                   style={{ transformOrigin: 'right center' }}
                   className="absolute inset-0 z-20 h-11 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 flex items-center bg-zinc-100 dark:bg-zinc-900 shadow-inner overflow-hidden"
                 >
@@ -352,23 +409,40 @@ const AchievementsPage: React.FC = () => {
         <div className="space-y-16 animate-page-enter">
           <div className="relative">
             {selectedPlayer ? (
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-zinc-50/50 dark:bg-zinc-900/20 py-6 px-8 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 transition-colors min-h-[110px]">
+              <motion.div 
+                layoutId={!settings.reducedMotion ? "player-panel" : undefined}
+                // Fix: passed transition config with 'as any' to avoid type error on layout animation
+                transition={selectionTransitionConfig.layout}
+                onLayoutAnimationComplete={() => {
+                  setIsAnimating(false);
+                  setShowBadges(true);
+                }}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-zinc-50/50 dark:bg-zinc-900/20 py-6 px-8 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 transition-colors min-h-[110px] overflow-hidden"
+              >
                 <div className="space-y-1 min-w-0">
-                  <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${accentText} opacity-60`}>Selected Player</span>
-                  <h3 
-                    className="text-xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase whitespace-nowrap overflow-hidden md:overflow-visible"
-                    style={{ textOverflow: window.innerWidth <= 768 ? 'clip' : undefined }}
+                  <motion.span 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 0.6 }} 
+                    className={`text-[10px] font-black uppercase tracking-[0.3em] ${accentText} block`}
                   >
+                    Selected Player
+                  </motion.span>
+                  <h3 className="text-xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase whitespace-nowrap">
                     {selectedPlayer.player}
                   </h3>
                 </div>
-                <div className="flex gap-4">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex gap-4"
+                >
                   <div className="flex flex-col">
                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Badges Earned</span>
                     <span className={`text-2xl font-black ${accentText}`}>{playerAchievements.filter(a => a.isEarned).length} / {playerAchievements.length}</span>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             ) : (
               <div className="flex flex-col items-center justify-center text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem] py-6 px-8 min-h-[110px]">
                 <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">ready to index</h3>
@@ -377,84 +451,106 @@ const AchievementsPage: React.FC = () => {
             )}
           </div>
 
-          {selectedPlayer ? (
-            <div className="space-y-16">
-              {categories.map(cat => {
-                const catBadges = playerAchievements.filter(pa => pa.achievement.category === cat);
-                if (catBadges.length === 0) return null;
+          <AnimatePresence mode="wait">
+            {selectedPlayer && showBadges ? (
+              <motion.div 
+                key="badges-grid"
+                variants={badgeContainerVariants}
+                initial="hidden"
+                animate="show"
+                className="space-y-16"
+              >
+                {categories.map(cat => {
+                  const catBadges = playerAchievements.filter(pa => pa.achievement.category === cat);
+                  if (catBadges.length === 0) return null;
 
-                return (
-                  <div key={cat} className="space-y-6">
-                    <div className="flex items-center gap-4">
-                      <h4 className="text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">{cat}</h4>
-                      <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-1" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {catBadges.map(pa => (
-                        <div 
-                          key={pa.achievement.id}
-                          className={`
-                            relative p-6 rounded-[2rem] border transition-all duration-500 flex flex-col justify-between h-full gap-4
-                            ${pa.isEarned 
-                              ? `bg-white dark:bg-zinc-950 border-current ${accentText} shadow-lg shadow-current/5` 
-                              : 'bg-zinc-50/50 dark:bg-zinc-900/30 border-zinc-100 dark:border-zinc-800/50 grayscale opacity-[0.65]'
-                            }
-                          `}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <h5 className={`text-lg font-black tracking-tight ${pa.isEarned ? '' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                                {pa.achievement.name}
-                              </h5>
-                              {pa.isEarned && (
-                                <div className={`w-2 h-2 rounded-full ${accentBg} animate-pulse`} />
-                              )}
+                  return (
+                    <div key={cat} className="space-y-6">
+                      <SectionHeader title={cat} />
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {catBadges.map(pa => (
+                          <motion.div 
+                            key={pa.achievement.id}
+                            variants={badgeItemVariants}
+                            className={`
+                              relative p-6 rounded-[2rem] border transition-all duration-500 flex flex-col justify-between h-full gap-4
+                              ${pa.isEarned 
+                                ? `bg-white dark:bg-zinc-950 border-current ${accentText} shadow-lg shadow-current/5` 
+                                : 'bg-zinc-50/50 dark:bg-zinc-900/30 border-zinc-100 dark:border-zinc-800/50 grayscale opacity-[0.65]'
+                              }
+                            `}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <h5 className={`text-lg font-black tracking-tight ${pa.isEarned ? '' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                                  {pa.achievement.name}
+                                </h5>
+                                {pa.isEarned && (
+                                  <div className={`w-2 h-2 rounded-full ${accentBg} animate-pulse`} />
+                                )}
+                              </div>
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{pa.achievement.description}</p>
                             </div>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{pa.achievement.description}</p>
-                          </div>
-                          <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{pa.achievement.requirementText}</span>
-                            <span className={`text-[10px] font-black uppercase tracking-widest ${pa.isEarned ? accentText : 'text-zinc-300 dark:text-zinc-600'}`}>
-                              {pa.isEarned ? 'Earned' : 'Locked'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{pa.achievement.requirementText}</span>
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${pa.isEarned ? accentText : 'text-zinc-300 dark:text-zinc-600'}`}>
+                                {pa.isEarned ? 'Earned' : 'Locked'}
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">Top Badge Earners (All-Time)</h3>
-                <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-1" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {topEarners.map((te, idx) => (
-                  <button 
-                    key={te.player} 
-                    onClick={() => {
-                      const match = players.find(p => p.player === te.player);
-                      if (match) handleSelectPlayer(match);
-                    }}
-                    className="p-5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/50 hover:bg-white dark:hover:bg-zinc-900 hover:border-zinc-200 dark:hover:border-zinc-700 transition-all text-left group"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">#{idx + 1}</span>
-                      <span className="text-sm font-black text-zinc-900 dark:text-white truncate">{te.player}</span>
-                      <span className={`text-[10px] font-bold ${accentText}`}>{te.earnedCount} Badges</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+                  );
+                })}
+              </motion.div>
+            ) : !selectedPlayer && (
+              <motion.div 
+                key="earners-grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-8"
+              >
+                <div className="flex items-center gap-4">
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">Top Badge Earners (All-Time)</h3>
+                  <div className="h-px bg-zinc-100 dark:bg-zinc-800 flex-1" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {topEarners.map((te, idx) => (
+                    <motion.button 
+                      key={te.player} 
+                      layoutId={!settings.reducedMotion ? "player-panel" : undefined}
+                      // Fix: added 'as any' cast for type compliance in layout transition
+                      transition={selectionTransitionConfig.layout}
+                      onClick={() => {
+                        const match = players.find(p => p.player === te.player);
+                        if (match) handleSelectPlayer(match);
+                      }}
+                      className={`p-5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/50 hover:bg-white dark:hover:bg-zinc-900 hover:border-zinc-200 dark:hover:border-zinc-700 transition-all text-left group ${isAnimating ? 'pointer-events-none' : ''}`}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">#{idx + 1}</span>
+                        <span className="text-sm font-black text-zinc-900 dark:text-white truncate">{te.player}</span>
+                        <span className={`text-[10px] font-bold ${accentText}`}>{te.earnedCount} Badges</span>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>
   );
 };
+
+const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
+  <div className="flex items-center gap-4">
+    <h4 className="text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">{title}</h4>
+    <div className="h-[1px] bg-zinc-100 dark:bg-zinc-800 flex-1" />
+  </div>
+);
 
 export default AchievementsPage;
