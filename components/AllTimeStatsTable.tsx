@@ -8,9 +8,10 @@ interface AllTimeStatsTableProps {
   season?: string;
   onSeasonChange?: (s: any) => void;
   searchQuery?: string;
+  externalSortKey?: string;
 }
 
-const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonChange, searchQuery = '' }) => {
+const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonChange, searchQuery = '', externalSortKey }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
   const accentBg = colors.bg;
@@ -54,6 +55,13 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
       controller.abort();
     };
   }, []);
+
+  // Update internal sort config if external key changes (mobile)
+  useEffect(() => {
+    if (externalSortKey && externalSortKey !== sortConfig.key) {
+      setSortConfig({ key: externalSortKey as SortKey, direction: 'desc' });
+    }
+  }, [externalSortKey]);
 
   const sortedData = useMemo(() => {
     const sorted = [...data].sort((a, b) => {
@@ -127,12 +135,6 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
     return `$${val.toFixed(0)}`;
   };
 
-  const DropdownIcon = () => (
-    <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-
   const StatGroup = ({ label, value }: { label: string, value: string | number }) => (
     <div className="flex items-center gap-1.5 whitespace-nowrap">
       <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">{label}</span>
@@ -142,46 +144,6 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
 
   return (
     <div className="w-full overflow-x-hidden touch-pan-y">
-      {/* Mobile Controls Row: Season Left, Sort Right */}
-      <div className="md:hidden mb-6 flex items-center justify-between px-2 gap-4">
-        <div className="flex flex-1 items-center gap-2">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 shrink-0">Season</span>
-          <div className="relative flex-1">
-            <select 
-              value={season}
-              onChange={(e) => onSeasonChange?.(e.target.value)}
-              className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-lg py-2 pl-3 pr-8 text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#D60A07]/20 outline-none appearance-none"
-            >
-              <option value="s10">S10</option>
-              <option value="s11">S11</option>
-              <option value="s12">S12</option>
-              <option value="all-time">ALL-TIME</option>
-            </select>
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-              <DropdownIcon />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-1 items-center gap-2 justify-end">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 shrink-0">Sort By</span>
-          <div className="relative flex-1">
-            <select 
-              value={sortConfig.key}
-              onChange={(e) => requestSort(e.target.value as SortKey)}
-              className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-lg py-2 pl-3 pr-8 text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-[#D60A07]/20 outline-none appearance-none"
-            >
-              {columns.map(col => (
-                <option key={col.key} value={col.key}>{col.label}</option>
-              ))}
-            </select>
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-              <DropdownIcon />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* DESKTOP TABLE */}
       <div className="hidden md:block bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] overflow-hidden shadow-sm">
         <div className="w-full overflow-x-auto overflow-y-auto max-h-[70vh] no-scrollbar">

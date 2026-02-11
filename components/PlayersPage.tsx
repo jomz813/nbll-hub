@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
@@ -36,11 +35,6 @@ const PlayersPage: React.FC = () => {
   // Avatar state
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
-
-  // Dynamic Font Size for mobile usernames
-  const [mobileFontSize, setMobileFontSize] = useState(48);
-  const nameRef = useRef<HTMLHeadingElement>(null);
-  const nameContainerRef = useRef<HTMLDivElement>(null);
 
   // Refs for search interaction and profile capture
   const pillAreaRef = useRef<HTMLDivElement>(null);
@@ -98,30 +92,6 @@ const PlayersPage: React.FC = () => {
       .finally(() => {
         setAvatarLoading(false);
       });
-  }, [selectedPlayer?.player]);
-
-  // Fit text logic for mobile
-  useLayoutEffect(() => {
-    if (window.innerWidth > 768 || !selectedPlayer || !nameRef.current || !nameContainerRef.current) return;
-
-    const fitText = () => {
-      let size = 48; // Max size
-      const minSize = 24; // Min size
-      const containerWidth = nameContainerRef.current!.offsetWidth;
-      
-      nameRef.current!.style.fontSize = `${size}px`;
-      
-      // Binary search or loop to find the best fit
-      while (nameRef.current!.scrollWidth > containerWidth && size > minSize) {
-        size -= 1;
-        nameRef.current!.style.fontSize = `${size}px`;
-      }
-      setMobileFontSize(size);
-    };
-
-    fitText();
-    window.addEventListener('resize', fitText);
-    return () => window.removeEventListener('resize', fitText);
   }, [selectedPlayer?.player]);
 
   const filteredPlayers = useMemo(() => {
@@ -515,15 +485,13 @@ const PlayersPage: React.FC = () => {
                     )}
                   </div>
                   
-                  {/* Readability wrapper on mobile anchored bottom-left */}
-                  <div ref={nameContainerRef} className="relative md:bg-transparent w-full max-w-full">
+                  <div className="relative md:bg-transparent w-full max-w-full">
                     {/* Subtle localized background gradient for readability on mobile */}
                     <div className="md:hidden absolute -inset-6 bg-gradient-to-r from-white/90 dark:from-black/80 to-transparent blur-2xl -z-10" />
                     
                     <h3 
-                      ref={nameRef}
-                      className="text-4xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] md:leading-[0.9] whitespace-nowrap overflow-hidden transition-[font-size] duration-75"
-                      style={{ fontSize: window.innerWidth <= 768 ? `${mobileFontSize}px` : undefined }}
+                      className="text-xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] md:leading-[0.9] whitespace-nowrap overflow-visible md:overflow-hidden"
+                      style={{ textOverflow: window.innerWidth <= 768 ? 'clip' : undefined }}
                     >
                       {selectedPlayer.player}
                     </h3>

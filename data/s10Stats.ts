@@ -8,6 +8,12 @@ export type S10Row = {
   ast: number;
   reb: number;
   stl: number;
+  gp: number;
+  eff: number;
+  ppg: number;
+  apg: number;
+  rpg: number;
+  spg: number;
 };
 
 export const normalizeKey = (k: string) => {
@@ -37,12 +43,25 @@ export const mapRow = (raw: Record<string, any>): S10Row => {
     return key ? String(raw[key]).trim() : '';
   };
 
+  const gp = findValue(['gp', 'gamesplayed', 'games']);
+  const pts = findValue(['pts', 'points']);
+  const ast = findValue(['ast', 'assists']);
+  const reb = findValue(['reb', 'rebounds']);
+  const stl = findValue(['stl', 'steals']);
+  const eff = findValue(['eff', 'efficiency']);
+
   return {
     player: findPlayer(),
-    pts: findValue(['pts', 'points']),
-    ast: findValue(['ast', 'assists']),
-    reb: findValue(['reb', 'rebounds']),
-    stl: findValue(['stl', 'steals']),
+    gp,
+    pts,
+    ast,
+    reb,
+    stl,
+    eff,
+    ppg: gp > 0 ? Number((pts / gp).toFixed(1)) : 0.0,
+    apg: gp > 0 ? Number((ast / gp).toFixed(1)) : 0.0,
+    rpg: gp > 0 ? Number((reb / gp).toFixed(1)) : 0.0,
+    spg: gp > 0 ? Number((stl / gp).toFixed(1)) : 0.0,
   };
 };
 

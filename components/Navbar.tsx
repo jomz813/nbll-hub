@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabID } from '../App';
@@ -320,9 +319,11 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
   }, [isSearchOpen]);
 
   const stickyClass = settings.stickyHeader ? 'fixed top-8' : 'absolute top-8';
+  
+  // Adjusted background logic: tailwind classes prefixed with md: to allow inline style glass on mobile
   const backgroundClasses = isScrolled && settings.stickyHeader
-    ? 'bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md'
-    : 'bg-gradient-to-b from-white via-white/98 to-zinc-100/95 dark:from-zinc-950 dark:via-zinc-950/98 dark:to-zinc-900/95 backdrop-blur-2xl';
+    ? 'md:bg-white/90 dark:md:bg-zinc-950/85 md:backdrop-blur-md'
+    : 'md:bg-white/95 dark:md:bg-zinc-950/90 md:backdrop-blur-2xl';
 
   const reducedMotion = settings.reducedMotion;
 
@@ -379,10 +380,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                 exit={{ opacity: 0 }}
                 type="text"
                 value={query}
-                onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setSelectedIndex(0); }}
                 placeholder="Quick search..."
                 className="w-full h-full bg-transparent border-none outline-none pl-10 pr-4 text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 z-20 relative"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
                 autoCapitalize="off"
                 autoComplete="off" 
                 autoCorrect="off"
@@ -464,16 +465,18 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
     );
   };
 
+  const isHomeLightMobile = isHome && theme === 'light' && window.innerWidth < 768;
+
   return (
-    <nav className={`${stickyClass} left-1/2 -translate-x-1/2 z-[80] w-full max-w-[1200px] px-6 transition-all duration-300`}>
+    <nav className={`${stickyClass} left-1/2 -translate-x-1/2 z-[80] w-full max-w-[1200px] px-4 md:px-6 transition-all duration-300`}>
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/[0.03] dark:bg-black/[0.08] backdrop-blur-[20px] z-[-1] md:hidden"
-            onClick={() => setIsMenuOpen(false)}
+            className="fixed inset-0 bg-black/10 dark:bg-black/20 z-[-1] md:hidden"
+            onClick={(e: React.MouseEvent<HTMLDivElement>) => setIsMenuOpen(false)}
           />
         )}
       </AnimatePresence>
@@ -490,14 +493,40 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
             flex-1 relative ${backgroundClasses} border ${accentBorder}
             shadow-xl md:shadow-[0_45px_100px_-15px_rgba(0,0,0,0.65)]
             lg:mx-16 overflow-hidden md:overflow-visible flex flex-col
+            ${isMenuOpen ? 'md:bg-white/100 dark:md:bg-zinc-950/100' : ''}
+            /* Liquid Glass Effect Styles */
+            ring-white/10 dark:ring-white/5
           `}
+          style={window.innerWidth < 768 ? {
+            backgroundColor: isHomeLightMobile ? 'rgba(255, 255, 255, 0.75)' : (theme === 'dark' ? 'rgba(9, 9, 11, 0.45)' : 'rgba(255, 255, 255, 0.4)'),
+            backdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
+            WebkitBackdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
+            border: isHomeLightMobile 
+                ? '1px solid rgba(0, 0, 0, 0.15)' 
+                : `1px solid ${settings.rahBizzyTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(214, 10, 7, 0.2)'}`,
+            ...(isMenuOpen ? {
+                boxShadow: isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                border: isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid ${settings.rahBizzyTheme ? 'rgba(59, 130, 246, 0.3)' : 'rgba(214, 10, 7, 0.3)'}`
+            } : {})
+          } : {}}
         >
-          <div className="h-16 shrink-0 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center justify-between md:justify-items-stretch px-8 w-full">
+          {/* Noise Texture Overlay for liquid glass effect (Visible on mobile both states) */}
+          <div 
+            className="md:hidden absolute inset-0 z-0 pointer-events-none opacity-[0.02] select-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+            }}
+          />
+
+          {/* Top Edge Specular Highlight (Liquid Glass) */}
+          <div className={`md:hidden absolute top-0 left-1/2 -translate-x-1/2 w-[85%] h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent z-20 pointer-events-none transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-20'}`} />
+          
+          <div className="h-16 shrink-0 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center justify-between md:justify-items-stretch px-8 w-full relative z-30">
             
             <div className="relative flex items-center justify-center md:justify-self-start">
               <button 
                 onClick={handleLogoClick}
-                className={`${accentText} text-2xl font-black tracking-tighter transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-110 active:scale-95 shrink-0 relative z-10 ${isPopping ? 'scale-105' : ''}`}
+                className={`${isHomeLightMobile ? 'text-zinc-950' : accentText} text-2xl font-black tracking-tighter transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-110 active:scale-95 shrink-0 relative z-10 ${isPopping ? 'scale-105' : ''}`}
               >
                 nbll
               </button>
@@ -581,7 +610,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
             <div className="flex md:hidden flex-1 justify-end items-center gap-4">
               <button 
                 onClick={onToggleTheme}
-                className="w-10 h-10 flex items-center justify-center rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
               >
                 {theme === 'dark' ? (
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -604,7 +633,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
               
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`w-10 h-10 flex items-center justify-center rounded-full ${accentText} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-90`}
+                className={`w-10 h-10 flex items-center justify-center rounded-full ${isHomeLightMobile ? 'text-zinc-950' : accentText} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-90`}
                 aria-label="Toggle menu"
               >
                 {isMenuOpen ? (
@@ -629,9 +658,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
-                className="w-full flex flex-col md:hidden pb-4"
+                className="w-full flex flex-col md:hidden pb-4 relative z-30"
               >
-                <div className="w-full border-t border-zinc-100/50 dark:border-zinc-800/30 mb-2" />
+                <div className={`w-full border-t mb-2 ${isHomeLightMobile ? 'border-zinc-200' : 'border-zinc-100/50 dark:border-zinc-800/30'}`} />
                 <nav className="flex flex-col relative">
                   {tabs.map((tab, idx) => {
                     const active = isTabActive(tab.name);
@@ -640,9 +669,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                         key={tab.name}
                         onClick={() => handleTabClick(tab.name)}
                         className={`
-                          relative w-full h-[60px] flex items-center justify-between px-8 text-left transition-all duration-300 outline-none active:bg-zinc-100 dark:active:bg-zinc-900 group
-                          ${active ? 'bg-zinc-500/5 dark:bg-zinc-400/5 backdrop-blur-sm' : ''}
-                          ${idx !== tabs.length - 1 ? 'border-b border-zinc-100/50 dark:border-zinc-800/30' : ''}
+                          relative w-full h-[60px] flex items-center justify-between px-8 text-left transition-all duration-300 outline-none active:bg-zinc-100/40 dark:active:bg-zinc-900/40 group
+                          ${active ? 'bg-zinc-500/5 dark:bg-zinc-400/5' : ''}
+                          ${idx !== tabs.length - 1 ? (isHomeLightMobile ? 'border-b border-zinc-200' : 'border-b border-zinc-100/30 dark:border-zinc-800/20') : ''}
                         `}
                       >
                         {active && (
@@ -658,13 +687,15 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
 
                         <span className={`
                           text-base font-black tracking-tight transition-colors duration-300
-                          ${active ? (settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white') : 'text-zinc-400 dark:text-zinc-500'}
+                          ${active 
+                             ? (settings.rahBizzyTheme ? 'text-[#3B82F6]' : (isHomeLightMobile ? 'text-zinc-950' : 'text-zinc-900 dark:text-white')) 
+                             : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-400 dark:text-zinc-500')}
                         `}>
                           {tab.label}
                         </span>
 
                         <svg 
-                          className={`w-4 h-4 transition-all duration-300 ${active ? accentText : 'text-zinc-200 dark:text-zinc-800 group-hover:text-zinc-400'}`} 
+                          className={`w-4 h-4 transition-all duration-300 ${active ? (isHomeLightMobile ? 'text-zinc-950' : accentText) : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-200 dark:text-zinc-800 group-hover:text-zinc-400')}`} 
                           viewBox="0 0 24 24" 
                           fill="none" 
                           stroke="currentColor" 
@@ -681,6 +712,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
               </motion.div>
             )}
           </AnimatePresence>
+          
+          {/* Mobile Sheen Element (Liquid Glass Specular) - Persistent but faint on mobile */}
+          <div className={`md:hidden absolute inset-0 z-10 pointer-events-none transition-opacity duration-700 ${isMenuOpen ? 'opacity-100' : 'opacity-40'}`}
+               style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 100%)' }} />
         </motion.div>
 
         <button 

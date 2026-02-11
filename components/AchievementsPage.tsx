@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchSeasonStats, PlayerStats, SeasonID } from '../data/statsFetcher';
@@ -354,9 +353,14 @@ const AchievementsPage: React.FC = () => {
           <div className="relative">
             {selectedPlayer ? (
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-zinc-50/50 dark:bg-zinc-900/20 py-6 px-8 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 transition-colors min-h-[110px]">
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${accentText} opacity-60`}>Selected Player</span>
-                  <h3 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase">{selectedPlayer.player}</h3>
+                  <h3 
+                    className="text-xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase whitespace-nowrap overflow-hidden md:overflow-visible"
+                    style={{ textOverflow: window.innerWidth <= 768 ? 'clip' : undefined }}
+                  >
+                    {selectedPlayer.player}
+                  </h3>
                 </div>
                 <div className="flex gap-4">
                   <div className="flex flex-col">
@@ -393,13 +397,15 @@ const AchievementsPage: React.FC = () => {
                             relative p-6 rounded-[2rem] border transition-all duration-500 flex flex-col justify-between h-full gap-4
                             ${pa.isEarned 
                               ? `bg-white dark:bg-zinc-950 border-current ${accentText} shadow-lg shadow-current/5` 
-                              : 'bg-zinc-50/50 dark:bg-zinc-900/30 border-zinc-100 dark:border-zinc-800/50 opacity-50 grayscale'
+                              : 'bg-zinc-50/50 dark:bg-zinc-900/30 border-zinc-100 dark:border-zinc-800/50 grayscale opacity-[0.65]'
                             }
                           `}
                         >
                           <div className="space-y-1">
                             <div className="flex items-center justify-between">
-                              <h5 className="text-lg font-black tracking-tight">{pa.achievement.name}</h5>
+                              <h5 className={`text-lg font-black tracking-tight ${pa.isEarned ? '' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                                {pa.achievement.name}
+                              </h5>
                               {pa.isEarned && (
                                 <div className={`w-2 h-2 rounded-full ${accentBg} animate-pulse`} />
                               )}
@@ -408,7 +414,7 @@ const AchievementsPage: React.FC = () => {
                           </div>
                           <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between">
                             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{pa.achievement.requirementText}</span>
-                            <span className={`text-[10px] font-black uppercase tracking-widest ${pa.isEarned ? accentText : 'text-zinc-300'}`}>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${pa.isEarned ? accentText : 'text-zinc-300 dark:text-zinc-600'}`}>
                               {pa.isEarned ? 'Earned' : 'Locked'}
                             </span>
                           </div>

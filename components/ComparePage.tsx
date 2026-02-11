@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { fetchSeasonStats, PlayerStats, SeasonID } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
@@ -23,7 +22,7 @@ const DropdownIcon = () => (
   </svg>
 );
 
-const PlayerAvatar: React.FC<{ username: string | null }> = ({ username }) => {
+const PlayerAvatar: React.FC<{ username: string | null; isMobile?: boolean }> = ({ username, isMobile }) => {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -56,7 +55,7 @@ const PlayerAvatar: React.FC<{ username: string | null }> = ({ username }) => {
   if (!username) return null;
 
   return (
-    <div className="relative shrink-0 h-16 md:h-24 flex items-center justify-center transition-all duration-300">
+    <div className={`relative shrink-0 flex items-center justify-center transition-all duration-300 ${isMobile ? 'h-32' : 'h-16 md:h-24'}`}>
       {loading ? (
         <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-400 animate-spin rounded-full" />
       ) : url ? (
@@ -93,7 +92,7 @@ const ComparePage: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // Refs
+  // Refs for Search and Table
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const pillAreaRef = useRef<HTMLDivElement>(null);
@@ -105,7 +104,7 @@ const ComparePage: React.FC = () => {
   const expectedTableHeight = useMemo(() => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
     const rowH = isMobile ? 45 : 65;
-    const headerH = isMobile ? 120 : 160;
+    const headerH = isMobile ? 240 : 160; 
     const sectionH = isMobile ? 36 : 48;
 
     let rows = 4;
@@ -195,9 +194,7 @@ const ComparePage: React.FC = () => {
   };
 
   const handleNameClick = (index: number) => {
-    if (window.innerWidth >= 768) {
-      removePlayerAt(index);
-    }
+    removePlayerAt(index);
   };
 
   const handleRandomMatchup = () => {
@@ -209,6 +206,10 @@ const ComparePage: React.FC = () => {
     const p2 = pool[idx2];
     setSelectedNames([p1.player, p2.player]);
     if (isSearchOpen) closeSearch();
+  };
+
+  const handleSwapPlayers = () => {
+    setSelectedNames([selectedNames[1], selectedNames[0]]);
   };
 
   const resetTable = () => {
@@ -462,7 +463,7 @@ const ComparePage: React.FC = () => {
         filtered.map(p => (
           <button 
             key={p.player} 
-            onClick={(e) => { e.stopPropagation(); addPlayer(p); }} 
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); addPlayer(p); }} 
             className="w-full px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-bold border-b border-zinc-100 dark:border-zinc-800 last:border-0 transition-colors text-zinc-900 dark:text-zinc-100 flex items-center justify-between"
           >
             <span>{p.player}</span>
@@ -501,17 +502,17 @@ const ComparePage: React.FC = () => {
                 initial={false}
                 animate={{ width: isSearchOpen ? 'calc(100vw - 32px)' : '3rem' }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className={`flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-12 shadow-sm relative z-20`}
-                onMouseDown={(e) => isSearchOpen && e.stopPropagation()}
+                className={`flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-12 shadow-sm relative z-20 overflow-hidden`}
+                onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => isSearchOpen && e.stopPropagation()}
               >
                 <button 
-                  onClick={(e) => { 
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => { 
                     e.stopPropagation(); 
                     if (!isSearchOpen) openSearch(); 
                   }} 
                   className={`flex-none w-12 h-12 flex items-center justify-center ${accentText}`}
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
                 </button>
                 <AnimatePresence>
                   {isSearchOpen && (
@@ -520,13 +521,13 @@ const ComparePage: React.FC = () => {
                         ref={mobileSearchInputRef}
                         type="text" 
                         value={query} 
-                        onChange={(e) => { setQuery(e.target.value); setShowResults(true); }} 
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setShowResults(true); }} 
                         placeholder="Search player..." 
                         className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400" 
-                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e: React.MouseEvent<HTMLInputElement>) => e.stopPropagation()}
                       />
                       <button 
-                        onClick={(e) => { 
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => { 
                           e.stopPropagation(); 
                           closeSearch(); 
                         }} 
@@ -562,7 +563,7 @@ const ComparePage: React.FC = () => {
             <div className="relative flex items-center px-3 h-full group">
               <select 
                 value={season} 
-                onChange={(e) => setSeason(e.target.value as SeasonID)} 
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSeason(e.target.value as SeasonID)} 
                 className="bg-transparent border-none text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-4 relative z-10"
               >
                 {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -574,9 +575,19 @@ const ComparePage: React.FC = () => {
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button 
               onClick={resetTable}
-              className="flex-1 h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all whitespace-nowrap px-2"
+              disabled={!hasSelection}
+              className={`flex-1 h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all whitespace-nowrap px-2 ${!hasSelection ? 'opacity-30 cursor-not-allowed' : ''}`}
             >
               reset table
+            </button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+            <button 
+              onClick={handleSwapPlayers}
+              className="w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all shrink-0"
+            >
+               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m7 21-4-4 4-4"/><path d="M3 17h18"/><path d="m17 3 4 4-4 4"/><path d="M21 7H3"/>
+              </svg>
             </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button 
@@ -616,6 +627,17 @@ const ComparePage: React.FC = () => {
             >
                <svg className="w-4 h-4 transition-all duration-300 group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
+              </svg>
+            </button>
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
+            <button 
+              onClick={handleSwapPlayers}
+              disabled={!hasSelection}
+              className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${hasSelection ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`}
+              title="swap players"
+            >
+              <svg className={`w-4 h-4 transition-all duration-300 ${hasSelection ? 'group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m7 21-4-4 4-4"/><path d="M3 17h18"/><path d="m17 3 4 4-4 4"/><path d="M21 7H3"/>
               </svg>
             </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
@@ -693,7 +715,7 @@ const ComparePage: React.FC = () => {
                       ref={desktopSearchInputRef}
                       type="text"
                       value={query}
-                      onChange={(e) => { setQuery(e.target.value); setShowResults(true); }}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setShowResults(true); }}
                       placeholder={isMaxPlayers ? "Max players" : "Search players..."}
                       className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
                     />
@@ -721,39 +743,53 @@ const ComparePage: React.FC = () => {
 
       {hasSelection ? (
         <div ref={compareRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-xl z-10">
-           <div className="grid grid-cols-[1fr_auto_1fr] md:grid-cols-[1fr_120px_1fr] items-stretch bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
+           <div className="relative grid grid-cols-2 md:grid-cols-[1fr_120px_1fr] items-stretch bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
+              
+              {/* Central VS Overlay (Mobile Only) */}
+              <div className="md:hidden absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-700 italic px-2 bg-zinc-50 dark:bg-[#121214] rounded-full">VS</span>
+              </div>
+
               {/* Left Player Area */}
-              <div className="px-4 py-2 md:px-8 md:py-4 flex items-center justify-start min-w-0">
+              <div className="px-2 py-6 md:px-8 md:py-4 flex items-center justify-center md:justify-start min-w-0">
                  <button
                    onClick={() => handleNameClick(0)}
                    disabled={!selectedNames[0]}
-                   className={`flex flex-row items-center gap-3 focus:outline-none min-w-0 group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity justify-start' : 'cursor-default'}`}
+                   className={`flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-3 focus:outline-none min-w-0 w-full group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
                    title={selectedNames[0] ? "Click to remove" : ""}
                  >
-                   <PlayerAvatar username={selectedNames[0]} />
-                   <span className={`text-xl md:text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 truncate uppercase ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                   <PlayerAvatar username={selectedNames[0]} isMobile={window.innerWidth <= 768} />
+                   <span className={`text-sm md:text-3xl font-medium md:font-black text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-left md:text-left ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
                      {selectedNames[0] ? selectedNames[0] : '...'}
                    </span>
                  </button>
               </div>
 
-              {/* VS Divider */}
-              <div className="px-2 md:px-0 text-center flex items-center justify-center shrink-0">
-                 <span className="text-[9px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-700 italic">VS</span>
+              {/* VS Divider (Desktop Only) */}
+              <div className="hidden md:flex px-2 md:px-0 text-center items-center justify-center shrink-0">
+                 <span className="text-[11px] font-black uppercase tracking-widest text-zinc-300 dark:text-zinc-700 italic">VS</span>
               </div>
 
               {/* Right Player Area */}
-              <div className="px-4 py-2 md:px-8 md:py-4 flex items-center justify-end min-w-0 text-right">
+              <div className="px-2 py-6 md:px-8 md:py-4 flex items-center justify-center md:justify-end min-w-0">
                  <button
                    onClick={() => handleNameClick(1)}
                    disabled={!selectedNames[1]}
-                   className={`flex flex-row items-center gap-3 focus:outline-none min-w-0 group/name1 ${selectedNames[1] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity justify-end' : 'cursor-default'}`}
+                   className={`flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-3 focus:outline-none min-w-0 w-full group/name1 ${selectedNames[1] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
                    title={selectedNames[1] ? "Click to remove" : ""}
                  >
-                   <span className={`text-xl md:text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 truncate uppercase ${selectedNames[1] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
-                     {selectedNames[1] ? selectedNames[1] : '...'}
-                   </span>
-                   <PlayerAvatar username={selectedNames[1]} />
+                   <div className="flex flex-col md:hidden items-center gap-2 w-full">
+                     <PlayerAvatar username={selectedNames[1]} isMobile={window.innerWidth <= 768} />
+                     <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-right`}>
+                        {selectedNames[1] ? selectedNames[1] : '...'}
+                     </span>
+                   </div>
+                   <div className="hidden md:flex flex-row items-center gap-3 w-full justify-end">
+                     <span className={`text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 truncate uppercase ${selectedNames[1] ? 'group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                       {selectedNames[1] ? selectedNames[1] : '...'}
+                     </span>
+                     <PlayerAvatar username={selectedNames[1]} />
+                   </div>
                  </button>
               </div>
            </div>
@@ -785,8 +821,8 @@ const ComparePage: React.FC = () => {
                         const normCat = cat.toLowerCase().trim();
                         const isBool = ['ROTY', 'HOF'].includes(cat.toUpperCase());
                         
-                        const normPlayer1 = normalizeName(selectedNames[0]);
-                        const normPlayer2 = normalizeName(selectedNames[1]);
+                        const normPlayer1 = normalizeName(selectedNames[0] || '');
+                        const normPlayer2 = normalizeName(selectedNames[1] || '');
                         
                         const leftRaw = normPlayer1 ? awardsData.byPlayer[normPlayer1]?.[normCat] : null;
                         const rightRaw = normPlayer2 ? awardsData.byPlayer[normPlayer2]?.[normCat] : null;

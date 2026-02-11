@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { TabID } from '../App';
@@ -270,7 +269,9 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose, onSelect
               exit="exit"
               style={positionStyle}
               className="bg-white dark:bg-zinc-900 rounded-[2rem] shadow-2xl flex flex-col pointer-events-auto overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+              onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+              onTouchStart={(e: React.TouchEvent<HTMLDivElement>) => e.stopPropagation()}
             >
               {/* Header / Input */}
               <div className="relative flex items-center px-6 md:px-8 pt-6 md:pt-8 pb-4 shrink-0">
@@ -281,7 +282,7 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose, onSelect
                   ref={inputRef}
                   type="text"
                   value={query}
-                  onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setSelectedIndex(0); }}
                   placeholder="Search legends, records, or pages..."
                   className={`w-full bg-zinc-50 dark:bg-zinc-800 rounded-2xl py-4 pl-14 pr-6 text-zinc-900 dark:text-zinc-100 font-bold text-lg outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-zinc-800 border-2 border-transparent focus:border-current ${accentText}`}
                 />

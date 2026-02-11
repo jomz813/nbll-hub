@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, type Transition } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
 
 interface RouteTransitionProps {
@@ -11,24 +11,30 @@ const RouteTransition: React.FC<RouteTransitionProps> = ({ children, className }
   const { settings } = useSettings();
   const shouldReduceMotion = settings.reducedMotion;
 
-  const variants = {
+  const variants: Variants = {
     initial: { 
       opacity: shouldReduceMotion ? 1 : 0, 
-      y: shouldReduceMotion ? 0 : 8 
+      y: shouldReduceMotion ? 0 : 6,
+      filter: shouldReduceMotion ? 'none' : 'blur(4px)',
     },
     animate: { 
       opacity: 1, 
-      y: 0 
+      y: 0,
+      filter: 'none',
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.3,
+        ease: [0.22, 1, 0.36, 1], // easeOutQuint
+      }
     },
     exit: { 
       opacity: shouldReduceMotion ? 1 : 0, 
-      y: shouldReduceMotion ? 0 : -6 
+      y: shouldReduceMotion ? 0 : -6,
+      filter: shouldReduceMotion ? 'none' : 'blur(4px)',
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.2,
+        ease: [0.32, 0, 0.67, 0], // easeInQuint
+      }
     }
-  };
-
-  const transition: Transition = {
-    duration: shouldReduceMotion ? 0 : 0.18,
-    ease: "easeOut"
   };
 
   return (
@@ -37,8 +43,7 @@ const RouteTransition: React.FC<RouteTransitionProps> = ({ children, className }
       animate="animate"
       exit="exit"
       variants={variants}
-      transition={transition}
-      className={className}
+      className={`${className} w-full`}
     >
       {children}
     </motion.div>

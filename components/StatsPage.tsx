@@ -9,6 +9,28 @@ import S12StatsTable from './S12StatsTable';
 const SEASONS = ['s10', 's11', 's12', 'all-time'] as const;
 type Season = typeof SEASONS[number];
 
+const SORT_OPTIONS: Record<Season, { key: string; label: string }[]> = {
+  's12': [
+    { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
+    { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
+    { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
+  ],
+  's11': [
+    { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
+    { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
+    { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
+  ],
+  's10': [
+    { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
+    { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
+    { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
+  ],
+  'all-time': [
+    { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
+    { key: 'eff', label: 'EFF' }, { key: 'off', label: 'OFF' }, { key: 'def', label: 'DEF' }
+  ]
+};
+
 const StatsPage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
@@ -18,9 +40,11 @@ const StatsPage: React.FC = () => {
   const [season, setSeason] = useState<Season>('s12');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [sortKey, setSortKey] = useState('pts');
   
   // Refs
   const pillAreaRef = useRef<HTMLDivElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,6 +59,11 @@ const StatsPage: React.FC = () => {
 
   const handleSeasonChange = (s: Season) => {
     setSeason(s);
+    // Reset sort key if invalid for the new season
+    const validKeys = SORT_OPTIONS[s].map(o => o.key);
+    if (!validKeys.includes(sortKey)) {
+      setSortKey('pts');
+    }
     const url = new URL(window.location.href);
     url.searchParams.set('season', s);
     window.history.replaceState({}, '', url);
@@ -80,10 +109,12 @@ const StatsPage: React.FC = () => {
     };
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (pillAreaRef.current && !pillAreaRef.current.contains(e.target as Node)) {
-        if (isSearchOpen) {
-          closeSearch();
-        }
+      const target = e.target as Node;
+      const isInsidePillArea = pillAreaRef.current?.contains(target);
+      const isInsideMobileSearch = mobileSearchContainerRef.current?.contains(target);
+
+      if (isSearchOpen && !isInsidePillArea && !isInsideMobileSearch) {
+        closeSearch();
       }
     };
 
@@ -102,7 +133,8 @@ const StatsPage: React.FC = () => {
     const commonProps = { 
       season, 
       onSeasonChange: handleSeasonChange,
-      searchQuery 
+      searchQuery,
+      externalSortKey: sortKey
     };
 
     switch (season) {
@@ -122,9 +154,8 @@ const StatsPage: React.FC = () => {
 
   return (
     <div className="relative">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 items-start">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 md:mb-12 items-start">
         <div className="flex items-center justify-between w-full md:w-auto relative min-h-[4rem]">
-          {/* Header Title - Fades out on mobile search */}
           <motion.h2 
             initial={false}
             animate={{ 
@@ -137,18 +168,20 @@ const StatsPage: React.FC = () => {
             player statistics
           </motion.h2>
           
-          {/* Mobile Inline Search Bar / Button */}
           <div className="md:hidden absolute right-0 flex items-center justify-end">
             <motion.div 
+              ref={mobileSearchContainerRef}
               initial={false}
               animate={{ 
                 width: isSearchOpen ? 'calc(100vw - 32px)' : '3rem',
               }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className={`flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-12 overflow-hidden shadow-sm`}
+              onClick={(e: React.MouseEvent<HTMLDivElement>) => isSearchOpen && e.stopPropagation()}
+              onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => isSearchOpen && e.stopPropagation()}
             >
               <button 
-                onClick={() => !isSearchOpen && toggleSearch()}
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); !isSearchOpen && toggleSearch(); }}
                 className={`flex-none w-12 h-12 flex items-center justify-center ${accentText}`}
                 aria-label="Search players"
               >
@@ -169,13 +202,12 @@ const StatsPage: React.FC = () => {
                       ref={mobileSearchInputRef}
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onBlur={() => !searchQuery && setIsSearchOpen(false)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                       placeholder="Search player..."
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
                     />
                     <button 
-                      onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }}
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); setSearchQuery(''); setIsSearchOpen(false); }}
                       className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-zinc-600 active:scale-90 transition-all"
                     >
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -191,9 +223,7 @@ const StatsPage: React.FC = () => {
 
         {/* Desktop Controls Area */}
         <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1">
-          {/* Grouped Season + Search Pill Area */}
           <div className="relative flex items-center gap-2.5 h-full" ref={pillAreaRef}>
-            {/* Base Layer: Season Selector + Search Icon */}
             <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
               <div role="tablist" aria-label="Select season" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1.5 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0">
                 <div className="flex gap-1 h-full items-center px-0.5">
@@ -215,7 +245,6 @@ const StatsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Search Trigger Icon */}
               <button
                 onClick={openSearch}
                 className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0`}
@@ -224,7 +253,6 @@ const StatsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Overlay Layer: Expanding Search Pill */}
             <AnimatePresence>
               {isSearchOpen && (
                 <motion.div
@@ -243,7 +271,7 @@ const StatsPage: React.FC = () => {
                       ref={desktopSearchInputRef}
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                       placeholder="Search players..."
                       className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
                     />
@@ -254,6 +282,45 @@ const StatsPage: React.FC = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Unified Mobile Controls Toolbar */}
+        <div className="md:hidden w-full mb-3">
+          <div className="w-full h-11 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full flex items-center overflow-hidden px-1 shadow-sm">
+            {/* Season Selector */}
+            <div className="relative flex-1 flex items-center px-4 h-full group justify-end">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mr-auto shrink-0">SZN</span>
+              <select 
+                value={season} 
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSeasonChange(e.target.value as Season)} 
+                className="bg-transparent border-none text-xs font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-4 relative z-10 text-right uppercase tracking-widest"
+              >
+                {SEASONS.map(s => <option key={s} value={s} className="dark:bg-zinc-900 dark:text-zinc-100">{s}</option>)}
+              </select>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
+                <DropdownIcon />
+              </div>
+            </div>
+            
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+            
+            {/* Sort Selector */}
+            <div className="relative flex-1 flex items-center px-4 h-full group justify-end">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mr-auto shrink-0">SORT</span>
+              <select 
+                value={sortKey} 
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortKey(e.target.value)} 
+                className="bg-transparent border-none text-xs font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-4 relative z-10 text-right uppercase tracking-widest"
+              >
+                {SORT_OPTIONS[season].map(opt => (
+                  <option key={opt.key} value={opt.key} className="dark:bg-zinc-900 dark:text-zinc-100">{opt.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
+                <DropdownIcon />
+              </div>
+            </div>
           </div>
         </div>
       </div>
