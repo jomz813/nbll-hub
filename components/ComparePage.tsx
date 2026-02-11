@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { fetchSeasonStats, PlayerStats, SeasonID } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
@@ -8,6 +9,7 @@ import { toPng } from 'html-to-image';
 const SEASONS: SeasonID[] = ['s10', 's11', 's12', 'all-time'];
 
 // In-memory cache for avatar URLs to prevent redundant requests
+// Now stores base64 strings to guarantee cross-origin snapshot capability
 const AVATAR_CACHE: Record<string, string | null> = {};
 
 // Standardization helper matching the one in awards.ts for robust lookups
@@ -37,19 +39,40 @@ const PlayerAvatar: React.FC<{ username: string | null; isMobile?: boolean }> = 
       return;
     }
 
-    setLoading(true);
-    fetch(`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}`)
-      .then(res => res.json())
-      .then(data => {
+    const fetchAvatar = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}`);
+        const data = await res.json();
         const imageUrl = data.imageUrl || null;
-        AVATAR_CACHE[username] = imageUrl;
-        setUrl(imageUrl);
-      })
-      .catch(() => {
+
+        if (imageUrl) {
+          // To fix mobile export issues where cross-origin images are blocked by canvas/html-to-image,
+          // we convert the URL to a base64 Data URL immediately.
+          const imgRes = await fetch(imageUrl);
+          const blob = await imgRes.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64data = reader.result as string;
+            AVATAR_CACHE[username] = base64data;
+            setUrl(base64data);
+            setLoading(false);
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          AVATAR_CACHE[username] = null;
+          setUrl(null);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to load avatar:", err);
         AVATAR_CACHE[username] = null;
         setUrl(null);
-      })
-      .finally(() => setLoading(false));
+        setLoading(false);
+      }
+    };
+
+    fetchAvatar();
   }, [username]);
 
   if (!username) return null;
@@ -59,7 +82,13 @@ const PlayerAvatar: React.FC<{ username: string | null; isMobile?: boolean }> = 
       {loading ? (
         <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-400 animate-spin rounded-full" />
       ) : url ? (
-        <img src={url} alt={username} className="h-full w-auto object-contain" />
+        <img 
+          src={url} 
+          alt={username} 
+          className="h-full w-auto object-contain" 
+          crossOrigin="anonymous"
+          onLoad={(e) => (e.currentTarget.dataset.loaded = "true")}
+        />
       ) : (
         <div className="opacity-10">
           <svg className="w-8 h-8 md:w-12 md:h-12 text-zinc-400 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -235,6 +264,16 @@ const ComparePage: React.FC = () => {
     setIsExporting(true);
     closeSearch(); 
 
+    // Mobile-friendly snapshot reliability: 
+    // Wait for any <img> within the target to be fully loaded/completed
+    const images = Array.from(target.querySelectorAll('img'));
+    const allLoaded = images.every(img => img.complete && img.naturalHeight !== 0);
+    
+    if (!allLoaded) {
+      // Brief retry if images aren't ready
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
     const originalHeight = target.style.height;
     const originalMaxHeight = target.style.maxHeight;
     const originalOverflow = target.style.overflow;
@@ -259,7 +298,7 @@ const ComparePage: React.FC = () => {
       const height = target.scrollHeight;
 
       const dataUrl = await toPng(target, {
-        cacheBust: true,
+        cacheBust: true, // Key for mobile caching issues
         pixelRatio: 2,
         backgroundColor: bgColor,
         width: width,
@@ -482,7 +521,7 @@ const ComparePage: React.FC = () => {
     <div className="space-y-6 md:space-y-10 pb-20 animate-page-enter">
       {/* Header Row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4 md:mb-12 items-start relative z-[60]">
-        <div className="flex items-center justify-between w-full md:w-auto relative min-h-[4rem]">
+        <div className="flex items-center justify-between w-full md:auto relative min-h-[4rem]">
           <motion.h2 
             initial={false}
             animate={{ 
@@ -512,7 +551,7 @@ const ComparePage: React.FC = () => {
                   }} 
                   className={`flex-none w-12 h-12 flex items-center justify-center ${accentText}`}
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </button>
                 <AnimatePresence>
                   {isSearchOpen && (
