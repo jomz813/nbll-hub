@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabID } from '../App';
@@ -64,7 +65,10 @@ const HighlightMatch: React.FC<{ text: string; query: string; accentText: string
         part.toLowerCase() === query.toLowerCase() ? (
           <span key={i} className={`text-zinc-900 dark:text-white font-black relative inline-block`}>
             {part}
-            <span className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-red-600/60 dark:bg-red-500/60 rounded-full" />
+            <span 
+              className="absolute left-0 right-0 -bottom-[1px] h-[2px] rounded-full" 
+              style={{ backgroundColor: 'var(--accent)', opacity: 0.6 }}
+            />
           </span>
         ) : (
           <span key={i}>{part}</span>
@@ -333,12 +337,14 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
         return {
           bg: theme === 'dark' ? '#18181b' : '#f4f4f5',
           icon: 'text-zinc-400',
-          hoverBg: theme === 'dark' ? '#18181b' : '#f4f4f5'
         };
       }
-      if (isHOF) return { bg: '#D4AF37', icon: 'text-zinc-900', hoverBg: '#B59020' };
-      if (settings.rahBizzyTheme) return { bg: '#3B82F6', icon: 'text-white', hoverBg: '#2563EB' };
-      return { bg: '#D60A07', icon: 'text-white', hoverBg: '#B91C1C' };
+      
+      const isLightAccent = settings.siteThemeAccent === 'citrine' || settings.siteThemeAccent === 'aquamarine' || isHOF;
+      return { 
+        bg: colors.hex, 
+        icon: isLightAccent ? 'text-zinc-950' : 'text-white' 
+      };
     };
     
     const searchStyles = getSearchStateStyles();
@@ -357,7 +363,11 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
             width: isSearchOpen ? 300 : 40,
             backgroundColor: searchStyles.bg
           }}
-          whileHover={{ backgroundColor: searchStyles.hoverBg }}
+          whileHover={{ 
+            backgroundColor: isSearchOpen 
+              ? searchStyles.bg 
+              : `color-mix(in srgb, ${searchStyles.bg} 85%, ${theme === 'dark' ? 'white' : 'black'})` 
+          }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
           className={`
             relative flex items-center rounded-full h-9 md:h-9 overflow-hidden
@@ -434,12 +444,19 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                                     )}
                                   </div>
                                   
-                                  <div className={`
-                                    shrink-0 px-2 py-0.5 rounded-full border text-[9px] font-black tracking-widest transition-all duration-300
-                                    ${isSelected 
-                                      ? `bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400 scale-105` 
-                                      : 'bg-zinc-100 dark:bg-zinc-800 border-transparent text-zinc-400 dark:text-zinc-500'}
-                                  `}>
+                                  <div 
+                                    className={`shrink-0 px-2 py-0.5 rounded-full border text-[9px] font-black tracking-widest transition-all duration-300`}
+                                    style={isSelected ? {
+                                      backgroundColor: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                                      borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
+                                      color: 'var(--accent)',
+                                      transform: 'scale(1.05)'
+                                    } : {
+                                      backgroundColor: theme === 'dark' ? 'rgba(39, 39, 42, 1)' : 'rgba(244, 244, 245, 1)',
+                                      borderColor: 'transparent',
+                                      color: theme === 'dark' ? 'rgba(113, 113, 122, 1)' : 'rgba(161, 161, 170, 1)'
+                                    }}
+                                  >
                                     {item.tag}
                                   </div>
                                 </button>
@@ -503,10 +520,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
             WebkitBackdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
             border: isHomeLightMobile 
                 ? '1px solid rgba(0, 0, 0, 0.15)' 
-                : `1px solid ${settings.rahBizzyTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(214, 10, 7, 0.2)'}`,
+                : `1px solid color-mix(in srgb, var(--accent) 20%, transparent)`,
             ...(isMenuOpen ? {
                 boxShadow: isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                border: isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid ${settings.rahBizzyTheme ? 'rgba(59, 130, 246, 0.3)' : 'rgba(214, 10, 7, 0.3)'}`
+                border: isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid color-mix(in srgb, var(--accent) 30%, transparent)`
             } : {})
           } : {}}
         >
@@ -608,28 +625,55 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
             </div>
 
             <div className="flex md:hidden flex-1 justify-end items-center gap-4">
-              <button 
-                onClick={onToggleTheme}
-                className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
-              >
-                {theme === 'dark' ? (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="5" />
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                  </svg>
-                )}
-              </button>
+              <div className="relative w-10 h-10">
+                <AnimatePresence mode="wait" initial={false}>
+                  {!isMenuOpen ? (
+                    <motion.button 
+                      key="theme-toggle"
+                      initial={{ opacity: 0, scale: 0.7, rotate: -45 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.7, rotate: 45 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      onClick={onToggleTheme}
+                      className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+                      aria-label="Toggle dark mode"
+                    >
+                      {theme === 'dark' ? (
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="5" />
+                          <line x1="12" y1="1" x2="12" y2="3" />
+                          <line x1="12" y1="21" x2="12" y2="23" />
+                          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                          <line x1="1" y1="12" x2="3" y2="12" />
+                          <line x1="21" y1="12" x2="23" y2="12" />
+                          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        </svg>
+                      )}
+                    </motion.button>
+                  ) : (
+                    <motion.button 
+                      key="settings-toggle"
+                      initial={{ opacity: 0, scale: 0.7, rotate: 45 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.7, rotate: -45 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      onClick={onOpenSettings}
+                      className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+                      aria-label="Open settings"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="2" y1="14" x2="6" y2="14" /><line x1="10" y1="8" x2="14" y2="8" /><line x1="18" y1="16" x2="22" y2="16" />
+                      </svg>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
               
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -677,7 +721,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                         {active && (
                           <motion.div
                             layoutId="mobile-active-indicator"
-                            className={`absolute left-0 w-[5px] h-[32px] ${accentBg} rounded-r-full shadow-[0_0_12px_rgba(214,10,7,0.3)] z-20`}
+                            className={`absolute left-0 w-[5px] h-[32px] ${accentBg} rounded-r-full z-20`}
+                            style={{ boxShadow: `0 0 12px color-mix(in srgb, var(--accent) 30%, transparent)` }}
                             initial={{ opacity: 0, scaleY: 0.5 }}
                             animate={{ opacity: 1, scaleY: 1 }}
                             exit={{ opacity: 0, scaleY: 0.5 }}

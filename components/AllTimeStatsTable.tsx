@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchAllTimeStats, AllTimeRow } from '../data/allTimeStats';
 import { useSettings } from '../context/SettingsContext';
@@ -9,12 +10,36 @@ interface AllTimeStatsTableProps {
   onSeasonChange?: (s: any) => void;
   searchQuery?: string;
   externalSortKey?: string;
+  showStat?: string;
 }
 
-const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonChange, searchQuery = '', externalSortKey }) => {
+const TableSkeleton: React.FC = () => (
+  <div className="w-full space-y-4 animate-pulse">
+    <div className="hidden md:grid grid-cols-[1.5fr_repeat(7,1fr)] gap-4 px-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-full">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+      ))}
+    </div>
+    <div className="space-y-3">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="grid grid-cols-1 md:grid-cols-[1.5fr_repeat(7,1fr)] gap-4 px-6 py-5 bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem]">
+          <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full w-32" />
+          <div className="hidden md:flex justify-between md:contents">
+             {Array.from({ length: 7 }).map((_, j) => (
+               <div key={j} className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full w-10 mx-auto" />
+             ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonChange, searchQuery = '', externalSortKey, showStat = 'ALL' }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
   const accentBg = colors.bg;
+  const accentText = colors.text;
 
   const [data, setData] = useState<AllTimeRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,13 +122,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-600 animate-pulse">
-          loading all-time stats...
-        </span>
-      </div>
-    );
+    return <TableSkeleton />;
   }
 
   if (error) {
@@ -148,7 +167,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
       <div className="hidden md:block bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] overflow-hidden shadow-sm">
         <div className="w-full overflow-x-auto overflow-y-auto max-h-[70vh] no-scrollbar">
           <div className="min-w-[640px]">
-            <div className="sticky top-0 z-20 grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50/95 dark:bg-zinc-800/95 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+            <div className="sticky top-0 z-20 grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 bg-zinc-50/95 dark:bg-zinc-800/95 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[9px] md:text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
               {columns.map((col) => (
                 <button
                   key={col.key}
@@ -182,7 +201,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
                     <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.ast}</div>
                     <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.reb}</div>
                     <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.stl}</div>
-                    <div className={`text-xs md:text-sm font-black ${colors.text} text-center tabular-nums`}>{row.eff}</div>
+                    <div className={`text-xs md:text-sm font-black ${accentText} text-center tabular-nums`}>{row.eff}</div>
                     <div className="text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.off}</div>
                     <div className="text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.def}</div>
                   </div>
@@ -200,9 +219,25 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
       </div>
 
       {/* MOBILE LIST */}
-      <div className="md:hidden space-y-3 px-2">
+      <div className="md:hidden space-y-2 px-2">
         {filteredData.length > 0 ? (
           filteredData.map((row, idx) => {
+            if (showStat !== 'ALL') {
+              const val = row[showStat as keyof AllTimeRow];
+              const label = showStat.toUpperCase();
+              const displayVal = showStat === 'val' ? formatCurrency(val as number) : (typeof val === 'number' ? val : '—');
+              return (
+                <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-xl p-3 shadow-sm flex items-center justify-between">
+                  <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate pr-4">{row.player}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">{label}</span>
+                    <span className={`text-sm font-black tabular-nums ${showStat === 'eff' ? accentText : 'text-zinc-900 dark:text-zinc-100'}`}>
+                      {displayVal}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-2xl p-4 shadow-sm">
                 <div className="mb-3 border-b border-zinc-50 dark:border-zinc-900/50 pb-2">

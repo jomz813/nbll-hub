@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
@@ -14,6 +15,40 @@ const AVATAR_CACHE: Record<string, string | null> = {};
 const normalizeName = (name: string): string => {
   return String(name || '').trim().toLowerCase().replace(/\s+/g, '');
 };
+
+const ProfileSkeleton: React.FC = () => (
+  <div className="space-y-10 animate-pulse">
+    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-xl">
+      <div className="p-8 md:p-12 bg-zinc-50/50 dark:bg-zinc-900/10 border-b border-zinc-100 dark:border-zinc-900 flex flex-col md:flex-row md:items-center gap-8 md:gap-12">
+        <div className="w-28 h-28 md:w-40 md:h-40 bg-zinc-200 dark:bg-zinc-800 rounded-3xl md:rounded-[2.5rem]" />
+        <div className="space-y-4 flex-1">
+          <div className="h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full w-24" />
+          <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-full w-3/4" />
+        </div>
+      </div>
+      <div className="p-8 md:p-12 space-y-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="space-y-6">
+            <div className="h-2 bg-zinc-100 dark:bg-zinc-900 rounded-full w-32" />
+            <div className="grid grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-16 bg-zinc-50 dark:bg-zinc-900/30 rounded-xl" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="h-2 bg-zinc-100 dark:bg-zinc-900 rounded-full w-32" />
+            <div className="grid grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-16 bg-zinc-50 dark:bg-zinc-900/30 rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const PlayersPage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
@@ -278,11 +313,7 @@ const PlayersPage: React.FC = () => {
     </div>
   );
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-32">
-      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-600 animate-pulse">accessing registry...</span>
-    </div>
-  );
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <div className="space-y-10 pb-20 animate-page-enter">
@@ -442,10 +473,10 @@ const PlayersPage: React.FC = () => {
              {/* Desktop Decorative Background */}
              <div className="hidden md:block absolute inset-0 opacity-[0.02] pointer-events-none select-none overflow-hidden" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
              
-             {/* Mobile-only Background Avatar Cover (Adjusted to contain) */}
+             {/* Mobile-only Background Avatar Cover */}
              <div className="md:hidden absolute inset-0 z-0">
                {avatarLoading ? (
-                 <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
+                 <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 animate-pulse">
                     <div className={`w-8 h-8 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
                  </div>
                ) : avatarUrl ? (
@@ -463,7 +494,7 @@ const PlayersPage: React.FC = () => {
                <div className="hidden md:block relative shrink-0 w-28 h-28 md:w-40 md:h-40 group">
                  <div className={`absolute inset-0 bg-white dark:bg-zinc-950 border-2 ${accentBorder} rounded-3xl md:rounded-[2.5rem] shadow-xl overflow-hidden z-10`}>
                     {avatarLoading ? (
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 animate-pulse">
                         <div className={`w-8 h-8 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
                       </div>
                     ) : avatarUrl ? (

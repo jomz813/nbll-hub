@@ -5,34 +5,46 @@ const FluidBackground: React.FC = () => {
   return (
     <div className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none">
       {/* Primary Fluid Layer */}
-      <div className="absolute inset-0 opacity-80">
-        {/* Large drifting red blob - Core red */}
+      <div className="absolute inset-0 opacity-[var(--fluid-opacity)]">
+        {/* Large drifting primary blob - Site Accent */}
         <div 
-          className="absolute top-[-20%] left-[-10%] w-[120%] h-[120%] bg-gradient-to-br from-[#D60A07] via-[#8B0000] to-transparent rounded-full filter blur-[120px] animate-fluid-slow opacity-60"
-          style={{ mixBlendMode: 'screen' }}
+          className="absolute top-[-20%] left-[-10%] w-[120%] h-[120%] rounded-full filter blur-[120px] animate-fluid-slow opacity-60"
+          style={{ 
+            mixBlendMode: 'screen',
+            background: 'linear-gradient(to bottom right, var(--accent), color-mix(in srgb, var(--accent) 50%, black), transparent)'
+          }}
         />
         
-        {/* Deep dark red accent - Contrast red */}
+        {/* Deep dark accent variant - Contrast */}
         <div 
-          className="absolute bottom-[-30%] right-[-20%] w-[100%] h-[100%] bg-gradient-to-tl from-[#450a0a] via-[#D60A07] to-transparent rounded-full filter blur-[140px] animate-fluid-reverse opacity-70"
-          style={{ mixBlendMode: 'screen' }}
+          className="absolute bottom-[-30%] right-[-20%] w-[100%] h-[100%] rounded-full filter blur-[140px] animate-fluid-reverse opacity-70"
+          style={{ 
+            mixBlendMode: 'screen',
+            background: 'linear-gradient(to top left, color-mix(in srgb, var(--accent) 30%, black), var(--accent), transparent)'
+          }}
         />
 
-        {/* High-intensity highlight - Vivid red */}
+        {/* High-intensity highlight - Vivid version */}
         <div 
-          className="absolute top-[20%] right-[-15%] w-[60%] h-[80%] bg-[#FF1A1A] rounded-full filter blur-[160px] opacity-15 animate-fluid-fast"
-          style={{ mixBlendMode: 'soft-light' }}
+          className="absolute top-[20%] right-[-15%] w-[60%] h-[80%] rounded-full filter blur-[160px] opacity-15 animate-fluid-fast"
+          style={{ 
+            mixBlendMode: 'soft-light',
+            backgroundColor: 'var(--accent)'
+          }}
         />
         
-        {/* Deep shadow fluid - Black drift */}
+        {/* Deep shadow fluid - Black drift for depth */}
         <div 
           className="absolute top-[40%] left-[30%] w-[50%] h-[50%] bg-black rounded-full filter blur-[100px] opacity-90 animate-fluid-slow"
         />
 
-        {/* Secondary drift blob - Deep crimson */}
+        {/* Secondary drift blob - Deep variant */}
         <div 
-          className="absolute bottom-[10%] left-[-10%] w-[70%] h-[70%] bg-[#660000] rounded-full filter blur-[130px] opacity-40 animate-fluid-fast"
-          style={{ mixBlendMode: 'plus-lighter' }}
+          className="absolute bottom-[10%] left-[-10%] w-[70%] h-[70%] rounded-full filter blur-[130px] opacity-40 animate-fluid-fast"
+          style={{ 
+            mixBlendMode: 'plus-lighter',
+            backgroundColor: 'color-mix(in srgb, var(--accent) 40%, black)'
+          }}
         />
       </div>
 

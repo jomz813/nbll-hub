@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
@@ -41,6 +42,7 @@ const StatsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sortKey, setSortKey] = useState('pts');
+  const [showStat, setShowStat] = useState('ALL');
   
   // Refs
   const pillAreaRef = useRef<HTMLDivElement>(null);
@@ -64,9 +66,31 @@ const StatsPage: React.FC = () => {
     if (!validKeys.includes(sortKey)) {
       setSortKey('pts');
     }
+    // Also reset showStat if invalid
+    if (showStat !== 'ALL' && !validKeys.includes(showStat)) {
+      setShowStat('ALL');
+    }
     const url = new URL(window.location.href);
     url.searchParams.set('season', s);
     window.history.replaceState({}, '', url);
+  };
+
+  const handleSortChange = (newSort: string) => {
+    if (newSort === sortKey) return;
+    setSortKey(newSort);
+    // Rule: If SHOW is not FULL, then SHOW follows SORT
+    if (showStat !== 'ALL') {
+      setShowStat(newSort);
+    }
+  };
+
+  const handleShowChange = (newShow: string) => {
+    if (newShow === showStat) return;
+    setShowStat(newShow);
+    // Rule: If SHOW is set to a stat (not ALL), SORT follows SHOW
+    if (newShow !== 'ALL') {
+      setSortKey(newShow);
+    }
   };
 
   const openSearch = () => {
@@ -134,7 +158,8 @@ const StatsPage: React.FC = () => {
       season, 
       onSeasonChange: handleSeasonChange,
       searchQuery,
-      externalSortKey: sortKey
+      externalSortKey: sortKey,
+      showStat
     };
 
     switch (season) {
@@ -289,16 +314,16 @@ const StatsPage: React.FC = () => {
         <div className="md:hidden w-full mb-3">
           <div className="w-full h-11 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full flex items-center overflow-hidden px-1 shadow-sm">
             {/* Season Selector */}
-            <div className="relative flex-1 flex items-center px-4 h-full group justify-end">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mr-auto shrink-0">SZN</span>
+            <div className="relative flex-1 flex items-center px-2 h-full group justify-end">
+              <span className="text-[8px] font-black uppercase tracking-[0.15em] text-zinc-400 mr-auto shrink-0">SZN</span>
               <select 
                 value={season} 
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSeasonChange(e.target.value as Season)} 
-                className="bg-transparent border-none text-xs font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-4 relative z-10 text-right uppercase tracking-widest"
+                className="bg-transparent border-none text-[10px] font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-3 relative z-10 text-right uppercase tracking-widest"
               >
                 {SEASONS.map(s => <option key={s} value={s} className="dark:bg-zinc-900 dark:text-zinc-100">{s}</option>)}
               </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
                 <DropdownIcon />
               </div>
             </div>
@@ -306,18 +331,38 @@ const StatsPage: React.FC = () => {
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             
             {/* Sort Selector */}
-            <div className="relative flex-1 flex items-center px-4 h-full group justify-end">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mr-auto shrink-0">SORT</span>
+            <div className="relative flex-1 flex items-center px-2 h-full group justify-end">
+              <span className="text-[8px] font-black uppercase tracking-[0.15em] text-zinc-400 mr-auto shrink-0">SORT</span>
               <select 
                 value={sortKey} 
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortKey(e.target.value)} 
-                className="bg-transparent border-none text-xs font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-4 relative z-10 text-right uppercase tracking-widest"
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSortChange(e.target.value)} 
+                className="bg-transparent border-none text-[10px] font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-3 relative z-10 text-right uppercase tracking-widest"
               >
                 {SORT_OPTIONS[season].map(opt => (
                   <option key={opt.key} value={opt.key} className="dark:bg-zinc-900 dark:text-zinc-100">{opt.label}</option>
                 ))}
               </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
+                <DropdownIcon />
+              </div>
+            </div>
+
+            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+
+            {/* Show Selector */}
+            <div className="relative flex-1 flex items-center px-2 h-full group justify-end">
+              <span className="text-[8px] font-black uppercase tracking-[0.15em] text-zinc-400 mr-auto shrink-0">SHOW</span>
+              <select 
+                value={showStat} 
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleShowChange(e.target.value)} 
+                className="bg-transparent border-none text-[10px] font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-3 relative z-10 text-right uppercase tracking-widest"
+              >
+                <option value="ALL" className="dark:bg-zinc-900 dark:text-zinc-100">FULL</option>
+                {SORT_OPTIONS[season].map(opt => (
+                  <option key={opt.key} value={opt.key} className="dark:bg-zinc-900 dark:text-zinc-100">{opt.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
                 <DropdownIcon />
               </div>
             </div>
@@ -328,7 +373,7 @@ const StatsPage: React.FC = () => {
       <div className="animate-page-enter">
         <AnimatePresence mode="wait">
           <motion.div
-            key={season}
+            key={`${season}-${showStat}`}
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}

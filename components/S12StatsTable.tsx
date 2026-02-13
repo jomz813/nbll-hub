@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchS12Stats, S12Row } from '../data/s12Stats';
 import { useSettings } from '../context/SettingsContext';
@@ -10,12 +11,36 @@ interface S12StatsTableProps {
   onSeasonChange?: (s: any) => void;
   searchQuery?: string;
   externalSortKey?: string;
+  showStat?: string;
 }
 
-const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, season, onSeasonChange, searchQuery = '', externalSortKey }) => {
+const TableSkeleton: React.FC = () => (
+  <div className="w-full space-y-4 animate-pulse">
+    <div className="hidden md:grid grid-cols-[1.4fr_repeat(10,1fr)] gap-4 px-6 py-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-full">
+      {Array.from({ length: 11 }).map((_, i) => (
+        <div key={i} className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+      ))}
+    </div>
+    <div className="space-y-3">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="grid grid-cols-1 md:grid-cols-[1.4fr_repeat(10,1fr)] gap-4 px-6 py-5 bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem]">
+          <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full w-24" />
+          <div className="hidden md:flex justify-between md:contents">
+             {Array.from({ length: 10 }).map((_, j) => (
+               <div key={j} className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full w-8 mx-auto" />
+             ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, season, onSeasonChange, searchQuery = '', externalSortKey, showStat = 'ALL' }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
   const accentBg = colors.bg;
+  const accentText = colors.text;
 
   const [data, setData] = useState<S12Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,13 +123,7 @@ const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, seaso
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-600 animate-pulse">
-          loading s12 stats...
-        </span>
-      </div>
-    );
+    return <TableSkeleton />;
   }
 
   if (error) {
@@ -185,7 +204,7 @@ const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, seaso
                     <div className="text-[11px] lg:text-[13px] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.apg.toFixed(1)}</div>
                     <div className="text-[11px] lg:text-[13px] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.rpg.toFixed(1)}</div>
                     <div className="text-[11px] lg:text-[13px] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.spg.toFixed(1)}</div>
-                    <div className={`text-[11px] lg:text-[13px] font-black ${colors.text} text-center tabular-nums`}>{row.eff}</div>
+                    <div className={`text-[11px] lg:text-[13px] font-black ${accentText} text-center tabular-nums`}>{row.eff}</div>
                   </div>
                 ))
               ) : (
@@ -201,9 +220,25 @@ const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, seaso
       </div>
 
       {/* MOBILE LIST */}
-      <div className="md:hidden space-y-3 px-2">
+      <div className="md:hidden space-y-2 px-2">
         {filteredData.length > 0 ? (
           filteredData.map((row, idx) => {
+            if (showStat !== 'ALL') {
+              const val = row[showStat as keyof S12Row];
+              const isAvg = ['ppg', 'apg', 'rpg', 'spg'].includes(showStat);
+              const label = showStat.toUpperCase();
+              return (
+                <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-xl p-3 shadow-sm flex items-center justify-between">
+                  <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate pr-4">{row.player}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">{label}</span>
+                    <span className={`text-sm font-black tabular-nums ${showStat === 'eff' ? accentText : 'text-zinc-900 dark:text-zinc-100'}`}>
+                      {typeof val === 'number' ? (isAvg ? val.toFixed(1) : val) : '—'}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-2xl p-4 shadow-sm">
                 <div className="flex items-baseline justify-between mb-3 border-b border-zinc-50 dark:border-zinc-900/50 pb-2">

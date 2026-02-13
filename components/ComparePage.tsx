@@ -78,9 +78,11 @@ const PlayerAvatar: React.FC<{ username: string | null; isMobile?: boolean }> = 
   if (!username) return null;
 
   return (
-    <div className={`relative shrink-0 flex items-center justify-center transition-all duration-300 ${isMobile ? 'h-32' : 'h-16 md:h-24'}`}>
+    <div className={`relative shrink-0 flex items-center justify-center transition-all duration-300 ${isMobile ? 'h-32 w-32' : 'h-16 md:h-24 w-16 md:w-24'}`}>
       {loading ? (
-        <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-400 animate-spin rounded-full" />
+        <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 rounded-3xl md:rounded-[2rem] animate-pulse flex items-center justify-center shadow-inner">
+           <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-400 animate-spin rounded-full" />
+        </div>
       ) : url ? (
         <img 
           src={url} 
@@ -90,7 +92,7 @@ const PlayerAvatar: React.FC<{ username: string | null; isMobile?: boolean }> = 
           onLoad={(e) => (e.currentTarget.dataset.loaded = "true")}
         />
       ) : (
-        <div className="opacity-10">
+        <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900 rounded-3xl md:rounded-[2rem] flex items-center justify-center opacity-40">
           <svg className="w-8 h-8 md:w-12 md:h-12 text-zinc-400 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
           </svg>
@@ -390,16 +392,15 @@ const ComparePage: React.FC = () => {
     return isNaN(num) ? 0 : num;
   };
 
-  const getWinnerClass = (left: any, right: any, isLeft: boolean) => {
+  const getHighlightStyle = (left: any, right: any, isLeft: boolean): React.CSSProperties | undefined => {
     const lNum = parseValue(left);
     const rNum = parseValue(right);
-    if (lNum === 0 && rNum === 0) return '';
-    const highlight = settings.rahBizzyTheme ? 'bg-[#3B82F6]/15' : 'bg-[#D60A07]/15';
-    if (lNum === rNum) return highlight;
-    const leftWins = lNum > rNum;
-    if (isLeft && leftWins) return highlight;
-    if (!isLeft && !leftWins) return highlight;
-    return '';
+    if (lNum === 0 && rNum === 0) return undefined;
+    
+    const highlightColor = 'color-mix(in srgb, var(--accent) 18%, transparent)';
+    const isWinner = isLeft ? (lNum >= rNum) : (rNum >= lNum);
+    
+    return isWinner ? { backgroundColor: highlightColor } : undefined;
   };
 
   const categories = {
@@ -432,20 +433,27 @@ const ComparePage: React.FC = () => {
 
   const seasonLabel = season === 'all-time' ? 'ALL-TIME' : season.toUpperCase();
 
-  const ComparisonRow = ({ label, leftVal, rightVal, key }: { label: string, leftVal: any, rightVal: any, key?: React.Key }) => {
-    const leftHighlight = getWinnerClass(leftVal, rightVal, true);
-    const rightHighlight = getWinnerClass(leftVal, rightVal, false);
-    const getValColorClass = (highlight: string) => highlight ? 'text-zinc-900 dark:text-zinc-100 font-extrabold' : 'text-zinc-900 dark:text-zinc-400 font-semibold';
+  const ComparisonRow = ({ label, leftVal, rightVal }: { label: string, leftVal: any, rightVal: any }) => {
+    const leftStyle = getHighlightStyle(leftVal, rightVal, true);
+    const rightStyle = getHighlightStyle(leftVal, rightVal, false);
+    
+    const lNum = parseValue(leftVal);
+    const rNum = parseValue(rightVal);
+    const leftIsWinner = (lNum !== 0 || rNum !== 0) && lNum >= rNum;
+    const rightIsWinner = (lNum !== 0 || rNum !== 0) && rNum >= lNum;
+
+    const getValColorClass = (isWinner: boolean) => isWinner ? 'text-zinc-900 dark:text-zinc-100 font-extrabold' : 'text-zinc-900 dark:text-zinc-400 font-semibold';
+    
     return (
       <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0">
-        <div className={`py-3 md:py-5 px-4 text-right transition-colors ${leftHighlight}`}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftHighlight)}`}>{leftVal === 0 || leftVal === null || leftVal === undefined || leftVal === '' ? '—' : leftVal}</span>
+        <div className={`py-3 md:py-5 px-4 text-right transition-colors`} style={leftStyle}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftIsWinner)}`}>{leftVal === 0 || leftVal === null || leftVal === undefined || leftVal === '' ? '—' : leftVal}</span>
         </div>
         <div className="py-3 md:py-5 text-center bg-zinc-50/30 dark:bg-zinc-900/10 h-full flex items-center justify-center border-x border-zinc-100 dark:border-zinc-900">
           <span className="text-[8px] md:text-[10px] font-black text-zinc-900 dark:text-zinc-600 uppercase tracking-widest whitespace-nowrap px-1">{label}</span>
         </div>
-        <div className={`py-3 md:py-5 px-4 text-left transition-colors ${rightHighlight}`}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightHighlight)}`}>{rightVal === 0 || rightVal === null || rightVal === undefined || rightVal === '' ? '—' : rightVal}</span>
+        <div className={`py-3 md:py-5 px-4 text-left transition-colors`} style={rightStyle}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightIsWinner)}`}>{rightVal === 0 || rightVal === null || rightVal === undefined || rightVal === '' ? '—' : rightVal}</span>
         </div>
       </div>
     );
@@ -457,34 +465,29 @@ const ComparePage: React.FC = () => {
     return ['yes', 'y', 'true', '1'].includes(s);
   };
 
-  const BooleanComparisonRow = ({ label, leftRaw, rightRaw, key }: { label: string, leftRaw: any, rightRaw: any, key?: React.Key }) => {
+  const BooleanComparisonRow = ({ label, leftRaw, rightRaw }: { label: string, leftRaw: any, rightRaw: any }) => {
     const leftIsYes = isYes(leftRaw);
     const rightIsYes = isYes(rightRaw);
-    const highlight = settings.rahBizzyTheme ? 'bg-[#3B82F6]/15' : 'bg-[#D60A07]/15';
-    let leftHighlight = '';
-    let rightHighlight = '';
-    if (leftIsYes && rightIsYes) {
-      leftHighlight = highlight;
-      rightHighlight = highlight;
-    } else if (leftIsYes) {
-      leftHighlight = highlight;
-    } else if (rightIsYes) {
-      rightHighlight = highlight;
-    }
-    const getValColorClass = (isYesVal: boolean, hasHighlight: string) => {
-      if (isYesVal && hasHighlight) return 'text-zinc-900 dark:text-zinc-100 font-extrabold';
+    
+    const highlightColor = 'color-mix(in srgb, var(--accent) 18%, transparent)';
+    const leftStyle = leftIsYes ? { backgroundColor: highlightColor } : undefined;
+    const rightStyle = rightIsYes ? { backgroundColor: highlightColor } : undefined;
+
+    const getValColorClass = (isYesVal: boolean) => {
+      if (isYesVal) return 'text-zinc-900 dark:text-zinc-100 font-extrabold';
       return 'text-zinc-900 dark:text-zinc-400 font-semibold';
     };
+    
     return (
       <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0">
-        <div className={`py-3 md:py-5 px-4 text-right transition-colors ${leftHighlight}`}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftIsYes, leftHighlight)}`}>{leftIsYes ? 'yes' : 'no'}</span>
+        <div className={`py-3 md:py-5 px-4 text-right transition-colors`} style={leftStyle}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftIsYes)}`}>{leftIsYes ? 'yes' : 'no'}</span>
         </div>
         <div className="py-3 md:py-5 text-center bg-zinc-50/30 dark:bg-zinc-900/10 h-full flex items-center justify-center border-x border-zinc-100 dark:border-zinc-900">
           <span className="text-[8px] md:text-[10px] font-black text-zinc-900 dark:text-zinc-600 uppercase tracking-widest whitespace-nowrap px-1">{label}</span>
         </div>
-        <div className={`py-3 md:py-5 px-4 text-left transition-colors ${rightHighlight}`}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightIsYes, rightHighlight)}`}>{rightIsYes ? 'yes' : 'no'}</span>
+        <div className={`py-3 md:py-5 px-4 text-left transition-colors`} style={rightStyle}>
+          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightIsYes)}`}>{rightIsYes ? 'yes' : 'no'}</span>
         </div>
       </div>
     );
@@ -781,7 +784,7 @@ const ComparePage: React.FC = () => {
       </div>
 
       {hasSelection ? (
-        <div ref={compareRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-xl z-10">
+        <div ref={compareRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-xl z-10">
            <div className="relative grid grid-cols-2 md:grid-cols-[1fr_120px_1fr] items-stretch bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
               
               {/* Central VS Overlay (Mobile Only) */}

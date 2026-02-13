@@ -15,9 +15,12 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabID>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  const { settings } = useSettings();
+  const { settings, getThemeColors } = useSettings();
 
-  // Track previous RahBizzy theme state to trigger transitions only on change
+  const colors = getThemeColors();
+
+  // Track previous RahBizzy or Accent theme state to trigger transitions
+  const prevAccentTheme = useRef(settings.siteThemeAccent);
   const prevRahBizzyTheme = useRef(settings.rahBizzyTheme);
 
   // Initialize theme from localStorage on mount
@@ -27,7 +30,6 @@ const AppContent: React.FC = () => {
       setTheme('light');
       document.documentElement.classList.remove('dark');
     } else {
-      // If savedTheme is 'dark' or if it doesn't exist (first time visitor)
       setTheme('dark');
       document.documentElement.classList.add('dark');
       if (!savedTheme) {
@@ -36,17 +38,12 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // Helper to trigger smooth transition
   const triggerThemeTransition = () => {
     if (settings.reducedMotion) return;
-    
     document.documentElement.classList.add('theme-transition');
-    
-    // Remove class after transition completes (250ms to match CSS)
     const timer = setTimeout(() => {
       document.documentElement.classList.remove('theme-transition');
     }, 250);
-    
     return () => clearTimeout(timer);
   };
 
@@ -64,43 +61,27 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const root = document.documentElement;
     
-    // Reduced Motion
-    if (settings.reducedMotion) {
-      root.classList.add('reduced-motion');
-    } else {
-      root.classList.remove('reduced-motion');
-    }
+    if (settings.reducedMotion) root.classList.add('reduced-motion');
+    else root.classList.remove('reduced-motion');
 
-    // High Contrast
-    if (settings.highContrast) {
-      root.classList.add('high-contrast');
-    } else {
-      root.classList.remove('high-contrast');
-    }
+    if (settings.highContrast) root.classList.add('high-contrast');
+    else root.classList.remove('high-contrast');
 
-    // Font Size
-    if (settings.fontSize === 'large') {
-      root.classList.add('font-large');
-    } else {
-      root.classList.remove('font-large');
-    }
+    if (settings.fontSize === 'large') root.classList.add('font-large');
+    else root.classList.remove('font-large');
 
-    // RahBizzy Theme
-    // Check if changed
-    if (prevRahBizzyTheme.current !== settings.rahBizzyTheme) {
+    // Check for theme changes to trigger transition
+    if (prevRahBizzyTheme.current !== settings.rahBizzyTheme || prevAccentTheme.current !== settings.siteThemeAccent) {
       triggerThemeTransition();
       prevRahBizzyTheme.current = settings.rahBizzyTheme;
+      prevAccentTheme.current = settings.siteThemeAccent;
     }
 
-    if (settings.rahBizzyTheme) {
-      root.classList.add('rahbizzy-theme');
-    } else {
-      root.classList.remove('rahbizzy-theme');
-    }
+    if (settings.rahBizzyTheme) root.classList.add('rahbizzy-theme');
+    else root.classList.remove('rahbizzy-theme');
 
   }, [settings]);
 
-  // HOF Theme class
   useEffect(() => {
     document.body.classList.remove('theme-hof');
     if (activeTab === 'hall-of-fame') {
@@ -113,24 +94,56 @@ const AppContent: React.FC = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  // Helper to convert hex to RGB for CSS variables
+  const getRgb = (hex: string) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r}, ${g}, ${b}`;
+  };
+
+  // Determine current accent hex for global injection
+  const accentHex = colors.hex;
+  const isMonochrome = settings.siteThemeAccent === "monochrome";
+  const monochromeHex = theme === 'dark' ? '#ffffff' : '#09090b';
+  const effectiveAccent = isMonochrome ? monochromeHex : accentHex;
+  const accentRgb = getRgb(effectiveAccent);
+
+  // Intensity capping for bright themes
+  const isBright = ['citrine', 'aquamarine'].includes(settings.siteThemeAccent);
+  const fluidOpacity = isBright ? '0.35' : '0.8';
+
   return (
-    <div className="min-h-screen transition-colors duration-300">
-      {/* Dynamic Theme Variables */}
+    <div className="min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300 flex flex-col">
       <style>{`
         :root {
-          --accent: #D60A07;
-          --accent-soft: rgba(214, 10, 7, 0.05);
-          --accent-soft-dark: rgba(214, 10, 7, 0.10);
-          --accent-shadow: rgba(214, 10, 7, 0.05);
-        }
-        .rahbizzy-theme {
-          --accent: #3B82F6 !important;
-          --accent-soft: rgba(59, 130, 246, 0.05) !important;
-          --accent-soft-dark: rgba(59, 130, 246, 0.10) !important;
-          --accent-shadow: rgba(59, 130, 246, 0.05) !important;
+          --accent: ${effectiveAccent};
+          --accent-rgb: ${accentRgb};
+          --accent-soft: rgba(${accentRgb}, 0.05);
+          --accent-soft-dark: rgba(${accentRgb}, 0.10);
+          --accent-shadow: rgba(${accentRgb}, 0.05);
+          --fluid-opacity: ${fluidOpacity};
         }
         
-        /* Smooth Theme Transition Class */
+        /* Apply dynamic accent to all elements using the variable */
+        .rahbizzy-theme {
+          --accent: #3B82F6 !important;
+          --accent-rgb: 59, 130, 246 !important;
+        }
+        
+        /* Overrides for dynamic themes if using monochrome */
+        ${isMonochrome ? `
+          ::selection {
+            background: ${monochromeHex} !important;
+            color: ${theme === 'dark' ? '#000' : '#fff'} !important;
+          }
+        ` : `
+          ::selection {
+            background: ${effectiveAccent} !important;
+            color: white !important;
+          }
+        `}
+
         .theme-transition,
         .theme-transition *,
         .theme-transition ::before,
@@ -145,7 +158,6 @@ const AppContent: React.FC = () => {
         }
       `}</style>
 
-      {/* Global Style Overrides based on Settings */}
       {settings.reducedMotion && (
         <style>{`
           *, ::before, ::after {
@@ -153,63 +165,6 @@ const AppContent: React.FC = () => {
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
             scroll-behavior: auto !important;
-          }
-        `}</style>
-      )}
-
-      {settings.highContrast && (
-        <style>{`
-          .high-contrast {
-            --tw-text-opacity: 1 !important;
-          }
-          /* Light Mode Overrides */
-          .high-contrast .text-zinc-400, 
-          .high-contrast .text-zinc-500, 
-          .high-contrast .text-zinc-600 {
-            color: #18181b !important; /* zinc-900 */
-          }
-          .high-contrast .border-zinc-100, 
-          .high-contrast .border-zinc-200 {
-            border-color: #a1a1aa !important; /* zinc-400 */
-          }
-          .high-contrast .bg-zinc-50 {
-            background-color: #f4f4f5 !important; /* zinc-100 */
-          }
-
-          /* Dark Mode Overrides */
-          .dark.high-contrast .text-zinc-400, 
-          .dark.high-contrast .text-zinc-500, 
-          .dark.high-contrast .text-zinc-600 {
-            color: #f4f4f5 !important; /* zinc-100 */
-          }
-          .dark.high-contrast .border-zinc-800, 
-          .dark.high-contrast .border-zinc-700 {
-            border-color: #71717a !important; /* zinc-500 */
-          }
-          .dark.high-contrast .bg-zinc-900 {
-            background-color: #09090b !important; /* zinc-950 for deeper contrast against content */
-          }
-        `}</style>
-      )}
-
-      {settings.fontSize === 'large' && (
-        <style>{`
-          html.font-large {
-            font-size: 112.5%; /* Approx 18px base */
-          }
-        `}</style>
-      )}
-      
-      {settings.rahBizzyTheme && (
-        <style>{`
-          ::selection {
-            background: #3B82F6 !important;
-            color: white !important;
-          }
-          /* Override HOF selection if RahBizzy is active */
-          .theme-hof ::selection {
-            background: #3B82F6 !important;
-            color: white !important;
           }
         `}</style>
       )}
@@ -224,24 +179,26 @@ const AppContent: React.FC = () => {
         onToggleTheme={toggleTheme}
       />
 
-      <AnimatePresence mode="wait">
-        {activeTab === 'home' ? (
-          <RouteTransition key="home">
-            <LandingPage 
-              onSearchTrigger={() => {}} // Legacy prop handler if needed by LandingPage, but functionality moved to Navbar
-              onTabChange={setActiveTab}
-            />
-          </RouteTransition>
-        ) : (
-          <RouteTransition key={activeTab}>
-            <TabPage 
-              tabId={activeTab} 
-              onBack={() => setActiveTab('home')} 
-              onTabChange={setActiveTab}
-            />
-          </RouteTransition>
-        )}
-      </AnimatePresence>
+      <div className="relative flex-1">
+        <AnimatePresence mode="wait">
+          {activeTab === 'home' ? (
+            <RouteTransition key="home">
+              <LandingPage 
+                onSearchTrigger={() => {}} 
+                onTabChange={setActiveTab}
+              />
+            </RouteTransition>
+          ) : (
+            <RouteTransition key={activeTab}>
+              <TabPage 
+                tabId={activeTab} 
+                onBack={() => setActiveTab('home')} 
+                onTabChange={setActiveTab}
+              />
+            </RouteTransition>
+          )}
+        </AnimatePresence>
+      </div>
       
       <ScrollToTopButton />
     </div>
