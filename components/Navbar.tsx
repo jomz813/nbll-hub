@@ -383,7 +383,6 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
 
           <AnimatePresence>
             {isSearchOpen && (
-              /* DO add comment above each fix. Fix: Use motion.input instead of motion.div for input element to correctly accept input props like type, value, etc. */
               <motion.input
                 ref={inputRef}
                 initial={{ opacity: 0 }}
@@ -486,7 +485,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
   const isHomeLightMobile = isHome && theme === 'light' && window.innerWidth < 768;
 
   return (
-    <nav className={`${stickyClass} inset-x-0 mx-auto z-[80] w-full max-w-6xl px-4 md:px-6 transition-all duration-300`}>
+    <nav className={`${stickyClass} inset-x-0 mx-auto z-[80] w-full px-4 md:px-6 transition-all duration-300`}>
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
@@ -499,285 +498,291 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
         )}
       </AnimatePresence>
 
-      <div className="relative flex items-center w-full gap-3 md:gap-4">
-        <motion.div 
-          layout
-          animate={{ 
-            height: isMenuOpen ? 'auto' : '4rem',
-            borderRadius: isMenuOpen ? '2.5rem' : '2rem'
-          }}
-          transition={{ type: "spring", stiffness: 350, damping: 35, mass: 1 }}
-          className={`
-            flex-1 relative ${backgroundClasses} border ${accentBorder}
-            shadow-xl md:shadow-[0_45px_100px_-15px_rgba(0,0,0,0.65)]
-            overflow-hidden md:overflow-visible flex flex-col
-            ${isMenuOpen ? 'md:bg-white/100 dark:md:bg-zinc-950/100' : ''}
-            /* Liquid Glass Effect Styles */
-            ring-white/10 dark:ring-white/5
-          `}
-          style={window.innerWidth < 768 ? {
-            backgroundColor: isHomeLightMobile ? 'rgba(255, 255, 255, 0.75)' : (theme === 'dark' ? 'rgba(9, 9, 11, 0.45)' : 'rgba(255, 255, 255, 0.4)'),
-            backdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
-            WebkitBackdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
-            border: isHomeLightMobile 
-                ? '1px solid rgba(0, 0, 0, 0.15)' 
-                : `1px solid color-mix(in srgb, var(--accent) 20%, transparent)`,
-            ...(isMenuOpen ? {
-                boxShadow: isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                border: isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid color-mix(in srgb, var(--accent) 30%, transparent)`
-            } : {})
-          } : {}}
-        >
-          {/* Noise Texture Overlay for liquid glass effect (Visible on mobile both states) */}
-          <div 
-            className="md:hidden absolute inset-0 z-0 pointer-events-none opacity-[0.02] select-none"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+      <div className="relative flex items-center justify-center w-full">
+        {/* Main Navbar Pill Container - Exactly matches site content width */}
+        <div className="w-full max-w-6xl relative">
+          <motion.div 
+            layout
+            animate={{ 
+              height: isMenuOpen ? 'auto' : '4rem',
+              borderRadius: isMenuOpen ? '2.5rem' : '2rem'
             }}
-          />
-
-          {/* Top Edge Specular Highlight (Liquid Glass) */}
-          <div className={`md:hidden absolute top-0 left-1/2 -translate-x-1/2 w-[85%] h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent z-20 pointer-events-none transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-20'}`} />
-          
-          <div className="h-16 shrink-0 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center justify-between md:justify-items-stretch px-8 w-full relative z-30">
-            
-            <div className="relative flex items-center justify-center md:justify-self-start">
-              <button 
-                onClick={handleLogoClick}
-                className={`${isHomeLightMobile ? 'text-zinc-950' : accentText} text-2xl font-black tracking-tighter transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-110 active:scale-95 shrink-0 relative z-10 ${isPopping ? 'scale-105' : ''}`}
-              >
-                nbll
-              </button>
-              
-              <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">
-                {particles.map(p => (
-                  <div 
-                    key={p.id}
-                    className="absolute rounded-full"
-                    style={{
-                      width: `${p.size}px`,
-                      height: `${p.size}px`,
-                      backgroundColor: p.color,
-                      '--tx': `${p.tx}px`,
-                      '--ty': `${p.ty}px`,
-                      animation: `particle-burst ${p.duration}ms cubic-bezier(0.16, 1, 0.3, 1) forwards`
-                    } as React.CSSProperties}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className={`hidden md:flex items-center gap-4 lg:gap-8 justify-self-center px-4 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'} transition-opacity duration-200`}>
-              {tabs.map((tab) => {
-                const active = isTabActive(tab.name);
-                return (
-                  <button
-                    key={tab.name}
-                    onClick={() => handleTabClick(tab.name)}
-                    className={`
-                      text-sm font-bold transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 active:scale-95 tracking-wide whitespace-nowrap relative py-1
-                      ${active ? accentText : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'}
-                    `}
-                  >
-                    {tab.label}
-                    {active && (
-                      <motion.div 
-                        layoutId="nav-underline"
-                        className={`absolute left-0 right-0 -bottom-1 h-0.5 ${accentBg} rounded-full`}
-                        transition={
-                          settings.reducedMotion 
-                            ? { duration: 0 } 
-                            : { type: "spring", stiffness: 500, damping: 35, mass: 0.6 }
-                        }
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="hidden md:flex items-center shrink-0 gap-3 justify-self-end">
-              <motion.button
-                layout={!reducedMotion}
-                onClick={onToggleTheme}
-                className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                aria-label="Toggle dark mode"
-              >
-                {theme === 'dark' ? (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="5" />
-                    <line x1="12" y1="1" x2="12" y2="3" />
-                    <line x1="12" y1="21" x2="12" y2="23" />
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                    <line x1="1" y1="12" x2="3" y2="12" />
-                    <line x1="21" y1="12" x2="23" y2="12" />
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                  </svg>
-                )}
-              </motion.button>
-
-              {renderSearch()}
-            </div>
-
-            <div className="flex md:hidden flex-1 justify-end items-center gap-4">
-              <div className="relative w-10 h-10">
-                <AnimatePresence mode="wait" initial={false}>
-                  {!isMenuOpen ? (
-                    <motion.button 
-                      key="theme-toggle"
-                      initial={{ opacity: 0, scale: 0.7, rotate: -45 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.7, rotate: 45 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      onClick={onToggleTheme}
-                      className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
-                      aria-label="Toggle dark mode"
-                    >
-                      {theme === 'dark' ? (
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="5" />
-                          <line x1="12" y1="1" x2="12" y2="3" />
-                          <line x1="12" y1="21" x2="12" y2="23" />
-                          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                          <line x1="1" y1="12" x2="3" y2="12" />
-                          <line x1="21" y1="12" x2="23" y2="12" />
-                          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                        </svg>
-                      )}
-                    </motion.button>
-                  ) : (
-                    <motion.button 
-                      key="settings-toggle"
-                      initial={{ opacity: 0, scale: 0.7, rotate: 45 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.7, rotate: -45 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      onClick={onOpenSettings}
-                      className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
-                      aria-label="Open settings"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="2" y1="14" x2="6" y2="14" /><line x1="10" y1="8" x2="14" y2="8" /><line x1="18" y1="16" x2="22" y2="16" />
-                      </svg>
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-              </div>
-              
-              <button 
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`w-10 h-10 flex items-center justify-center rounded-full ${isHomeLightMobile ? 'text-zinc-950' : accentText} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-90`}
-                aria-label="Toggle menu"
-              >
-                {isMenuOpen ? (
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="4" y1="8" x2="20" y2="8"></line>
-                    <line x1="4" y1="16" x2="20" y2="16"></line>
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
-                className="w-full flex flex-col md:hidden pb-4 relative z-30"
-              >
-                <div className={`w-full border-t mb-2 ${isHomeLightMobile ? 'border-zinc-200' : 'border-zinc-100/50 dark:border-zinc-800/30'}`} />
-                <nav className="flex flex-col relative">
-                  {tabs.map((tab, idx) => {
-                    const active = isTabActive(tab.name);
-                    return (
-                      <button
-                        key={tab.name}
-                        onClick={() => handleTabClick(tab.name)}
-                        className={`
-                          relative w-full h-[60px] flex items-center justify-between px-8 text-left transition-all duration-300 outline-none active:bg-zinc-100/40 dark:active:bg-zinc-900/40 group
-                          ${active ? 'bg-zinc-500/5 dark:bg-zinc-400/5' : ''}
-                          ${idx !== tabs.length - 1 ? (isHomeLightMobile ? 'border-b border-zinc-200' : 'border-b border-zinc-100/30 dark:border-zinc-800/20') : ''}
-                        `}
-                      >
-                        {active && (
-                          <motion.div
-                            layoutId="mobile-active-indicator"
-                            className={`absolute left-0 w-[5px] h-[32px] ${accentBg} rounded-r-full z-20`}
-                            style={{ boxShadow: `0 0 12px color-mix(in srgb, var(--accent) 30%, transparent)` }}
-                            initial={{ opacity: 0, scaleY: 0.5 }}
-                            animate={{ opacity: 1, scaleY: 1 }}
-                            exit={{ opacity: 0, scaleY: 0.5 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                          />
-                        )}
-
-                        <span className={`
-                          text-base font-black tracking-tight transition-colors duration-300
-                          ${active 
-                             ? (settings.rahBizzyTheme ? 'text-[#3B82F6]' : (isHomeLightMobile ? 'text-zinc-950' : 'text-zinc-900 dark:text-white')) 
-                             : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-400 dark:text-zinc-500')}
-                        `}>
-                          {tab.label}
-                        </span>
-
-                        <svg 
-                          className={`w-4 h-4 transition-all duration-300 ${active ? (isHomeLightMobile ? 'text-zinc-950' : accentText) : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-200 dark:text-zinc-800 group-hover:text-zinc-400')}`} 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          strokeWidth="3.5" 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {/* Mobile Sheen Element (Liquid Glass Specular) - Persistent but faint on mobile */}
-          <div className={`md:hidden absolute inset-0 z-10 pointer-events-none transition-opacity duration-700 ${isMenuOpen ? 'opacity-100' : 'opacity-40'}`}
-               style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 100%)' }} />
-        </motion.div>
-
-        <button 
-          onClick={onOpenSettings}
-          className="hidden lg:flex items-center justify-center w-[44px] h-[44px] rounded-full shadow-sm border transition-all duration-300 active:scale-95 overflow-visible shrink-0
-            bg-white dark:bg-zinc-950 
-            text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 
-            hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
-          aria-label="Settings"
-        >
-          <svg 
-            width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="overflow-visible"
+            transition={{ type: "spring", stiffness: 350, damping: 35, mass: 1 }}
+            className={`
+              relative ${backgroundClasses} border ${accentBorder}
+              shadow-xl md:shadow-[0_45px_100px_-15px_rgba(0,0,0,0.65)]
+              overflow-hidden md:overflow-visible flex flex-col
+              ${isMenuOpen ? 'md:bg-white/100 dark:md:bg-zinc-950/100' : ''}
+              /* Liquid Glass Effect Styles */
+              ring-white/10 dark:ring-white/5
+            `}
+            style={window.innerWidth < 768 ? {
+              backgroundColor: isHomeLightMobile ? 'rgba(255, 255, 255, 0.75)' : (theme === 'dark' ? 'rgba(9, 9, 11, 0.45)' : 'rgba(255, 255, 255, 0.4)'),
+              backdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
+              WebkitBackdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
+              border: isHomeLightMobile 
+                  ? '1px solid rgba(0, 0, 0, 0.15)' 
+                  : `1px solid color-mix(in srgb, var(--accent) 20%, transparent)`,
+              ...(isMenuOpen ? {
+                  boxShadow: isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                  border: isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid color-mix(in srgb, var(--accent) 30%, transparent)`
+              } : {})
+            } : {}}
           >
-             <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="2" y1="14" x2="6" y2="14" /><line x1="10" y1="8" x2="14" y2="8" /><line x1="18" y1="16" x2="22" y2="16" />
-          </svg>
-        </button>
+            {/* Noise Texture Overlay for liquid glass effect (Visible on mobile both states) */}
+            <div 
+              className="md:hidden absolute inset-0 z-0 pointer-events-none opacity-[0.02] select-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+              }}
+            />
+
+            {/* Top Edge Specular Highlight (Liquid Glass) */}
+            <div className={`md:hidden absolute top-0 left-1/2 -translate-x-1/2 w-[85%] h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent z-20 pointer-events-none transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-20'}`} />
+            
+            <div className="h-16 shrink-0 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center justify-between md:justify-items-stretch px-8 w-full relative z-30">
+              
+              <div className="relative flex items-center justify-center md:justify-self-start">
+                <button 
+                  onClick={handleLogoClick}
+                  className={`${isHomeLightMobile ? 'text-zinc-950' : accentText} text-2xl font-black tracking-tighter transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-110 active:scale-95 shrink-0 relative z-10 ${isPopping ? 'scale-105' : ''}`}
+                >
+                  nbll
+                </button>
+                
+                <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">
+                  {particles.map(p => (
+                    <div 
+                      key={p.id}
+                      className="absolute rounded-full"
+                      style={{
+                        width: `${p.size}px`,
+                        height: `${p.size}px`,
+                        backgroundColor: p.color,
+                        '--tx': `${p.tx}px`,
+                        '--ty': `${p.ty}px`,
+                        animation: `particle-burst ${p.duration}ms cubic-bezier(0.16, 1, 0.3, 1) forwards`
+                      } as React.CSSProperties}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className={`hidden md:flex items-center gap-4 lg:gap-8 justify-self-center px-4 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'} transition-opacity duration-200`}>
+                {tabs.map((tab) => {
+                  const active = isTabActive(tab.name);
+                  return (
+                    <button
+                      key={tab.name}
+                      onClick={() => handleTabClick(tab.name)}
+                      className={`
+                        text-sm font-bold transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 active:scale-95 tracking-wide whitespace-nowrap relative py-1
+                        ${active ? accentText : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'}
+                      `}
+                    >
+                      {tab.label}
+                      {active && (
+                        <motion.div 
+                          layoutId="nav-underline"
+                          className={`absolute left-0 right-0 -bottom-1 h-0.5 ${accentBg} rounded-full`}
+                          transition={
+                            settings.reducedMotion 
+                              ? { duration: 0 } 
+                              : { type: "spring", stiffness: 500, damping: 35, mass: 0.6 }
+                          }
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="hidden md:flex items-center shrink-0 gap-3 justify-self-end">
+                <motion.button
+                  layout={!reducedMotion}
+                  onClick={onToggleTheme}
+                  className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  aria-label="Toggle dark mode"
+                >
+                  {theme === 'dark' ? (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="5" />
+                      <line x1="12" y1="1" x2="12" y2="3" />
+                      <line x1="12" y1="21" x2="12" y2="23" />
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                      <line x1="1" y1="12" x2="3" y2="12" />
+                      <line x1="21" y1="12" x2="23" y2="12" />
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                  )}
+                </motion.button>
+
+                {renderSearch()}
+              </div>
+
+              <div className="flex md:hidden flex-1 justify-end items-center gap-4">
+                <div className="relative w-10 h-10">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {!isMenuOpen ? (
+                      <motion.button 
+                        key="theme-toggle"
+                        initial={{ opacity: 0, scale: 0.7, rotate: -45 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        exit={{ opacity: 0, scale: 0.7, rotate: 45 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        onClick={onToggleTheme}
+                        className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+                        aria-label="Toggle dark mode"
+                      >
+                        {theme === 'dark' ? (
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="5" />
+                            <line x1="12" y1="1" x2="12" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="23" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                            <line x1="1" y1="12" x2="3" y2="12" />
+                            <line x1="21" y1="12" x2="23" y2="12" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                          </svg>
+                        )}
+                      </motion.button>
+                    ) : (
+                      <motion.button 
+                        key="settings-toggle"
+                        initial={{ opacity: 0, scale: 0.7, rotate: 45 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        exit={{ opacity: 0, scale: 0.7, rotate: -45 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        onClick={onOpenSettings}
+                        className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+                        aria-label="Open settings"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="2" y1="14" x2="6" y2="14" /><line x1="10" y1="8" x2="14" y2="8" /><line x1="18" y1="16" x2="22" y2="16" />
+                        </svg>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+                
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full ${isHomeLightMobile ? 'text-zinc-950' : accentText} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-90`}
+                  aria-label="Toggle menu"
+                >
+                  {isMenuOpen ? (
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="4" y1="8" x2="20" y2="8"></line>
+                      <line x1="4" y1="16" x2="20" y2="16"></line>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
+                  className="w-full flex flex-col md:hidden pb-4 relative z-30"
+                >
+                  <div className={`w-full border-t mb-2 ${isHomeLightMobile ? 'border-zinc-200' : 'border-zinc-100/50 dark:border-zinc-800/30'}`} />
+                  <nav className="flex flex-col relative">
+                    {tabs.map((tab, idx) => {
+                      const active = isTabActive(tab.name);
+                      return (
+                        <button
+                          key={tab.name}
+                          onClick={() => handleTabClick(tab.name)}
+                          className={`
+                            relative w-full h-[60px] flex items-center justify-between px-8 text-left transition-all duration-300 outline-none active:bg-zinc-100/40 dark:active:bg-zinc-900/40 group
+                            ${active ? 'bg-zinc-500/5 dark:bg-zinc-400/5' : ''}
+                            ${idx !== tabs.length - 1 ? (isHomeLightMobile ? 'border-b border-zinc-200' : 'border-b border-zinc-100/30 dark:border-zinc-800/20') : ''}
+                          `}
+                        >
+                          {active && (
+                            <motion.div
+                              layoutId="mobile-active-indicator"
+                              className={`absolute left-0 w-[5px] h-[32px] ${accentBg} rounded-r-full z-20`}
+                              style={{ boxShadow: `0 0 12px color-mix(in srgb, var(--accent) 30%, transparent)` }}
+                              initial={{ opacity: 0, scaleY: 0.5 }}
+                              animate={{ opacity: 1, scaleY: 1 }}
+                              exit={{ opacity: 0, scaleY: 0.5 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                            />
+                          )}
+
+                          <span className={`
+                            text-base font-black tracking-tight transition-colors duration-300
+                            ${active 
+                               ? (settings.rahBizzyTheme ? 'text-[#3B82F6]' : (isHomeLightMobile ? 'text-zinc-950' : 'text-zinc-900 dark:text-white')) 
+                               : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-400 dark:text-zinc-500')}
+                          `}>
+                            {tab.label}
+                          </span>
+
+                          <svg 
+                            className={`w-4 h-4 transition-all duration-300 ${active ? (isHomeLightMobile ? 'text-zinc-950' : accentText) : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-200 dark:text-zinc-800 group-hover:text-zinc-400')}`} 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="3.5" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                          </svg>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {/* Mobile Sheen Element (Liquid Glass Specular) - Persistent but faint on mobile */}
+            <div className={`md:hidden absolute inset-0 z-10 pointer-events-none transition-opacity duration-700 ${isMenuOpen ? 'opacity-100' : 'opacity-40'}`}
+                 style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 100%)' }} />
+          </motion.div>
+
+          {/* Desktop Settings Button - Positioned absolute in the right gutter */}
+          <div className="hidden lg:flex absolute left-full ml-4 md:ml-6 top-1/2 -translate-y-1/2 items-center justify-center">
+            <button 
+              onClick={onOpenSettings}
+              className="flex items-center justify-center w-[44px] h-[44px] rounded-full shadow-sm border transition-all duration-300 active:scale-95 overflow-visible shrink-0
+                bg-white dark:bg-zinc-950 
+                text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 
+                hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
+              aria-label="Settings"
+            >
+              <svg 
+                width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="overflow-visible"
+              >
+                 <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="2" y1="14" x2="6" y2="14" /><line x1="10" y1="8" x2="14" y2="8" /><line x1="18" y1="16" x2="22" y2="16" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
       
       <style>{`
