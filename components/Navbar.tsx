@@ -383,6 +383,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
 
           <AnimatePresence>
             {isSearchOpen && (
+              /* DO add comment above each fix. Fix: Use motion.input instead of motion.div for input element to correctly accept input props like type, value, etc. */
               <motion.input
                 ref={inputRef}
                 initial={{ opacity: 0 }}
@@ -485,7 +486,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
   const isHomeLightMobile = isHome && theme === 'light' && window.innerWidth < 768;
 
   return (
-    <nav className={`${stickyClass} left-1/2 -translate-x-1/2 z-[80] w-full max-w-[1200px] px-4 md:px-6 transition-all duration-300`}>
+    <nav className={`${stickyClass} inset-x-0 mx-auto z-[80] w-full max-w-6xl px-4 md:px-6 transition-all duration-300`}>
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
@@ -498,7 +499,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
         )}
       </AnimatePresence>
 
-      <div className="relative flex items-center w-full">
+      <div className="relative flex items-center w-full gap-3 md:gap-4">
         <motion.div 
           layout
           animate={{ 
@@ -509,7 +510,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
           className={`
             flex-1 relative ${backgroundClasses} border ${accentBorder}
             shadow-xl md:shadow-[0_45px_100px_-15px_rgba(0,0,0,0.65)]
-            lg:mx-16 overflow-hidden md:overflow-visible flex flex-col
+            overflow-hidden md:overflow-visible flex flex-col
             ${isMenuOpen ? 'md:bg-white/100 dark:md:bg-zinc-950/100' : ''}
             /* Liquid Glass Effect Styles */
             ring-white/10 dark:ring-white/5
@@ -765,7 +766,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
 
         <button 
           onClick={onOpenSettings}
-          className="hidden lg:flex absolute right-0 items-center justify-center w-[44px] h-[44px] rounded-full shadow-sm border transition-all duration-300 active:scale-95 overflow-visible
+          className="hidden lg:flex items-center justify-center w-[44px] h-[44px] rounded-full shadow-sm border transition-all duration-300 active:scale-95 overflow-visible shrink-0
             bg-white dark:bg-zinc-950 
             text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 
             hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"

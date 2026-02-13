@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
@@ -20,8 +20,8 @@ const AchievementsPage: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
   
-  // Animation state
-  const [isAnimating, setIsAnimating] = useState(false);
+  // Single source of truth for the processing state
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
 
   const pillAreaRef = useRef<HTMLDivElement>(null);
@@ -39,11 +39,6 @@ const AchievementsPage: React.FC = () => {
         ]);
         setPlayers(stats);
         setAwardsData(awards);
-        
-        if (selectedPlayer) {
-          const match = stats.find(p => p.player.toLowerCase() === selectedPlayer.player.toLowerCase());
-          setSelectedPlayer(match || null);
-        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -63,9 +58,10 @@ const AchievementsPage: React.FC = () => {
     return players.filter(p => p.player.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 8);
   }, [searchQuery, players]);
 
+  // Derived state for badges based on selection
   const playerAchievements = useMemo(() => {
-    if (!selectedPlayer) return [];
-    const awards = awardsData?.byPlayer[selectedPlayer.player.toLowerCase()];
+    if (!selectedPlayer || !awardsData) return [];
+    const awards = awardsData.byPlayer[selectedPlayer.player.toLowerCase()];
     return currentBadges.map(ach => ({
       achievement: ach,
       isEarned: ach.check(selectedPlayer, awards)
@@ -77,32 +73,61 @@ const AchievementsPage: React.FC = () => {
     return getTopBadgeEarners(players, currentBadges, awardsData?.byPlayer);
   }, [players, awardsData, loading, currentBadges]);
 
-  const handleSelectPlayer = (p: PlayerStats) => {
-    if (isAnimating) return;
-    if (selectedPlayer?.player === p.player) return;
-
-    // Reset visibility for stagger re-trigger
-    setShowBadges(false);
+  /**
+   * Unified selection logic with processing guards to prevent race conditions.
+   */
+  const selectPlayerInternal = useCallback((p: PlayerStats | null) => {
+    if (isProcessing) return;
     
-    // If reduced motion is on, skip the move animation
-    if (!settings.reducedMotion) {
-      setIsAnimating(true);
-    } else {
-      setShowBadges(true);
+    // Prevent immediate re-selection logic but allow if player is actually different
+    if (p && selectedPlayer?.player === p.player) {
+      setIsSearchOpen(false);
+      return;
     }
 
+    setIsProcessing(true);
+    setShowBadges(false);
     setSelectedPlayer(p);
     setSearchQuery('');
     setIsSearchOpen(false);
-  };
 
-  const handleClearPlayer = () => {
-    if (isAnimating) return;
-    setSelectedPlayer(null);
-    setShowBadges(false);
-    setSearchQuery('');
-    if (isSearchOpen) setIsSearchOpen(false);
-  };
+    // If reduced motion is active or we are clearing, skip the staggered entry wait
+    if (settings.reducedMotion || !p) {
+      setShowBadges(!!p);
+      setIsProcessing(false);
+    }
+    // Otherwise, we rely on the layout animation callback or a fallback timeout
+    // to re-enable the UI and show the badges.
+  }, [isProcessing, selectedPlayer, settings.reducedMotion]);
+
+  const handleSelectPlayer = (p: PlayerStats) => selectPlayerInternal(p);
+  const handleClearPlayer = () => selectPlayerInternal(null);
+
+  const handleRandomPlayer = useCallback(() => {
+    if (isProcessing || players.length === 0) return;
+    
+    // Pick a random player that isn't the current one if possible
+    let pool = players;
+    if (selectedPlayer) {
+      pool = players.filter(p => p.player !== selectedPlayer.player);
+    }
+    
+    const randomIdx = Math.floor(Math.random() * (pool.length || players.length));
+    const selection = pool.length > 0 ? pool[randomIdx] : players[randomIdx];
+    
+    if (selection) handleSelectPlayer(selection);
+  }, [isProcessing, players, selectedPlayer, handleSelectPlayer]);
+
+  // Fallback cleanup for the "processing" lock in case layout callbacks don't fire
+  useEffect(() => {
+    if (isProcessing) {
+      const timer = setTimeout(() => {
+        setIsProcessing(false);
+        if (selectedPlayer) setShowBadges(true);
+      }, 600); // Slightly longer than the layout transition
+      return () => clearTimeout(timer);
+    }
+  }, [isProcessing, selectedPlayer]);
 
   useEffect(() => {
     if (isSearchOpen) {
@@ -125,9 +150,9 @@ const AchievementsPage: React.FC = () => {
     };
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (pillAreaRef.current && !pillAreaRef.current.contains(target) && 
-          mobileSearchContainerRef.current && !mobileSearchContainerRef.current.contains(target)) {
-        if (isSearchOpen) setIsSearchOpen(false);
+      const isSearchArea = (pillAreaRef.current?.contains(target)) || (mobileSearchContainerRef.current?.contains(target));
+      if (isSearchOpen && !isSearchArea) {
+        setIsSearchOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -152,16 +177,6 @@ const AchievementsPage: React.FC = () => {
     return sorted;
   }, [currentBadges]);
 
-  // Fix: added 'as any' cast to ease array to fix "number[] not assignable to Easing" error
-  const selectionTransition = {
-    layout: {
-      duration: 0.45,
-      ease: [0.16, 1, 0.3, 1] as any
-    },
-    opacity: { duration: 0.2 }
-  };
-
-  // Framer Motion Variants
   const badgeContainerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -173,7 +188,6 @@ const AchievementsPage: React.FC = () => {
     }
   };
 
-  // Fix: added 'as any' cast to ease array in Variants definition to fix type mismatch
   const badgeItemVariants = {
     hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
     show: { 
@@ -205,7 +219,6 @@ const AchievementsPage: React.FC = () => {
               opacity: isSearchOpen && window.innerWidth <= 768 ? 0 : 1,
               x: isSearchOpen && window.innerWidth <= 768 ? -20 : 0
             }}
-            // Fix: added 'as any' to ease array to fix reported line 400 error
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as any }}
             className={`text-4xl md:text-6xl font-black tracking-tighter shrink-0 select-none pointer-events-none md:pointer-events-auto ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}
           >
@@ -217,7 +230,6 @@ const AchievementsPage: React.FC = () => {
               <motion.div 
                 initial={false}
                 animate={{ width: isSearchOpen ? 'calc(100vw - 32px)' : '3rem' }}
-                // Fix: added 'as any' to ease array for consistency
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as any }}
                 className={`flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-12 shadow-sm relative z-20 overflow-hidden`}
               >
@@ -252,7 +264,6 @@ const AchievementsPage: React.FC = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    // Fix: added 'as any' cast for type compatibility
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as any }}
                     className="absolute top-full right-0 mt-3 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl z-50 overflow-hidden"
                   >
@@ -279,19 +290,16 @@ const AchievementsPage: React.FC = () => {
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button 
               onClick={handleClearPlayer}
-              disabled={!selectedPlayer || isAnimating}
-              className={`flex-1 h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all whitespace-nowrap px-2 ${(!selectedPlayer || isAnimating) ? 'opacity-30 cursor-not-allowed' : ''}`}
+              disabled={!selectedPlayer || isProcessing}
+              className={`flex-1 h-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all whitespace-nowrap px-2 ${(!selectedPlayer || isProcessing) ? 'opacity-30 cursor-not-allowed' : ''}`}
             >
               clear player
             </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button 
-              onClick={() => {
-                const randomIdx = Math.floor(Math.random() * players.length);
-                if (players[randomIdx]) handleSelectPlayer(players[randomIdx]);
-              }}
+              onClick={handleRandomPlayer}
               className="w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-90 transition-all shrink-0"
-              disabled={isAnimating}
+              disabled={isProcessing}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
@@ -303,11 +311,8 @@ const AchievementsPage: React.FC = () => {
         <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1 gap-2.5 z-50">
           <div className="flex items-center bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-full overflow-hidden shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300">
             <button 
-              onClick={() => {
-                const randomIdx = Math.floor(Math.random() * players.length);
-                if (players[randomIdx]) handleSelectPlayer(players[randomIdx]);
-              }}
-              disabled={isAnimating}
+              onClick={handleRandomPlayer}
+              disabled={isProcessing}
               className={`w-10 h-full flex items-center justify-center ${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 group/btn`}
               title="random"
             >
@@ -318,8 +323,8 @@ const AchievementsPage: React.FC = () => {
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
             <button 
               onClick={handleClearPlayer}
-              disabled={!selectedPlayer || isAnimating}
-              className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${selectedPlayer && !isAnimating ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`}
+              disabled={!selectedPlayer || isProcessing}
+              className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${selectedPlayer && !isProcessing ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`}
               title="clear player"
             >
               <svg className={`w-4 h-4 transition-all duration-300 ${selectedPlayer ? 'group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -342,8 +347,8 @@ const AchievementsPage: React.FC = () => {
 
               <button
                 onClick={() => setIsSearchOpen(true)}
-                disabled={isAnimating}
-                className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${isAnimating ? 'opacity-30 pointer-events-none' : ''}`}
+                disabled={isProcessing}
+                className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${isProcessing ? 'opacity-30 pointer-events-none' : ''}`}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </button>
@@ -355,7 +360,6 @@ const AchievementsPage: React.FC = () => {
                   initial={{ opacity: 0, scaleX: 0.8 }}
                   animate={{ opacity: 1, scaleX: 1 }}
                   exit={{ opacity: 0, scaleX: 0.8 }}
-                  // Fix: added 'as any' cast for type compatibility in reported line 509 transition
                   transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] as any }}
                   style={{ transformOrigin: 'right center' }}
                   className="absolute inset-0 z-20 h-11 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 flex items-center bg-zinc-100 dark:bg-zinc-900 shadow-inner overflow-hidden"
@@ -411,10 +415,9 @@ const AchievementsPage: React.FC = () => {
             {selectedPlayer ? (
               <motion.div 
                 layoutId={!settings.reducedMotion ? "player-panel" : undefined}
-                // Fix: passed transition config with 'as any' to avoid type error on layout animation
                 transition={selectionTransitionConfig.layout}
                 onLayoutAnimationComplete={() => {
-                  setIsAnimating(false);
+                  setIsProcessing(false);
                   setShowBadges(true);
                 }}
                 className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-zinc-50/50 dark:bg-zinc-900/20 py-6 px-8 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 transition-colors min-h-[110px] overflow-hidden"
@@ -454,7 +457,7 @@ const AchievementsPage: React.FC = () => {
           <AnimatePresence mode="wait">
             {selectedPlayer && showBadges ? (
               <motion.div 
-                key="badges-grid"
+                key={`badges-${selectedPlayer.player}`}
                 variants={badgeContainerVariants}
                 initial="hidden"
                 animate="show"
@@ -504,7 +507,7 @@ const AchievementsPage: React.FC = () => {
                   );
                 })}
               </motion.div>
-            ) : !selectedPlayer && (
+            ) : !selectedPlayer && !isProcessing && (
               <motion.div 
                 key="earners-grid"
                 initial={{ opacity: 0 }}
@@ -521,13 +524,12 @@ const AchievementsPage: React.FC = () => {
                     <motion.button 
                       key={te.player} 
                       layoutId={!settings.reducedMotion ? "player-panel" : undefined}
-                      // Fix: added 'as any' cast for type compliance in layout transition
                       transition={selectionTransitionConfig.layout}
                       onClick={() => {
                         const match = players.find(p => p.player === te.player);
                         if (match) handleSelectPlayer(match);
                       }}
-                      className={`p-5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/50 hover:bg-white dark:hover:bg-zinc-900 hover:border-zinc-200 dark:hover:border-zinc-700 transition-all text-left group ${isAnimating ? 'pointer-events-none' : ''}`}
+                      className={`p-5 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/50 hover:bg-white dark:hover:bg-zinc-900 hover:border-zinc-200 dark:hover:border-zinc-700 transition-all text-left group ${isProcessing ? 'pointer-events-none' : ''}`}
                     >
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">#{idx + 1}</span>
