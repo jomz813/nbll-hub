@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchS11Stats, S11Row } from '../data/s11Stats';
 import { useSettings } from '../context/SettingsContext';
@@ -152,8 +151,8 @@ const S11StatsTable: React.FC<S11StatsTableProps> = ({ isEmbedded = false, seaso
   ];
 
   const containerClasses = isEmbedded 
-    ? "space-y-6 w-full overflow-x-hidden touch-pan-y" 
-    : "animate-page-enter pt-4 space-y-6 pb-20 w-full overflow-x-hidden touch-pan-y";
+    ? "md:space-y-6 w-full overflow-x-hidden touch-pan-y" 
+    : "animate-page-enter pt-4 md:space-y-6 pb-20 w-full overflow-x-hidden touch-pan-y";
 
   const StatGroup = ({ label, value }: { label: string, value: string | number }) => (
     <div className="flex items-center gap-1.5 whitespace-nowrap">

@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useSettings, SiteThemeAccent } from '../context/SettingsContext';
 
 interface SettingsModalProps {
@@ -24,229 +24,255 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (!isOpen) return null;
+  // Esc to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-end">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+  // Prevent scroll when open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
 
-      {/* Drawer */}
-      <div className="relative w-full max-w-md h-full bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col animate-slide-in-right">
-        <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md z-10">
-          <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">Settings</h2>
-          <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-            <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+  const reducedMotion = settings.reducedMotion;
+
+  const modalVariants: Variants = {
+    hidden: { 
+      opacity: isMobile ? 1 : 0, 
+      x: isMobile ? 0 : '100%',
+      y: isMobile ? '100%' : 0,
+      scale: 1,
+      transition: { duration: 0.25, ease: [0.32, 0, 0.67, 0] as any }
+    },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      y: 0, 
+      scale: 1,
+      transition: { 
+        duration: reducedMotion ? 0.05 : 0.35, 
+        ease: [0.16, 1, 0.3, 1] as any
+      }
+    }
+  };
+
+  const backdropVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.2 } }
+  };
+
+  const SettingRow = ({ label, desc, children, isLast = false, rightElement }: { label: string, desc?: string, children: React.ReactNode, isLast?: boolean, rightElement?: React.ReactNode }) => (
+    <div className={`flex flex-col py-4 ${!isLast ? 'border-b border-zinc-100/50 dark:border-zinc-800/30' : ''}`}>
+      <div className="flex items-center justify-between w-full mb-3">
+        <div className="space-y-0.5 pr-4">
+          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">{label}</p>
+          {desc && <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium leading-tight">{desc}</p>}
         </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-10 custom-scrollbar">
-          
-          {/* Site Color Themes */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Site Color Themes</h3>
-              <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                {THEME_OPTIONS.find(o => o.id === settings.siteThemeAccent)?.label || "Default"}
-              </span>
-            </div>
-            
-            <div className="flex flex-nowrap items-center justify-between gap-1 py-2 overflow-x-hidden">
-              {THEME_OPTIONS.map((option) => {
-                const isSelected = settings.siteThemeAccent === option.id;
-                
-                return (
-                  <button
-                    key={option.id}
-                    onClick={() => updateSettings({ siteThemeAccent: option.id })}
-                    className={`
-                      relative w-[34px] h-[34px] rounded-full transition-all duration-300 p-[2px] border-2 flex items-center justify-center flex-shrink-0
-                      ${isSelected 
-                        ? 'border-zinc-900 dark:border-zinc-100 scale-110 shadow-lg ring-4 ring-zinc-900/10 dark:ring-zinc-100/10 z-10' 
-                        : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:scale-105 active:scale-95 shadow-sm'}
-                    `}
-                    title={option.label}
-                  >
-                    <div 
-                      className="w-full h-full rounded-full border border-black/5 dark:border-white/10"
-                      style={{ backgroundColor: option.color }}
-                    />
-                    
-                    {isSelected && (
-                      <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-zinc-900 dark:bg-zinc-100 rounded-full flex items-center justify-center border-[1.5px] border-white dark:border-zinc-950 shadow-sm animate-pop-in">
-                        <svg className="w-2 h-2 text-white dark:text-zinc-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Appearance - Desktop Only */}
-          {!isMobile && (
-            <section className="space-y-4">
-              <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Appearance</h3>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="font-bold text-zinc-800 dark:text-zinc-200">Font Size</p>
-                  <p className="text-xs text-zinc-500">Adjust the global text size.</p>
-                </div>
-                <div className="flex bg-zinc-100 dark:bg-zinc-900 rounded-lg p-1">
-                  <button
-                    onClick={() => updateSettings({ fontSize: 'normal' })}
-                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${settings.fontSize === 'normal' ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-600'}`}
-                  >
-                    Normal
-                  </button>
-                  <button
-                    onClick={() => updateSettings({ fontSize: 'large' })}
-                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${settings.fontSize === 'large' ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-600'}`}
-                  >
-                    Large
-                  </button>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Accessibility */}
-          <section className="space-y-4">
-            <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Accessibility</h3>
-            
-            {/* Reduced Motion */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="font-bold text-zinc-800 dark:text-zinc-200">Reduced Motion</p>
-                <p className="text-xs text-zinc-500">Disables animations and transitions.</p>
-              </div>
-              <button 
-                onClick={() => updateSettings({ reducedMotion: !settings.reducedMotion })}
-                className={`w-12 h-7 rounded-full transition-colors relative ${settings.reducedMotion ? 'bg-zinc-800 dark:bg-zinc-200' : 'bg-zinc-200 dark:bg-zinc-800'}`}
-              >
-                <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${settings.reducedMotion ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
-
-            {/* High Contrast */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="font-bold text-zinc-800 dark:text-zinc-200">High Contrast</p>
-                <p className="text-xs text-zinc-500">Increases visibility of text and borders.</p>
-              </div>
-              <button 
-                onClick={() => updateSettings({ highContrast: !settings.highContrast })}
-                className={`w-12 h-7 rounded-full transition-colors relative ${settings.highContrast ? 'bg-zinc-800 dark:bg-zinc-200' : 'bg-zinc-200 dark:bg-zinc-800'}`}
-              >
-                <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${settings.highContrast ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
-          </section>
-
-          {/* Layout */}
-          <section className="space-y-4">
-            <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Layout</h3>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="font-bold text-zinc-800 dark:text-zinc-200">Sticky Header</p>
-                <p className="text-xs text-zinc-500">Keep navbar visible while scrolling.</p>
-              </div>
-              <button 
-                onClick={() => updateSettings({ stickyHeader: !settings.stickyHeader })}
-                className={`w-12 h-7 rounded-full transition-colors relative ${settings.stickyHeader ? 'bg-zinc-800 dark:bg-zinc-200' : 'bg-zinc-200 dark:bg-zinc-800'}`}
-              >
-                <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${settings.stickyHeader ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
-          </section>
-
-          {/* Search - Desktop Only */}
-          {!isMobile && (
-            <section className="space-y-4">
-              <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Search</h3>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="font-bold text-zinc-800 dark:text-zinc-200">Press / to Open</p>
-                </div>
-                <button 
-                  onClick={() => updateSettings({ searchSlashOpens: !settings.searchSlashOpens })}
-                  className={`w-12 h-7 rounded-full transition-colors relative ${settings.searchSlashOpens ? 'bg-zinc-800 dark:bg-zinc-200' : 'bg-zinc-200 dark:bg-zinc-800'}`}
-                >
-                  <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${settings.searchSlashOpens ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-              </div>
-            </section>
-          )}
-
-          {/* Data */}
-          <section className="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-            <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Data</h3>
-            <button 
-              onClick={resetSettings}
-              className="w-full py-3 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
-            >
-              Clear saved prefs & Reload
-            </button>
-          </section>
-
-          {/* JewBizzy Special Theme (Hidden/Bottom) */}
-          <section className="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-             <div className="flex items-center justify-between">
-               <div className="space-y-1">
-                 <p className="font-bold text-zinc-800 dark:text-zinc-200 text-sm">JewBizzy Special Theme</p>
-                 <p className="text-[10px] text-zinc-400">Forces site theme to Blue + White.</p>
-               </div>
-               <button 
-                 onClick={() => updateSettings({ rahBizzyTheme: !settings.rahBizzyTheme })}
-                 className={`w-12 h-7 rounded-full transition-colors relative ${settings.rahBizzyTheme ? 'bg-[#3B82F6]' : 'bg-zinc-200 dark:bg-zinc-800'}`}
-               >
-                 <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm ${settings.rahBizzyTheme ? 'translate-x-5' : 'translate-x-0'}`} />
-               </button>
-             </div>
-          </section>
-
-          {/* Version Footer - Desktop Only */}
-          {!isMobile && (
-            <div className="pt-8 pb-2 text-center opacity-40">
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
-                Current version 1.5.2
-              </span>
-            </div>
-          )}
-
+        <div className="shrink-0">
+          {rightElement}
         </div>
       </div>
-      
-      <style>{`
-        @keyframes slide-in-right {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-        @keyframes pop-in {
-          0% { transform: scale(0); opacity: 0; }
-          70% { transform: scale(1.2); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .animate-pop-in {
-          animation: pop-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
+      {children}
     </div>
+  );
+
+  const ControlRow = ({ label, desc, children, isLast = false }: { label: string, desc?: string, children: React.ReactNode, isLast?: boolean }) => (
+    <div className={`flex items-center justify-between py-4 ${!isLast ? 'border-b border-zinc-100/50 dark:border-zinc-800/30' : ''}`}>
+      <div className="space-y-0.5 pr-4">
+        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">{label}</p>
+        {desc && <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium leading-tight">{desc}</p>}
+      </div>
+      <div className="shrink-0">
+        {children}
+      </div>
+    </div>
+  );
+
+  const Toggle = ({ active, onToggle, color = 'bg-zinc-900 dark:bg-zinc-100' }: { active: boolean, onToggle: () => void, color?: string }) => (
+    <button 
+      onClick={onToggle}
+      className={`w-10 h-6 rounded-full transition-all duration-300 relative ${active ? color : 'bg-zinc-200 dark:bg-zinc-800'}`}
+    >
+      <motion.div 
+        initial={false}
+        animate={{ x: active ? 18 : 4 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className="absolute top-1 w-4 h-4 bg-white dark:bg-zinc-950 rounded-full shadow-sm" 
+      />
+    </button>
+  );
+
+  const currentThemeLabel = THEME_OPTIONS.find(opt => opt.id === settings.siteThemeAccent)?.label || 'Default';
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-end overflow-hidden">
+          {/* Backdrop */}
+          <motion.div 
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className="absolute inset-0 bg-zinc-950/40 backdrop-blur-[2px]" 
+            onClick={onClose} 
+          />
+
+          {/* Modal/Drawer Container */}
+          <motion.div
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className={`
+              relative flex flex-col w-full bg-white/80 dark:bg-zinc-950/85 backdrop-blur-2xl
+              border-l border-white/20 dark:border-zinc-800/50 shadow-2xl
+              ${isMobile ? 'h-[85vh] bottom-0 rounded-t-[2.5rem] mt-auto border-t border-l-0' : 'h-full max-w-md rounded-l-[3rem]'}
+              overflow-hidden ring-1 ring-inset ring-white/10
+            `}
+          >
+            {/* Liquid-Glass Highlight */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
+
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-20 px-8 py-6 flex items-center justify-between border-b border-zinc-100/50 dark:border-zinc-800/50 bg-white/30 dark:bg-zinc-950/30 backdrop-blur-md">
+              <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tighter uppercase italic">Settings</h2>
+              <button 
+                onClick={onClose} 
+                className="p-2 -mr-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90"
+                aria-label="Close settings"
+              >
+                <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-8 pt-6 space-y-8 custom-scrollbar">
+              
+              {/* Appearance Section */}
+              <section className="space-y-4">
+                <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Appearance</h3>
+                
+                <div className="space-y-0">
+                  <SettingRow 
+                    label="Site Accent Color" 
+                    desc="Choose your primary interface accent."
+                    rightElement={
+                      <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                        {currentThemeLabel}
+                      </span>
+                    }
+                  >
+                    <div className="grid grid-cols-5 gap-3 md:gap-4 py-1">
+                      {THEME_OPTIONS.map((option) => {
+                        const isSelected = settings.siteThemeAccent === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() => updateSettings({ siteThemeAccent: option.id })}
+                            className={`
+                              relative aspect-square rounded-full transition-all duration-300 p-0.5 border-2 flex items-center justify-center
+                              ${isSelected 
+                                ? 'border-zinc-900 dark:border-zinc-100 scale-105 shadow-md' 
+                                : 'border-transparent hover:scale-105 active:scale-95'}
+                            `}
+                            title={option.label}
+                          >
+                            <div 
+                              className="w-full h-full rounded-full border border-black/5 dark:border-white/10 flex items-center justify-center"
+                              style={{ backgroundColor: option.color }}
+                            >
+                              {isSelected && (
+                                <motion.div 
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  className="text-white drop-shadow-sm"
+                                >
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                </motion.div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </SettingRow>
+
+                  <ControlRow label="Sticky Header" desc="Keep navigation visible while scrolling.">
+                    <Toggle active={settings.stickyHeader} onToggle={() => updateSettings({ stickyHeader: !settings.stickyHeader })} />
+                  </ControlRow>
+                </div>
+              </section>
+
+              {/* Accessibility Section */}
+              <section className="space-y-4">
+                <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Accessibility</h3>
+                <div className="space-y-0">
+                  <ControlRow label="Reduced Motion" desc="Disables non-essential animations.">
+                    <Toggle active={settings.reducedMotion} onToggle={() => updateSettings({ reducedMotion: !settings.reducedMotion })} />
+                  </ControlRow>
+                  <ControlRow label="High Contrast" desc="Enhances text and border visibility.">
+                    <Toggle active={settings.highContrast} onToggle={() => updateSettings({ highContrast: !settings.highContrast })} />
+                  </ControlRow>
+                  <ControlRow label="Quick Search" desc="Enable '/' keyboard shortcut." isLast={isMobile}>
+                    <Toggle active={settings.searchSlashOpens} onToggle={() => updateSettings({ searchSlashOpens: !settings.searchSlashOpens })} />
+                  </ControlRow>
+                </div>
+              </section>
+
+              {/* Special Themes */}
+              <section className="space-y-4">
+                <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Experimental</h3>
+                <ControlRow label="JewBizzy Theme" desc="Special performance mode for elite players." isLast>
+                  <Toggle 
+                    active={settings.rahBizzyTheme} 
+                    onToggle={() => updateSettings({ rahBizzyTheme: !settings.rahBizzyTheme })}
+                    color="bg-[#3B82F6]"
+                  />
+                </ControlRow>
+              </section>
+
+              {/* Danger Zone */}
+              <section className="space-y-4 pt-4 border-t border-zinc-100/50 dark:border-zinc-800/30">
+                <button 
+                  onClick={resetSettings}
+                  className="w-full h-11 bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+                  </svg>
+                  Reset preferences
+                </button>
+                <div className="text-center">
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-600 opacity-40">Version 1.5.2</span>
+                </div>
+              </section>
+
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 

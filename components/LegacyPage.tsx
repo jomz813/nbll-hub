@@ -26,7 +26,6 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ initialSegment = 'hof' }) => {
   ];
 
   const isHOF = activeSegment === 'hof';
-  const accentColor = settings.rahBizzyTheme ? 'bg-[#3B82F6]' : 'bg-[#D60A07]';
 
   return (
     <div className="space-y-10 animate-page-enter">
@@ -92,7 +91,7 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ initialSegment = 'hof' }) => {
                 key={seg.id}
                 onClick={() => setActiveSegment(seg.id)}
                 className={`relative flex-1 h-full text-[10px] font-black uppercase tracking-widest transition-colors duration-300 outline-none ${
-                  isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-600'
+                  isActive ? colors.text : 'text-zinc-400 dark:text-zinc-600'
                 }`}
               >
                 {seg.label}
@@ -107,7 +106,10 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ initialSegment = 'hof' }) => {
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
             className="absolute bottom-0 left-0 w-1/2 h-[3px] px-4"
           >
-            <div className={`w-full h-full ${accentColor} rounded-t-full shadow-[0_-2px_10px_rgba(0,0,0,0.1)]`} />
+            <div 
+              className="w-full h-full rounded-t-full shadow-[0_-2px_10px_rgba(0,0,0,0.1)]" 
+              style={{ backgroundColor: 'var(--accent)' }}
+            />
           </motion.div>
         </div>
       </div>

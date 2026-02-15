@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { recordsData } from '../data/records';
 import { useSettings } from '../context/SettingsContext';
@@ -43,7 +42,10 @@ const RecordsPage: React.FC = () => {
 
                   {/* Column 2: Value */}
                   <div className="flex flex-col items-center justify-center">
-                    <span className={`text-2xl font-black tabular-nums tracking-tighter leading-none ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-[#D60A07]'}`}>
+                    <span 
+                      className="text-2xl font-black tabular-nums tracking-tighter leading-none"
+                      style={{ color: 'var(--accent)' }}
+                    >
                       {record.value}
                     </span>
                     <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mt-1.5">
@@ -76,7 +78,10 @@ const RecordsPage: React.FC = () => {
                   {/* Line 2: Value (Left) and Holder (Right) */}
                   <div className="flex items-end justify-between">
                     <div className="flex items-baseline gap-2">
-                      <span className={`text-xl font-black tabular-nums tracking-tighter ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-[#D60A07]'}`}>
+                      <span 
+                        className="text-xl font-black tabular-nums tracking-tighter"
+                        style={{ color: 'var(--accent)' }}
+                      >
                         {record.value}
                       </span>
                       <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">

@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import LandingPage from './components/LandingPage';
 import TabPage from './components/TabPage';
-import Navbar from './components/Navbar';
+import Navbar from '././components/Navbar';
 import SettingsModal from './components/SettingsModal';
 import RouteTransition from './components/RouteTransition';
 import ScrollToTopButton from './components/ScrollToTopButton';
@@ -11,87 +10,11 @@ import { SettingsProvider, useSettings } from './context/SettingsContext';
 
 export type TabID = 'home' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | 'compare' | 'achievements' | string;
 
-const DevLock: React.FC<{ onUnlock: () => void }> = ({ onUnlock }) => {
-  const [code, setCode] = useState('');
-  const [error, setError] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (code === '5207') {
-      localStorage.setItem('devUnlocked', 'true');
-      onUnlock();
-    } else {
-      setError(true);
-      setCode('');
-      setTimeout(() => setError(false), 500);
-    }
-  };
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  return (
-    <div className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center pointer-events-auto p-6 text-center">
-      <div className={`space-y-8 w-full max-w-xs transition-transform duration-100 ${error ? 'animate-shake' : ''}`}>
-        <div className="space-y-2">
-          <h2 className="text-white text-3xl font-black tracking-tighter uppercase">Dev Lock</h2>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">Enter code to continue</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            ref={inputRef}
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={4}
-            value={code}
-            onChange={(e) => {
-              setError(false);
-              setCode(e.target.value.replace(/[^0-9]/g, ''));
-            }}
-            placeholder="••••"
-            className={`w-full bg-zinc-900 border-2 ${error ? 'border-red-500' : 'border-zinc-800 focus:border-white'} rounded-2xl py-4 px-6 text-center text-2xl font-black text-white tracking-[1em] outline-none transition-all placeholder:text-zinc-800 placeholder:tracking-normal`}
-          />
-          
-          <button
-            type="submit"
-            className="w-full py-4 bg-white text-black rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-zinc-200 active:scale-95 transition-all"
-          >
-            Dev Unlock
-          </button>
-        </form>
-
-        {error && (
-          <p className="text-red-500 text-[10px] font-black uppercase tracking-widest animate-pulse">Incorrect Code</p>
-        )}
-      </div>
-
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-8px); }
-          75% { transform: translateX(8px); }
-        }
-        .animate-shake {
-          animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
-          animation-iteration-count: 2;
-        }
-      `}</style>
-    </div>
-  );
-};
-
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabID>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const { settings, getThemeColors } = useSettings();
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-    return localStorage.getItem('devUnlocked') === 'true';
-  });
 
   const colors = getThemeColors();
 
@@ -143,9 +66,6 @@ const AppContent: React.FC = () => {
     if (settings.highContrast) root.classList.add('high-contrast');
     else root.classList.remove('high-contrast');
 
-    if (settings.fontSize === 'large') root.classList.add('font-large');
-    else root.classList.remove('font-large');
-
     // Check for theme changes to trigger transition
     if (prevRahBizzyTheme.current !== settings.rahBizzyTheme || prevAccentTheme.current !== settings.siteThemeAccent) {
       triggerThemeTransition();
@@ -191,8 +111,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300 flex flex-col">
-      {!isUnlocked && <DevLock onUnlock={() => setIsUnlocked(true)} />}
-
       <style>{`
         :root {
           --accent: ${effectiveAccent};

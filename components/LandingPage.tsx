@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import FluidBackground from './FluidBackground';
 import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
@@ -79,6 +79,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
   const [dynamicTitles, setDynamicTitles] = useState<string[]>([]);
   
   // Use lazy initializer to pick exactly ONE title on first render and keep it stable.
+  // This prevents the "stutter" where the title changes shortly after the page loads.
   const [heroTitle, setHeroTitle] = useState(() => pickRandom(HERO_TITLES));
 
   // Fetch S12 stats in the background to populate the rotation pool.
@@ -107,6 +108,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
           ];
 
           setDynamicTitles(s12LeaderTitles);
+          // Note: We do NOT call setHeroTitle here anymore.
+          // The title will only change once the 10-second interval triggers.
         }
       } catch (err) {
         console.error("Failed to load S12 leader titles", err);
@@ -117,18 +120,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
     return () => { active = false; };
   }, []);
 
-  // Title rotation interval
+  // Title rotation interval - ensures the page feels alive without jarring "stutters" on load.
   useEffect(() => {
     const rotationInterval = setInterval(() => {
       const fullPool = [...HERO_TITLES, ...dynamicTitles];
       setHeroTitle((current) => {
         let next = pickRandom(fullPool);
+        // Avoid repeating the same title
         while (next === current && fullPool.length > 1) {
           next = pickRandom(fullPool);
         }
         return next;
       });
-    }, 10000);
+    }, 10000); // 10 seconds per title
 
     return () => clearInterval(rotationInterval);
   }, [dynamicTitles]);

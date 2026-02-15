@@ -11,14 +11,6 @@ export interface SearchOrigin {
   h: number;
 }
 
-// --- SEARCH DATA ---
-const PLAYERS = [
-  { name: 'Michael Jordan', slug: 'michael-jordan' },
-  { name: 'LeBron James', slug: 'lebron-james' },
-  { name: 'Kobe Bryant', slug: 'kobe-bryant' },
-  { name: 'Stephen Curry', slug: 'stephen-curry' },
-];
-
 const PAGES: { name: TabID; label: string; keywords?: string[] }[] = [
   { name: 'home', label: 'home' },
   { name: 'standings', label: 'standings' },
@@ -69,11 +61,7 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose, onSelect
                 (p.name === 'credits') ? 'Team' : 'System'
     }));
     
-    // 2. Players
-    const matchedPlayers = PLAYERS.filter(p => p.name.toLowerCase().includes(q))
-      .map(p => ({ name: p.name, tabId: `player-${p.slug}` as TabID, type: 'Player', id: `player-${p.slug}`, category: 'Legend' }));
-
-    // 3. Records
+    // 2. Records
     const matchedRecords = recordsData.flatMap(section => 
       section.items.filter(item => item.title.toLowerCase().includes(q) || item.valueLabel.toLowerCase().includes(q))
         .map(item => ({
@@ -88,7 +76,6 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose, onSelect
     const combined = [];
     if (matchedPages.length) combined.push({ group: 'Pages', items: matchedPages });
     if (matchedRecords.length) combined.push({ group: 'Records', items: matchedRecords });
-    if (matchedPlayers.length) combined.push({ group: 'Players', items: matchedPlayers });
     
     return combined;
   }, [query]);
@@ -283,7 +270,7 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose, onSelect
                   type="text"
                   value={query}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setSelectedIndex(0); }}
-                  placeholder="Search legends, records, or pages..."
+                  placeholder="Search pages or records..."
                   className={`w-full bg-zinc-50 dark:bg-zinc-800 rounded-2xl py-4 pl-14 pr-6 text-zinc-900 dark:text-zinc-100 font-bold text-lg outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-zinc-800 border-2 border-transparent focus:border-current ${accentText}`}
                 />
               </div>

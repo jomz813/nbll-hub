@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
@@ -311,7 +310,7 @@ const StatsPage: React.FC = () => {
         </div>
 
         {/* Unified Mobile Controls Toolbar */}
-        <div className="md:hidden w-full mb-3">
+        <div className="md:hidden w-full mb-4">
           <div className="w-full h-11 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full flex items-center overflow-hidden px-1 shadow-sm">
             {/* Season Selector */}
             <div className="relative flex-1 flex items-center px-2 h-full group justify-end">

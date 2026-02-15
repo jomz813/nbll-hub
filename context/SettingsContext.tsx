@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type SiteThemeAccent = "malachite" | "citrine" | "marigold" | "aquamarine" | "byzantium" | "mulberry" | "taupe" | "monochrome" | "default";
@@ -7,7 +6,6 @@ export interface Settings {
   rahBizzyTheme: boolean;
   reducedMotion: boolean;
   highContrast: boolean;
-  fontSize: 'normal' | 'large';
   stickyHeader: boolean;
   searchSlashOpens: boolean;
   siteThemeAccent: SiteThemeAccent;
@@ -34,7 +32,6 @@ const defaultSettings: Settings = {
   rahBizzyTheme: false,
   reducedMotion: false,
   highContrast: false,
-  fontSize: 'normal',
   stickyHeader: true,
   searchSlashOpens: true,
   siteThemeAccent: "default",

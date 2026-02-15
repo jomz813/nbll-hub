@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
 import { recordsData } from '../data/records';
-import { fetchS12Stats, S12Row } from '../data/s12Stats';
 
 // --- SEARCH DATA CONSTANTS ---
 const PAGES: { name: TabID; label: string; keywords?: string[] }[] = [
@@ -89,7 +87,6 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [dynamicPlayers, setDynamicPlayers] = useState<{name: string, slug: string}[]>([]);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -103,26 +100,6 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    let active = true;
-    const loadSearchData = async () => {
-      try {
-        const stats = await fetchS12Stats();
-        if (active && stats) {
-          const players = stats.map(s => ({
-            name: s.player,
-            slug: s.player.toLowerCase().replace(/\s+/g, '-')
-          }));
-          setDynamicPlayers(players);
-        }
-      } catch (err) {
-        console.error("Search data fetch failed", err);
-      }
-    };
-    loadSearchData();
-    return () => { active = false; };
-  }, []);
-  
   const isHOF = activeTab === 'hall-of-fame';
   const isHome = activeTab === 'home';
   const colors = getThemeColors(isHOF);
@@ -213,11 +190,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
            (p.name === 'credits') ? 'TEAM' : (p.name === 'stats' || p.name === 'compare' || p.name === 'achievements') ? 'STATS' : 'HUB'
     }));
     
-    // 2. Players
-    const matchedPlayers: SearchResultItem[] = dynamicPlayers.filter(p => p.name.toLowerCase().includes(q))
-      .map(p => ({ name: p.name, tabId: 'stats' as TabID, type: 'Player', id: `player-${p.slug}`, tag: 'LEGEND' }));
-
-    // 3. Records
+    // 2. Records
     const matchedRecords: SearchResultItem[] = recordsData.flatMap(section => 
       section.items.filter(item => item.title.toLowerCase().includes(q) || item.valueLabel.toLowerCase().includes(q))
         .map(item => ({
@@ -233,10 +206,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
     const combined: SearchResultGroup[] = [];
     if (matchedPages.length) combined.push({ group: 'PAGES', items: matchedPages });
     if (matchedRecords.length) combined.push({ group: 'RECORDS', items: matchedRecords });
-    if (matchedPlayers.length) combined.push({ group: 'PLAYERS', items: matchedPlayers });
     
     return combined;
-  }, [query, dynamicPlayers]);
+  }, [query]);
 
   const flatResults = useMemo(() => searchResults.flatMap(g => g.items), [searchResults]);
 
@@ -635,7 +607,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                         initial={{ opacity: 0, scale: 0.7, rotate: -45 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         exit={{ opacity: 0, scale: 0.7, rotate: 45 }}
-                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                         onClick={onToggleTheme}
                         className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
                         aria-label="Toggle dark mode"
@@ -664,7 +636,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                         initial={{ opacity: 0, scale: 0.7, rotate: 45 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         exit={{ opacity: 0, scale: 0.7, rotate: -45 }}
-                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                         onClick={onOpenSettings}
                         className={`absolute inset-0 flex items-center justify-center rounded-full transition-colors ${isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-500 dark:text-zinc-400'} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
                         aria-label="Open settings"

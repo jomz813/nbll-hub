@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchS10Stats, S10Row } from '../data/s10Stats';
 import { useSettings } from '../context/SettingsContext';
@@ -152,8 +151,8 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
   ];
 
   const containerClasses = isEmbedded 
-    ? "space-y-6 w-full overflow-x-hidden touch-pan-y" 
-    : "animate-page-enter pt-4 space-y-6 pb-20 w-full overflow-x-hidden touch-pan-y";
+    ? "md:space-y-6 w-full overflow-x-hidden touch-pan-y" 
+    : "animate-page-enter pt-4 md:space-y-6 pb-20 w-full overflow-x-hidden touch-pan-y";
 
   const StatGroup = ({ label, value, hideIfZero = false }: { label: string, value: string | number, hideIfZero?: boolean }) => {
     const displayValue = (hideIfZero && (value === 0 || value === "0.0")) ? "—" : value;
