@@ -30,7 +30,7 @@ export const contentMap: Record<string, TabContent> = {
     items: []
   },
   'league-history': {
-    title: 'history',
+    title: 'league history',
     description: "",
     items: []
   },

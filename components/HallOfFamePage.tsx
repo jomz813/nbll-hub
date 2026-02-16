@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { hallOfFameMembers, HOFMember } from '../data/hof';
 
@@ -46,7 +47,8 @@ const HOFEligibility: React.FC = () => {
               "25x+ POTG // DPOTG Total",
               "4x Seasons Played",
               "5x Awards",
-              "Ring Riding Excluded"
+              "Ring Riding Excluded",
+              "Exceptions can be made at any time"
             ].map((item, idx) => (
               <li key={idx} className="text-xs font-bold text-zinc-500 dark:text-zinc-400">
                 {item}

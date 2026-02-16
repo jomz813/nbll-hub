@@ -171,7 +171,7 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
         </button>
 
         {/* Content Header */}
-        {tabId !== 'stats' && tabId !== 'legacy' && tabId !== 'hall-of-fame' && tabId !== 'records' && tabId !== 'compare' && tabId !== 'achievements' && tabId !== 'players' && (
+        {tabId !== 'stats' && tabId !== 'legacy' && tabId !== 'hall-of-fame' && tabId !== 'records' && tabId !== 'compare' && tabId !== 'achievements' && tabId !== 'players' && tabId !== 'league-history' && (
           <div>
             <h2 className={`text-4xl md:text-6xl font-black tracking-tighter ${colors.text === 'text-[#3B82F6]' ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}>
               {page.title.toLowerCase()}

@@ -35,6 +35,19 @@ const TableSkeleton: React.FC = () => (
   </div>
 );
 
+const getColumnMaxes = (rows: AllTimeRow[], keys: (keyof AllTimeRow)[]) => {
+  const maxes: Partial<Record<keyof AllTimeRow, number>> = {};
+  keys.forEach(key => {
+    const values = rows
+      .map(row => row[key] as number)
+      .filter(val => typeof val === 'number' && !isNaN(val) && val > 0);
+    if (values.length > 0) {
+      maxes[key] = Math.max(...values);
+    }
+  });
+  return maxes;
+};
+
 const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonChange, searchQuery = '', externalSortKey, showStat = 'ALL' }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
@@ -81,7 +94,6 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
     };
   }, []);
 
-  // Update internal sort config if external key changes (mobile)
   useEffect(() => {
     if (externalSortKey && externalSortKey !== sortConfig.key) {
       setSortConfig({ key: externalSortKey as SortKey, direction: 'desc' });
@@ -106,12 +118,16 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
     return sorted;
   }, [data, sortConfig]);
 
-  // Apply Search Filter
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return sortedData;
     const q = searchQuery.toLowerCase().trim();
     return sortedData.filter(row => row.player.toLowerCase().includes(q));
   }, [sortedData, searchQuery]);
+
+  const columnMaxes = useMemo(() => {
+    const numericKeys: (keyof AllTimeRow)[] = ['pts', 'ast', 'reb', 'stl', 'eff', 'off', 'def'];
+    return getColumnMaxes(filteredData, numericKeys);
+  }, [filteredData]);
 
   const requestSort = (key: SortKey) => {
     let direction: 'asc' | 'desc' = 'desc';
@@ -119,6 +135,21 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
       direction = 'asc';
     }
     setSortConfig({ key, direction });
+  };
+
+  const HighlightedCell = ({ value, colKey, isBold = false }: { value: number, colKey: keyof AllTimeRow, isBold?: boolean }) => {
+    const isLeader = value > 0 && value === columnMaxes[colKey];
+    
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className={`
+          tabular-nums transition-all duration-300
+          ${isLeader ? `px-2 py-0.5 rounded-full bg-[var(--accent)]/10 font-black ${accentText} shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)]` : (isBold ? 'font-black' : 'font-bold')}
+        `}>
+          {value}
+        </span>
+      </div>
+    );
   };
 
   if (loading) {
@@ -197,13 +228,13 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
                     className="grid grid-cols-[1.5fr_repeat(7,1fr)] px-6 py-4 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors"
                   >
                     <div className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate pr-4">{row.player}</div>
-                    <div className="text-xs md:text-sm font-black text-zinc-900 dark:text-zinc-100 text-center tabular-nums">{row.pts}</div>
-                    <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.ast}</div>
-                    <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.reb}</div>
-                    <div className="text-xs md:text-sm font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.stl}</div>
-                    <div className={`text-xs md:text-sm font-black ${accentText} text-center tabular-nums`}>{row.eff}</div>
-                    <div className="text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.off}</div>
-                    <div className="text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.def}</div>
+                    <div className="text-xs md:text-sm text-zinc-900 dark:text-zinc-100 text-center tabular-nums"><HighlightedCell value={row.pts} colKey="pts" isBold={true} /></div>
+                    <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.ast} colKey="ast" /></div>
+                    <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.reb} colKey="reb" /></div>
+                    <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.stl} colKey="stl" /></div>
+                    <div className={`text-xs md:text-sm text-center tabular-nums`}><HighlightedCell value={row.eff} colKey="eff" isBold={true} /></div>
+                    <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.off} colKey="off" /></div>
+                    <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.def} colKey="def" /></div>
                   </div>
                 ))
               ) : (

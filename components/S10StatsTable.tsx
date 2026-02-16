@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchS10Stats, S10Row } from '../data/s10Stats';
 import { useSettings } from '../context/SettingsContext';
@@ -34,6 +35,19 @@ const TableSkeleton: React.FC = () => (
     </div>
   </div>
 );
+
+const getColumnMaxes = (rows: S10Row[], keys: (keyof S10Row)[]) => {
+  const maxes: Partial<Record<keyof S10Row, number>> = {};
+  keys.forEach(key => {
+    const values = rows
+      .map(row => row[key] as number)
+      .filter(val => typeof val === 'number' && !isNaN(val) && val > 0);
+    if (values.length > 0) {
+      maxes[key] = Math.max(...values);
+    }
+  });
+  return maxes;
+};
 
 const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, season, onSeasonChange, searchQuery = '', externalSortKey, showStat = 'ALL' }) => {
   const { settings, getThemeColors } = useSettings();
@@ -81,7 +95,6 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
     };
   }, []);
 
-  // Update internal sort config if external key changes (mobile)
   useEffect(() => {
     if (externalSortKey && externalSortKey !== sortConfig.key) {
       setSortConfig({ key: externalSortKey as SortKey, direction: 'desc' });
@@ -106,12 +119,16 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
     return sorted;
   }, [data, sortConfig]);
 
-  // Apply Search Filter
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return sortedData;
     const q = searchQuery.toLowerCase().trim();
     return sortedData.filter(row => row.player.toLowerCase().includes(q));
   }, [sortedData, searchQuery]);
+
+  const columnMaxes = useMemo(() => {
+    const numericKeys: (keyof S10Row)[] = ['pts', 'ast', 'reb', 'stl', 'gp', 'ppg', 'apg', 'rpg', 'spg', 'eff'];
+    return getColumnMaxes(filteredData, numericKeys);
+  }, [filteredData]);
 
   const requestSort = (key: SortKey) => {
     let direction: 'asc' | 'desc' = 'desc';
@@ -119,6 +136,22 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
       direction = 'asc';
     }
     setSortConfig({ key, direction });
+  };
+
+  const HighlightedCell = ({ value, colKey, isBold = false, isFormat = false }: { value: number, colKey: keyof S10Row, isBold?: boolean, isFormat?: boolean }) => {
+    const isLeader = value > 0 && value === columnMaxes[colKey];
+    const displayValue = isFormat ? value.toFixed(1) : value;
+    
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className={`
+          tabular-nums transition-all duration-300
+          ${isLeader ? `px-2 py-0.5 rounded-full bg-[var(--accent)]/10 font-black ${accentText} shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)]` : (isBold ? 'font-black' : 'font-bold')}
+        `}>
+          {displayValue}
+        </span>
+      </div>
+    );
   };
 
   if (loading) {
@@ -199,16 +232,16 @@ const S10StatsTable: React.FC<S10StatsTableProps> = ({ isEmbedded = false, seaso
                   return (
                     <div key={idx} className="grid grid-cols-[1.4fr_repeat(10,1fr)] px-4 py-3.5 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
                       <div className="text-[11px] lg:text-[13px] font-bold text-zinc-900 dark:text-zinc-100 truncate pr-2">{row.player}</div>
-                      <div className="text-[11px] lg:text-[13px] font-black text-zinc-900 dark:text-zinc-100 text-center tabular-nums">{row.pts}</div>
-                      <div className="text-[11px] lg:text-[13px] font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.ast}</div>
-                      <div className="text-[11px] lg:text-[13px] font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.reb}</div>
-                      <div className="text-[11px] lg:text-[13px] font-bold text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{row.stl}</div>
-                      <div className="text-[11px] lg:text-[13px] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : row.gp}</div>
-                      <div className="text-[11px] lg:text-[13px] font-bold text-zinc-900 dark:text-zinc-100 text-center tabular-nums">{noGp ? "—" : row.ppg.toFixed(1)}</div>
-                      <div className="text-[11px] lg:text-[13px] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : row.apg.toFixed(1)}</div>
-                      <div className="text-[11px] lg:text-[13px] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : row.rpg.toFixed(1)}</div>
-                      <div className="text-[11px] lg:text-[13px] font-medium text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : row.spg.toFixed(1)}</div>
-                      <div className={`text-[11px] lg:text-[13px] font-black ${accentText} text-center tabular-nums`}>{row.eff === 0 ? "—" : row.eff}</div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-900 dark:text-zinc-100 text-center tabular-nums"><HighlightedCell value={row.pts} colKey="pts" isBold={true} /></div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.ast} colKey="ast" /></div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.reb} colKey="reb" /></div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.stl} colKey="stl" /></div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : <HighlightedCell value={row.gp} colKey="gp" />}</div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-900 dark:text-zinc-100 text-center tabular-nums">{noGp ? "—" : <HighlightedCell value={row.ppg} colKey="ppg" isBold={true} isFormat={true} />}</div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : <HighlightedCell value={row.apg} colKey="apg" isFormat={true} />}</div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : <HighlightedCell value={row.rpg} colKey="rpg" isFormat={true} />}</div>
+                      <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums">{noGp ? "—" : <HighlightedCell value={row.spg} colKey="spg" isFormat={true} />}</div>
+                      <div className={`text-[11px] lg:text-[13px] text-center tabular-nums`}>{row.eff === 0 ? "—" : <HighlightedCell value={row.eff} colKey="eff" isBold={true} />}</div>
                     </div>
                   );
                 })
