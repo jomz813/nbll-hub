@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchS12Stats, S12Row } from '../data/s12Stats';
 import { useSettings } from '../context/SettingsContext';
@@ -142,11 +141,17 @@ const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, seaso
     const isLeader = value > 0 && value === columnMaxes[colKey];
     const displayValue = isFormat ? value.toFixed(1) : value;
     
+    // Logic for high contrast EFF in light mode
+    const isEff = colKey === 'eff';
+    const leaderColorClass = isEff && settings.siteThemeAccent !== 'monochrome'
+      ? `text-zinc-900 dark:${accentText}`
+      : accentText;
+
     return (
       <div className="flex items-center justify-center h-full">
         <span className={`
           tabular-nums transition-all duration-300
-          ${isLeader ? `px-2 py-0.5 rounded-full bg-[var(--accent)]/10 font-black ${accentText} shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)]` : (isBold ? 'font-black' : 'font-bold')}
+          ${isLeader ? `px-2 py-0.5 rounded-full bg-[var(--accent)]/10 font-black ${leaderColorClass} shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)]` : (isBold ? 'font-black' : 'font-bold')}
         `}>
           {displayValue}
         </span>
@@ -236,7 +241,7 @@ const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, seaso
                     <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.apg} colKey="apg" isFormat={true} /></div>
                     <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.rpg} colKey="rpg" isFormat={true} /></div>
                     <div className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.spg} colKey="spg" isFormat={true} /></div>
-                    <div className={`text-[11px] lg:text-[13px] text-center tabular-nums`}><HighlightedCell value={row.eff} colKey="eff" isBold={true} /></div>
+                    <div className={`text-[11px] lg:text-[13px] text-zinc-900 dark:text-zinc-100 text-center tabular-nums`}><HighlightedCell value={row.eff} colKey="eff" isBold={true} /></div>
                   </div>
                 ))
               ) : (
@@ -259,12 +264,19 @@ const S12StatsTable: React.FC<S12StatsTableProps> = ({ isEmbedded = false, seaso
               const val = row[showStat as keyof S12Row];
               const isAvg = ['ppg', 'apg', 'rpg', 'spg'].includes(showStat);
               const label = showStat.toUpperCase();
+              
+              // Mobile specific high contrast logic
+              const isEffStat = showStat === 'eff';
+              const mobileColorClass = isEffStat && settings.siteThemeAccent !== 'monochrome'
+                ? `text-zinc-900 dark:${accentText}`
+                : 'text-zinc-900 dark:text-zinc-100';
+
               return (
                 <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-xl p-3 shadow-sm flex items-center justify-between">
                   <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate pr-4">{row.player}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">{label}</span>
-                    <span className={`text-sm font-black tabular-nums ${showStat === 'eff' ? accentText : 'text-zinc-900 dark:text-zinc-100'}`}>
+                    <span className={`text-sm font-black tabular-nums ${mobileColorClass}`}>
                       {typeof val === 'number' ? (isAvg ? val.toFixed(1) : val) : '—'}
                     </span>
                   </div>

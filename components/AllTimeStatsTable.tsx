@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchAllTimeStats, AllTimeRow } from '../data/allTimeStats';
 import { useSettings } from '../context/SettingsContext';
@@ -140,11 +139,17 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
   const HighlightedCell = ({ value, colKey, isBold = false }: { value: number, colKey: keyof AllTimeRow, isBold?: boolean }) => {
     const isLeader = value > 0 && value === columnMaxes[colKey];
     
+    // Logic for high contrast EFF in light mode
+    const isEff = colKey === 'eff';
+    const leaderColorClass = isEff && settings.siteThemeAccent !== 'monochrome'
+      ? `text-zinc-900 dark:${accentText}`
+      : accentText;
+
     return (
       <div className="flex items-center justify-center h-full">
         <span className={`
           tabular-nums transition-all duration-300
-          ${isLeader ? `px-2 py-0.5 rounded-full bg-[var(--accent)]/10 font-black ${accentText} shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)]` : (isBold ? 'font-black' : 'font-bold')}
+          ${isLeader ? `px-2 py-0.5 rounded-full bg-[var(--accent)]/10 font-black ${leaderColorClass} shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)]` : (isBold ? 'font-black' : 'font-bold')}
         `}>
           {value}
         </span>
@@ -232,7 +237,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
                     <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.ast} colKey="ast" /></div>
                     <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.reb} colKey="reb" /></div>
                     <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.stl} colKey="stl" /></div>
-                    <div className={`text-xs md:text-sm text-center tabular-nums`}><HighlightedCell value={row.eff} colKey="eff" isBold={true} /></div>
+                    <div className={`text-xs md:text-sm text-zinc-900 dark:text-zinc-100 text-center tabular-nums`}><HighlightedCell value={row.eff} colKey="eff" isBold={true} /></div>
                     <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.off} colKey="off" /></div>
                     <div className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 text-center tabular-nums"><HighlightedCell value={row.def} colKey="def" /></div>
                   </div>
@@ -257,12 +262,19 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
               const val = row[showStat as keyof AllTimeRow];
               const label = showStat.toUpperCase();
               const displayVal = showStat === 'val' ? formatCurrency(val as number) : (typeof val === 'number' ? val : '—');
+              
+              // Mobile specific color logic for EFF contrast
+              const isEffStat = showStat === 'eff';
+              const mobileColorClass = isEffStat && settings.siteThemeAccent !== 'monochrome'
+                ? `text-zinc-900 dark:${accentText}`
+                : isEffStat ? 'text-zinc-900 dark:text-zinc-100' : (showStat === 'eff' ? accentText : 'text-zinc-900 dark:text-zinc-100');
+
               return (
                 <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-xl p-3 shadow-sm flex items-center justify-between">
                   <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate pr-4">{row.player}</span>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">{label}</span>
-                    <span className={`text-sm font-black tabular-nums ${showStat === 'eff' ? accentText : 'text-zinc-900 dark:text-zinc-100'}`}>
+                    <span className={`text-sm font-black tabular-nums ${mobileColorClass}`}>
                       {displayVal}
                     </span>
                   </div>

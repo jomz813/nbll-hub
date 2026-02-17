@@ -1,27 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { useSettings, SiteThemeAccent } from '../context/SettingsContext';
+import { motion, AnimatePresence, Variants, useDragControls } from 'framer-motion';
+import { useSettings, THEME_OPTIONS } from '../context/SettingsContext';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const THEME_OPTIONS: { id: SiteThemeAccent; label: string; color: string }[] = [
-  { id: "default", label: "Default", color: "#D60A07" },
-  { id: "malachite", label: "Malachite", color: "#45C089" },
-  { id: "citrine", label: "Citrine", color: "#E4D007" },
-  { id: "marigold", label: "Marigold", color: "#EAA221" },
-  { id: "aquamarine", label: "Aquamarine", color: "#7FFFD4" },
-  { id: "byzantium", label: "Byzantium", color: "#702963" },
-  { id: "mulberry", label: "Mulberry", color: "#C64B8C" },
-  { id: "taupe", label: "Taupe", color: "#B9A281" },
-  { id: "monochrome", label: "Monochrome", color: "#9CA3AF" },
-];
-
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings, resetSettings } = useSettings();
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const dragControls = useDragControls();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -117,7 +106,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     </button>
   );
 
-  const currentThemeLabel = THEME_OPTIONS.find(opt => opt.id === settings.siteThemeAccent)?.label || 'Default';
+  const currentThemeLabel = THEME_OPTIONS.find(opt => opt.id === settings.siteThemeAccent)?.label || 'nbll red';
 
   return (
     <AnimatePresence>
@@ -139,6 +128,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             initial="hidden"
             animate="visible"
             exit="hidden"
+            drag={isMobile && !reducedMotion ? "y" : false}
+            dragControls={dragControls}
+            dragListener={false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            onDragEnd={(_: unknown, info: { offset: { x: number; y: number }; velocity: { x: number; y: number } }) => {
+              if (info.offset.y > 80 || info.velocity.y > 500) {
+                onClose();
+              }
+            }}
             className={`
               relative flex flex-col w-full bg-white/80 dark:bg-zinc-950/85 backdrop-blur-2xl
               border-l border-white/20 dark:border-zinc-800/50 shadow-2xl
@@ -150,18 +149,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
 
             {/* Sticky Header */}
-            <div className="sticky top-0 z-20 px-8 py-6 flex items-center justify-between border-b border-zinc-100/50 dark:border-zinc-800/50 bg-white/30 dark:bg-zinc-950/30 backdrop-blur-md">
-              <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tighter uppercase italic">Settings</h2>
-              <button 
-                onClick={onClose} 
-                className="p-2 -mr-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90"
-                aria-label="Close settings"
-              >
-                <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+            <div 
+              className={`sticky top-0 z-20 px-8 py-6 flex flex-col items-center border-b border-zinc-100/50 dark:border-zinc-800/50 bg-white/30 dark:bg-zinc-950/30 backdrop-blur-md ${isMobile ? 'cursor-grab active:cursor-grabbing touch-none' : ''}`}
+              onPointerDown={(e) => isMobile && dragControls.start(e)}
+            >
+              {isMobile && (
+                <div className="w-12 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mb-4 opacity-50" />
+              )}
+              <div className="flex items-center justify-between w-full">
+                <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tighter uppercase italic">Settings</h2>
+                <button 
+                  onClick={onClose} 
+                  className="p-2 -mr-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90"
+                  aria-label="Close settings"
+                  onPointerDown={(e) => e.stopPropagation()} // Prevent drag when clicking the X
+                >
+                  <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Body */}
@@ -242,8 +250,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
               {/* Special Themes */}
               <section className="space-y-4">
-                <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Experimental</h3>
-                <ControlRow label="JewBizzy Theme" desc="Special performance mode for elite players." isLast>
+                <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Special</h3>
+                <ControlRow label="JewBizzy Special Theme" desc="Secret theme for JewBizzy lovers." isLast>
                   <Toggle 
                     active={settings.rahBizzyTheme} 
                     onToggle={() => updateSettings({ rahBizzyTheme: !settings.rahBizzyTheme })}

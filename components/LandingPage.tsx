@@ -1,25 +1,39 @@
-
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import FluidBackground from './FluidBackground';
 import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
 import { fetchS12Stats, S12Row } from '../data/s12Stats';
 
-interface LandingPageProps {
-  onSearchTrigger: () => void;
-  onTabChange: (tabId: TabID) => void;
-}
+const RARE_TITLE = "first person to ping jomz in general and say - you're right jomz, pansho does have 3 legs! - gets a free mythic";
 
 const HERO_TITLES = [
-   "soulz has the most points in nbll history with 4,307 and counting",
+  "soulz has the most points in nbll history with 4,307 and counting",
   "marsh has the most steals in nbll history with 423 and counting",
-  "taser was the first to reach the 1,000 points milestone",
-  "pansho and taser are tied for the most rings with 5 each",
+  "taser was the first to reach 1,000 points",
+  "pansho and taser are tied for the most rings at 5 each",
   "rah holds the most nbll records with 6",
   "pansho has an 83% chance to win the finals when he appears in one",
   "soulz's 71.2 ppg in s11 is the highest of all time",
   "phattie's 5.4 spg in s11 is the highest of all time",
+  "tip - use the desktop site for a better experience",
 ];
+
+/**
+ * Custom selection logic that treats the RARE_TITLE with a lower weight.
+ * This makes it appear much less frequently than standard titles.
+ */
+const pickWeightedTitle = (pool: string[]) => {
+  // 2% chance to pick the rare title if it exists in the logical set
+  const isRareRoll = Math.random() < 0.02;
+  
+  if (isRareRoll) {
+    return RARE_TITLE;
+  }
+
+  // Otherwise pick from non-rare titles
+  const commonPool = pool.filter(t => t !== RARE_TITLE);
+  return commonPool[Math.floor(Math.random() * commonPool.length)];
+};
 
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -74,13 +88,17 @@ const RahBizzyCoins: React.FC<{ reducedMotion: boolean }> = ({ reducedMotion }) 
   );
 };
 
+interface LandingPageProps {
+  onSearchTrigger: () => void;
+  onTabChange: (tabId: TabID) => void;
+}
+
 const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange }) => {
   const { settings } = useSettings();
   const [dynamicTitles, setDynamicTitles] = useState<string[]>([]);
   
-  // Use lazy initializer to pick exactly ONE title on first render and keep it stable.
-  // This prevents the "stutter" where the title changes shortly after the page loads.
-  const [heroTitle, setHeroTitle] = useState(() => pickRandom(HERO_TITLES));
+  // Use weighted selection for the initial title
+  const [heroTitle, setHeroTitle] = useState(() => pickWeightedTitle(HERO_TITLES));
 
   // Fetch S12 stats in the background to populate the rotation pool.
   useEffect(() => {
@@ -104,12 +122,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
             `${astL.player} currently leads the league in assists with ${Math.round(astL.ast)}`,
             `${rebL.player} currently leads the league in rebounds with ${Math.round(rebL.reb)}`,
             `${stlL.player} currently leads the league in steals with ${Math.round(stlL.stl)}`,
-            `${ppgL.player} currently leads the league in points per game with ${ppgL.ppg.toFixed(1)}`,
+            `${ppgL.player} currently leads the league in ppg with ${ppgL.ppg.toFixed(1)}`,
           ];
 
           setDynamicTitles(s12LeaderTitles);
-          // Note: We do NOT call setHeroTitle here anymore.
-          // The title will only change once the 10-second interval triggers.
         }
       } catch (err) {
         console.error("Failed to load S12 leader titles", err);
@@ -120,19 +136,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
     return () => { active = false; };
   }, []);
 
-  // Title rotation interval - ensures the page feels alive without jarring "stutters" on load.
+  // Title rotation interval - ensures the page feels alive
   useEffect(() => {
     const rotationInterval = setInterval(() => {
       const fullPool = [...HERO_TITLES, ...dynamicTitles];
       setHeroTitle((current) => {
-        let next = pickRandom(fullPool);
-        // Avoid repeating the same title
+        let next = pickWeightedTitle(fullPool);
+        // Avoid repeating the same title if possible
         while (next === current && fullPool.length > 1) {
-          next = pickRandom(fullPool);
+          next = pickWeightedTitle(fullPool);
         }
         return next;
       });
-    }, 10000); // 10 seconds per title
+    }, 10000); 
 
     return () => clearInterval(rotationInterval);
   }, [dynamicTitles]);
@@ -144,6 +160,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
       document.body.style.overflow = 'unset';
     };
   }, []);
+
+  const isRare = heroTitle === RARE_TITLE;
 
   return (
     <div className="relative h-screen bg-black selection:bg-[#D60A07] selection:text-white overflow-hidden">
@@ -158,8 +176,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
           {/* Main Headline Group */}
           <div className="space-y-3 relative group">
             <h1 
-              key={heroTitle} // Keying by content triggers the animation on change
-              className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight leading-[1.05] text-white transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none animate-title-fade"
+              key={heroTitle}
+              className={`
+                font-medium tracking-tight text-white transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none animate-title-fade
+                ${isRare 
+                  ? 'text-2xl md:text-4xl lg:text-5xl leading-tight max-w-4xl mx-auto' 
+                  : 'text-5xl md:text-7xl lg:text-8xl leading-[1.05]'}
+              `}
             >
               {heroTitle}
             </h1>

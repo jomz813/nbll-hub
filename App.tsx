@@ -4,6 +4,7 @@ import LandingPage from './components/LandingPage';
 import TabPage from './components/TabPage';
 import Navbar from '././components/Navbar';
 import SettingsModal from './components/SettingsModal';
+import ThemeOnboardingModal from './components/ThemeOnboardingModal';
 import RouteTransition from './components/RouteTransition';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
@@ -13,6 +14,7 @@ export type TabID = 'home' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hu
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabID>('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const { settings, getThemeColors } = useSettings();
 
@@ -22,8 +24,9 @@ const AppContent: React.FC = () => {
   const prevAccentTheme = useRef(settings.siteThemeAccent);
   const prevRahBizzyTheme = useRef(settings.rahBizzyTheme);
 
-  // Initialize theme from localStorage on mount
+  // Initialize theme and onboarding status from localStorage
   useEffect(() => {
+    // Theme setup
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') {
       setTheme('light');
@@ -35,7 +38,20 @@ const AppContent: React.FC = () => {
         localStorage.setItem('theme', 'dark');
       }
     }
+
+    // Onboarding check
+    const onboarded = localStorage.getItem('nbll_theme_onboarded');
+    if (!onboarded) {
+      // Delay onboarding slightly for visual impact
+      const timer = setTimeout(() => setIsOnboardingOpen(true), 1500);
+      return () => clearTimeout(timer);
+    }
   }, []);
+
+  const handleOnboardingComplete = () => {
+    setIsOnboardingOpen(false);
+    localStorage.setItem('nbll_theme_onboarded', '1');
+  };
 
   const triggerThemeTransition = () => {
     if (settings.reducedMotion) return;
@@ -166,6 +182,12 @@ const AppContent: React.FC = () => {
       )}
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <ThemeOnboardingModal 
+        isOpen={isOnboardingOpen} 
+        onComplete={handleOnboardingComplete} 
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
 
       <Navbar 
         activeTab={activeTab} 

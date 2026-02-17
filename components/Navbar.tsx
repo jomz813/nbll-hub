@@ -474,12 +474,24 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
         {/* Main Navbar Pill Container - Exactly matches site content width */}
         <div className="w-full max-w-6xl relative">
           <motion.div 
-            layout
+            initial={false}
             animate={{ 
               height: isMenuOpen ? 'auto' : '4rem',
-              borderRadius: isMenuOpen ? '2.5rem' : '2rem'
+              borderRadius: isMenuOpen ? '2.5rem' : '2rem',
+              boxShadow: (isMenuOpen && window.innerWidth < 768) 
+                ? (isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)')
+                : undefined,
+              border: (isMenuOpen && window.innerWidth < 768)
+                ? (isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid color-mix(in srgb, var(--accent) 30%, transparent)`)
+                : undefined
             }}
-            transition={{ type: "spring", stiffness: 350, damping: 35, mass: 1 }}
+            transition={{ 
+              height: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+              borderRadius: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+              boxShadow: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+              border: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+              type: "spring", stiffness: 350, damping: 35, mass: 1 
+            }}
             className={`
               relative ${backgroundClasses} border ${accentBorder}
               shadow-xl md:shadow-[0_45px_100px_-15px_rgba(0,0,0,0.65)]
@@ -492,13 +504,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
               backgroundColor: isHomeLightMobile ? 'rgba(255, 255, 255, 0.75)' : (theme === 'dark' ? 'rgba(9, 9, 11, 0.45)' : 'rgba(255, 255, 255, 0.4)'),
               backdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
               WebkitBackdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
-              border: isHomeLightMobile 
+              border: !isMenuOpen ? (isHomeLightMobile 
                   ? '1px solid rgba(0, 0, 0, 0.15)' 
-                  : `1px solid color-mix(in srgb, var(--accent) 20%, transparent)`,
-              ...(isMenuOpen ? {
-                  boxShadow: isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                  border: isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid color-mix(in srgb, var(--accent) 30%, transparent)`
-              } : {})
+                  : `1px solid color-mix(in srgb, var(--accent) 20%, transparent)`) : undefined
             } : {}}
           >
             {/* Noise Texture Overlay for liquid glass effect (Visible on mobile both states) */}
@@ -598,7 +606,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                 {renderSearch()}
               </div>
 
-              <div className="flex md:hidden flex-1 justify-end items-center gap-4">
+              <div className="flex md:hidden flex-1 justify-end items-center gap-1">
                 <div className="relative w-10 h-10">
                   <AnimatePresence mode="wait" initial={false}>
                     {!isMenuOpen ? (

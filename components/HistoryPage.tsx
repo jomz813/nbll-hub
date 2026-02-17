@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,18 +28,80 @@ const historyData: HistorySeason[] = [
   { id: 1, champion: 'Chicago Bulls', mvp: 'Tend' },
 ];
 
-const rosters: Record<number, string[]> = {
-  1: ["2hyped", "Koda", "Mateo", "Pansho", "Tend"],
-  2: ["Pansho", "Roro", "Tend", "Verse"],
-  3: ["CryptikNebula", "Pansho", "Shray", "Soulz"],
-  4: ["Jay", "Pansho", "PunkMonk", "Sinful", "Verse"],
-  5: ["Aesir", "Aev", "Nero", "Pansho", "Purple", "Soxxer (FO)", "Wisn"],
-  6: ["1luv", "Albrx", "Chxno", "Dannygreen", "Junior", "Packed", "Polar", "Pansho", "Taser"],
-  7: ["Bum", "Pansho", "Polar", "Rah", "Silver (FO)", "Taser", "Void"],
-  8: ["1luv", "Aim", "Albrx", "Chicken", "Dre", "Pansho", "Polar", "Taser"],
-  9: ["Albrx", "Cola", "CompShxrp", "i2qn", "Jamal", "Packed", "Pansho", "Rah", "Soulz"],
-  10: ["Albrx", "Anyrode", "Chxno", "Dre", "gmz", "Junior", "Paris", "Pansho", "Polar", "Red", "Taser"],
-  11: ["6Flags", "Aim", "Bum", "Doge", "Green", "PraiseCam", "Soulz", "Suki", "Taser", "Virnadol"]
+interface SeasonFinals {
+  championsTeam: string;
+  championsRoster: string[];
+  runnerUpTeam: string;
+  runnerUpRoster: string[];
+}
+
+const finalsData: Record<number, SeasonFinals> = {
+  1: {
+    championsTeam: "Bulls",
+    championsRoster: ["2hyped", "Koda", "Mateo", "Reticent", "Tend", "Voceity"],
+    runnerUpTeam: "Warriors",
+    runnerUpRoster: ["Castle", "Ethan", "Make-a-Wish", "Nebula", "Taser"]
+  },
+  2: {
+    championsTeam: "Bulls",
+    championsRoster: ["Koda", "Roro", "Tend", "Verse", "Voceity"],
+    runnerUpTeam: "Pelicans",
+    runnerUpRoster: ["Colt", "Jay", "Reece", "Sinful", "Soulz"]
+  },
+  3: {
+    championsTeam: "Warriors",
+    championsRoster: ["Marsh", "Nebula", "Shary", "Sinful", "Soulz"],
+    runnerUpTeam: "Bulls",
+    runnerUpRoster: ["Corey", "Jack", "Jay", "Kaza", "Seeker", "Verse"]
+  },
+  4: {
+    championsTeam: "Rockets",
+    championsRoster: ["Ghost", "Jay", "Meme", "Punk", "Seeker", "Sinful", "Verse"],
+    runnerUpTeam: "Hawks",
+    runnerUpRoster: ["Aym8", "Bullet", "Nebula", "Phattie", "Shray", "Wisn"]
+  },
+  5: {
+    championsTeam: "Thunder",
+    championsRoster: ["Aevolved", "Aesir", "Nero", "Pansho", "Purple", "Soxxer", "Wisn"],
+    runnerUpTeam: "Knicks",
+    runnerUpRoster: ["Chris", "Danny", "Jolly", "Packed", "Phattie", "Silver", "Soulz", "Trae"]
+  },
+  6: {
+    championsTeam: "Cavaliers",
+    championsRoster: ["1luv", "Albrx", "Chxno", "Danny", "Junior", "Packed", "Pansho", "Polar", "Taser"],
+    runnerUpTeam: "Lakers",
+    runnerUpRoster: ["Aesir", "Compxsharp", "Kirazi", "Suki"]
+  },
+  7: {
+    championsTeam: "Kings",
+    championsRoster: ["Bum", "Pansho", "Polar", "Rah", "Silver", "Taser", "Void"],
+    runnerUpTeam: "Magic",
+    runnerUpRoster: ["Cam", "Clipsyryan", "Dre", "Tend", "Wcs"]
+  },
+  8: {
+    championsTeam: "Knicks",
+    championsRoster: ["1luv", "Aim", "Albrx", "Chicken", "Pansho", "Phattie", "Polar", "Taser"],
+    runnerUpTeam: "—",
+    runnerUpRoster: ["Mattimized", "Packed", "Sosa", "Tend", "Wisn"]
+  },
+  9: {
+    championsTeam: "Cavaliers",
+    championsRoster: ["Albrx", "Cola", "Compxsharp", "Geek", "i2qn", "Jamal", "Packed", "Prt", "Rah", "Soulz"],
+    runnerUpTeam: "Lakers",
+    runnerUpRoster: ["Ghost", "Lavixey", "Marsh", "Phattie", "Polar"]
+  },
+  10: {
+    championsTeam: "Heat",
+    championsRoster: ["Anyrode", "Chxno", "Dre", "gmz", "Junior", "Paris", "Pansho", "Polar", "Red", "Taser"],
+    runnerUpTeam: "Lakers",
+    runnerUpRoster: ["Bum", "Coves", "Kac", "Lavixey", "Marsh", "Plv"]
+  },
+  11: {
+    championsTeam: "Bucks",
+    championsRoster: ["6Flags", "Aim", "Bum", "Cam", "Doge", "Green", "Liminal", "Soulz", "Taser",  "Suki"],
+    runnerUpTeam: "Clippers",
+    runnerUpRoster: ["1luv", "Chxno", "Coves", "Dre", "Jomz", "Junior", "Polar", "Rah", "Taser"]
+  }
 };
 
 const USERNAME_MAPPING: Record<number, Record<string, string>> = {
@@ -50,7 +111,11 @@ const USERNAME_MAPPING: Record<number, Record<string, string>> = {
     "Junior": "jr49ers12",
     "Pansho": "ff2frs",
     "Polar": "polurhx",
-    "Taser": "iTxser"
+    "Taser": "iTxser",
+    "Bum": "Xlerent",
+    "Coves": "coves7",
+    "Lavixey": "oxolxzyoxo",
+    "Marsh": "urmarshboi77"
   },
   11: {
     "Aim": "dndaim",
@@ -60,7 +125,14 @@ const USERNAME_MAPPING: Record<number, Record<string, string>> = {
     "PraiseCam": "Offprkx_13",
     "Soulz": "qleerinsGoon1",
     "Suki": "666detached",
-    "Taser": "iTxser"
+    "Taser": "iTxser",
+    "1luv": "xr1r0",
+    "Coves": "coves7",
+    "Dre": "adrexelavenue886",
+    "Jomz": "spidermonkeywastaken",
+    "Junior": "jr49ers12",
+    "Polar": "polurhx",
+    "Rah": "alwayzbizzy41"
   }
 };
 
@@ -160,24 +232,18 @@ const StatPreview: React.FC<{
       style={containerStyle}
       className={`
         bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden
-        ${isMobile ? (isRostersActive ? 'rounded-[2rem] border' : 'rounded-t-[2rem] border-t') : 'w-[280px] rounded-[2.5rem] p-6 md:border'}
+        ${isMobile ? (isRostersActive ? 'rounded-[2rem] border' : 'rounded-t-[2rem] border-t') : 'w-[280px] rounded-[2.5rem] md:border'}
       `}
     >
-      <div className={`flex-1 overflow-y-auto no-scrollbar ${isMobile ? "p-8" : ""}`}>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className={`px-2.5 py-1 rounded-full border-2 ${accentText} border-current bg-transparent shrink-0`}>
-              <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">S{seasonId} STATS</span>
-            </div>
-            <div className="h-px w-8 bg-zinc-100 dark:bg-zinc-800" />
-          </div>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onClose(); }} 
-            className={`${isMobile ? 'absolute top-6 right-6' : ''} p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 active:scale-90 z-20`}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-        </div>
+      <div className={`flex-1 overflow-y-auto no-scrollbar pt-12 px-8 pb-8`}>
+        {/* Close Button Top-Right Positioning */}
+        <button 
+          onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onClose(); }} 
+          className="absolute top-6 right-6 p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 active:scale-90 z-20"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        </button>
+
         <div className="flex items-center gap-5 mb-8">
           <div className="relative shrink-0">
              <div className="w-16 h-16 rounded-[1.5rem] bg-zinc-50 dark:bg-zinc-800 overflow-hidden border border-zinc-100 dark:border-zinc-800 flex items-center justify-center">
@@ -195,21 +261,25 @@ const StatPreview: React.FC<{
           </div>
           <div className="min-w-0">
             <h4 className="text-lg font-black text-zinc-900 dark:text-white truncate uppercase tracking-tighter leading-none mb-1">{username}</h4>
-            <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] block">{player}</span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] block leading-tight">{player}</span>
+              <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest opacity-80 leading-tight">S{seasonId}</span>
+            </div>
           </div>
         </div>
+
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'PTS', val: stats?.pts ?? 0, highlight: true },
+            { label: 'PTS', val: stats?.pts ?? 0 },
             { label: 'AST', val: stats?.ast ?? 0 },
             { label: 'REB', val: stats?.reb ?? 0 },
             { label: 'STL', val: stats?.stl ?? 0 },
             { label: 'GP', val: stats?.gp ?? 0 },
-            { label: 'EFF', val: stats?.eff ?? 0, bold: true },
+            { label: 'EFF', val: stats?.eff ?? 0 },
           ].map((st, i) => (
-            <div key={i} className={`flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-colors ${st.highlight ? 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-800/50' : 'border-transparent'}`}>
+            <div key={i} className="flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border border-transparent transition-colors">
               <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">{st.label}</span>
-              <span className={`text-base tabular-nums tracking-tight leading-none ${st.highlight ? accentText : 'text-zinc-900 dark:text-zinc-100'} ${st.bold || st.highlight ? 'font-black' : 'font-bold'}`}>
+              <span className="text-base tabular-nums tracking-tight leading-none text-zinc-900 dark:text-zinc-100 font-bold">
                 {st.val}
               </span>
             </div>
@@ -227,7 +297,7 @@ const HistoryPage: React.FC = () => {
   const accentText = colors.text;
 
   const [filter, setFilter] = useState<HistoryFilter>('All');
-  const [openSeasonId, setOpenSeasonId] = useState<number | null>(null);
+  const [openSeasonIds, setOpenSeasonIds] = useState<number[]>([]);
   const [s10Stats, setS10Stats] = useState<any[]>([]);
   const [s11Stats, setS11Stats] = useState<any[]>([]);
   const [loadingGlobalStats, setLoadingGlobalStats] = useState(true);
@@ -272,13 +342,22 @@ const HistoryPage: React.FC = () => {
     observer.observe(seasonsListRef.current);
     update();
     return () => observer.disconnect();
-  }, [filter, openSeasonId]);
+  }, [filter, openSeasonIds]);
+
+  // Desktop-only auto-expand behavior for "Rosters" filter
+  useEffect(() => {
+    if (filter === 'Rosters' && !isMobile) {
+      setOpenSeasonIds(historyData.map(s => s.id));
+    }
+  }, [filter, isMobile]);
 
   const toggleRoster = (id: number) => {
-    setOpenSeasonId(openSeasonId === id ? null : id);
+    setOpenSeasonIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
-  const handleRosterNameClick = (e: React.MouseEvent, name: string, seasonId: number, mappedUsername: string) => {
+  const handleRosterNameClick = (e: React.MouseEvent<HTMLElement>, name: string, seasonId: number, mappedUsername: string) => {
     e.stopPropagation();
     if (activePreview?.username === mappedUsername && activePreview?.seasonId === seasonId) {
       setActivePreview(null);
@@ -305,7 +384,7 @@ const HistoryPage: React.FC = () => {
           hidden: { opacity: 0, y: 5 },
           show: { opacity: 1, y: 0 }
         }}
-        onClick={(e) => isInteractive && handleRosterNameClick(e, displayName, seasonId, mappedUsername)}
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => isInteractive && handleRosterNameClick(e, displayName, seasonId, mappedUsername)}
         className={`
           flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all duration-300
           ${isInteractive 
@@ -333,12 +412,6 @@ const HistoryPage: React.FC = () => {
 
   const filterOptions: HistoryFilter[] = ['All', 'Teams', 'MVPs', 'Rosters'];
 
-  const DropdownIcon = () => (
-    <svg className="w-3 h-3 text-zinc-400 dark:text-zinc-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-
   return (
     <div className="pb-20 animate-page-enter">
       {/* Header + Filter Row */}
@@ -346,52 +419,6 @@ const HistoryPage: React.FC = () => {
         <h2 className={`text-4xl md:text-6xl font-black tracking-tighter ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}>
           league history
         </h2>
-        
-        {/* Desktop Filter - Aligned right of header */}
-        <div className="hidden md:flex items-center h-11 shrink-0">
-          <div role="tablist" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1.5 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0 overflow-hidden">
-            <div className="flex gap-1 h-full items-center px-0.5">
-              {filterOptions.map((opt) => {
-                const isActive = filter === opt;
-                return (
-                  <button
-                    key={opt}
-                    onClick={() => setFilter(opt)}
-                    className={`relative flex-none rounded-full font-black uppercase tracking-widest transition-colors duration-300 px-6 py-2 text-[10px] z-10 ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
-                  >
-                    <span className="relative z-20">{opt}</span>
-                    {isActive && (
-                      <motion.div 
-                        layoutId="history-filter-pill" 
-                        className={`absolute inset-0 ${accentBg} rounded-full shadow-md z-10`} 
-                        transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.6 }} 
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Dropdown Style Filter */}
-        <div className="md:hidden w-full">
-          <div className="w-full h-11 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-full flex items-center overflow-hidden px-1 shadow-sm">
-            <div className="relative flex-1 flex items-center px-4 h-full group justify-between">
-              <span className="text-[8px] font-black uppercase tracking-[0.15em] text-zinc-400 shrink-0">FILTER</span>
-              <select 
-                value={filter} 
-                onChange={(e) => setFilter(e.target.value as HistoryFilter)} 
-                className="absolute inset-0 w-full h-full bg-transparent border-none text-[10px] font-black text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-10 text-right uppercase tracking-widest z-10"
-              >
-                {filterOptions.map(opt => <option key={opt} value={opt} className="dark:bg-zinc-900">{opt}</option>)}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 group-hover:translate-y-[-40%] transition-transform">
-                <DropdownIcon />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="relative">
@@ -406,8 +433,8 @@ const HistoryPage: React.FC = () => {
 
         <div ref={seasonsListRef} className="space-y-8 md:space-y-12">
           {historyData.map((season) => {
-            const isRosterOpen = openSeasonId === season.id;
-            const seasonRoster = rosters[season.id] || [];
+            const isRosterOpen = openSeasonIds.includes(season.id);
+            const finals = finalsData[season.id];
             const isLocalPreviewActive = activePreview?.seasonId === season.id;
 
             const showChampion = filter === 'All' || filter === 'Teams';
@@ -452,7 +479,7 @@ const HistoryPage: React.FC = () => {
                              <svg className={`w-3.5 h-3.5 transition-transform duration-300 ${isRosterOpen ? 'rotate-180' : 'group-hover/btn:translate-y-0.5'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Roster</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Finalists</span>
                           </button>
                         )}
                         <div className={`hidden md:block px-3 py-1.5 rounded-full ${colors.bgSoft}`}>
@@ -498,7 +525,7 @@ const HistoryPage: React.FC = () => {
                       </AnimatePresence>
                     </div>
 
-                    {showRosterUI && (
+                    {showRosterUI && finals && (
                       <AnimatePresence>
                         {isRosterOpen && (
                           <motion.div
@@ -508,19 +535,42 @@ const HistoryPage: React.FC = () => {
                             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                             className="overflow-hidden"
                           >
-                            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/50">
-                              <SectionHeader title="Team Roster" />
-                              <motion.div 
-                                variants={{
-                                  hidden: { opacity: 0 },
-                                  show: { opacity: 1, transition: { staggerChildren: settings.reducedMotion ? 0 : 0.05 } }
-                                }}
-                                initial="hidden"
-                                animate="show"
-                                className="flex flex-wrap gap-2 mt-4"
-                              >
-                                {seasonRoster.map((name) => renderRosterChip(name, season.id))}
-                              </motion.div>
+                            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/50 space-y-8">
+                              {/* Champions Section */}
+                              <div className="space-y-4">
+                                <SectionHeader title="Champions" rightValue={finals.championsTeam} />
+                                <div className="px-1">
+                                  <motion.div 
+                                    variants={{
+                                      hidden: { opacity: 0 },
+                                      show: { opacity: 1, transition: { staggerChildren: settings.reducedMotion ? 0 : 0.05 } }
+                                    }}
+                                    initial="hidden"
+                                    animate="show"
+                                    className="flex flex-wrap gap-2"
+                                  >
+                                    {finals.championsRoster.map((name) => renderRosterChip(name, season.id))}
+                                  </motion.div>
+                                </div>
+                              </div>
+
+                              {/* Runner Up Section */}
+                              <div className="space-y-4">
+                                <SectionHeader title="Runner Ups" rightValue={finals.runnerUpTeam} />
+                                <div className="px-1">
+                                  <motion.div 
+                                    variants={{
+                                      hidden: { opacity: 0 },
+                                      show: { opacity: 1, transition: { staggerChildren: settings.reducedMotion ? 0 : 0.05 } }
+                                    }}
+                                    initial="hidden"
+                                    animate="show"
+                                    className="flex flex-wrap gap-2"
+                                  >
+                                    {finals.runnerUpRoster.map((name) => renderRosterChip(name, season.id))}
+                                  </motion.div>
+                                </div>
+                              </div>
                             </div>
                           </motion.div>
                         )}
@@ -579,10 +629,15 @@ const HistoryPage: React.FC = () => {
   );
 };
 
-const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
-  <div className="flex items-center gap-3">
+const SectionHeader: React.FC<{ title: string, rightValue?: string }> = ({ title, rightValue }) => (
+  <div className="flex items-center gap-3 w-full">
     <h4 className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.25em] shrink-0">{title}</h4>
     <div className="h-px bg-zinc-100 dark:bg-zinc-800/50 flex-1" />
+    {rightValue && (
+      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 shrink-0">
+        {rightValue}
+      </span>
+    )}
   </div>
 );
 

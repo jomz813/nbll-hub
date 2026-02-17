@@ -11,6 +11,24 @@ export interface Settings {
   siteThemeAccent: SiteThemeAccent;
 }
 
+export interface ThemeOption {
+  id: SiteThemeAccent;
+  label: string;
+  color: string;
+}
+
+export const THEME_OPTIONS: ThemeOption[] = [
+  { id: "default", label: "nbll red", color: "#D60A07" },
+  { id: "marigold", label: "marigold", color: "#EAA221" },
+  { id: "citrine", label: "citrine", color: "#E4D007" },
+  { id: "aquamarine", label: "aquamarine", color: "#7FFFD4" },
+  { id: "malachite", label: "malachite", color: "#45C089" },
+  { id: "mulberry", label: "mulberry", color: "#C64B8C" },
+  { id: "byzantium", label: "byzantium", color: "#702963" },
+  { id: "taupe", label: "taupe", color: "#B9A281" },
+  { id: "monochrome", label: "monochrome", color: "#9CA3AF" },
+];
+
 interface ThemeColors {
   text: string;
   bg: string;
@@ -37,7 +55,7 @@ const defaultSettings: Settings = {
   siteThemeAccent: "default",
 };
 
-const THEME_ACCENTS: Record<SiteThemeAccent, string> = {
+const THEME_ACCENTS_MAP: Record<SiteThemeAccent, string> = {
   default: "#D60A07",
   malachite: "#45C089",
   citrine: "#E4D007",
@@ -46,7 +64,7 @@ const THEME_ACCENTS: Record<SiteThemeAccent, string> = {
   byzantium: "#702963",
   mulberry: "#C64B8C",
   taupe: "#B9A281",
-  monochrome: "#71717a", // Fallback, monochrome logic is handled specifically
+  monochrome: "#71717a",
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -80,7 +98,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const getThemeColors = (isHOF = false): ThemeColors => {
-    // Priority 1: RahBizzy Theme (Blue)
     if (settings.rahBizzyTheme) {
       return {
         text: 'text-[#3B82F6]',
@@ -93,8 +110,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       };
     }
     
-    // Priority 2: HOF Override (Gold) - Only if not forced by global theme? 
-    // Usually HOF pages have a specific look.
     if (isHOF) {
       return {
         text: 'text-[#D4AF37]',
@@ -107,9 +122,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       };
     }
 
-    // Priority 3: Custom Site Accent
     if (settings.siteThemeAccent && settings.siteThemeAccent !== "default") {
-      const hex = THEME_ACCENTS[settings.siteThemeAccent];
+      const hex = THEME_ACCENTS_MAP[settings.siteThemeAccent];
       const isMonochrome = settings.siteThemeAccent === "monochrome";
       
       return {
@@ -123,7 +137,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       };
     }
 
-    // Default Red
     return {
       text: 'text-[#D60A07]',
       bg: 'bg-[#D60A07]',
