@@ -291,7 +291,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   Reset preferences
                 </button>
                 <div className="text-center">
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-600 opacity-40">Version 1.5.2</span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-600 opacity-40">Version 1.5.2 *giggles cutely*</span>
                 </div>
               </section>
 

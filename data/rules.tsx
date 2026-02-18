@@ -123,7 +123,10 @@ export const rulesData = [
     title: 'Ban-Level Offenses',
     content: [
       'DDoSing or intentionally interrupting a game',
-      'Repeated offenses'
+      'Repeated offenses',
+      'Being gay',
+      'Being retarded',
+      'Being named either manfla or zion'
     ]
   }
 ];
