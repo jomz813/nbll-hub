@@ -171,7 +171,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   </svg>
                 </button>
               </div>
-            </div>
+            </div>s
 
             {/* Scrollable Body */}
             <div className="flex-1 overflow-y-auto p-8 pt-6 space-y-8 custom-scrollbar">
@@ -183,7 +183,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <div className="space-y-0">
                   <SettingRow 
                     label="Site Accent Color" 
-                    desc="Choose your primary interface accent."
+                    desc="Choose your accent color."
                     rightElement={
                       <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
                         {currentThemeLabel}

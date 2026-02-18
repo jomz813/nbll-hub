@@ -26,7 +26,7 @@ export const generateAllTimeBadges = (players: PlayerStats[]): Achievement[] => 
     badges.push({
       id: `at-pts-${item.m}`,
       name: item.title,
-      description: `Surpassed ${item.m.toLocaleString()} career points in the league.`,
+      description: `Scored at least ${item.m.toLocaleString()} points in your career.`,
       requirementText: `${item.m.toLocaleString()} PTS`,
       category: 'Points',
       check: (s) => (s['pts'] as number || 0) >= item.m
@@ -46,7 +46,7 @@ export const generateAllTimeBadges = (players: PlayerStats[]): Achievement[] => 
     badges.push({
       id: `at-ast-${item.m}`,
       name: item.title,
-      description: `Recorded ${item.m.toLocaleString()} or more assists across your career.`,
+      description: `Recorded at least ${item.m.toLocaleString()} assists in your career.`,
       requirementText: `${item.m.toLocaleString()} AST`,
       category: 'Assists',
       check: (s) => (s['ast'] as number || 0) >= item.m
@@ -66,7 +66,7 @@ export const generateAllTimeBadges = (players: PlayerStats[]): Achievement[] => 
     badges.push({
       id: `at-reb-${item.m}`,
       name: item.title,
-      description: `Collected over ${item.m.toLocaleString()} rebounds during your league tenure.`,
+      description: `Collected at least ${item.m.toLocaleString()} rebounds in your career.`,
       requirementText: `${item.m.toLocaleString()} REB`,
       category: 'Rebounds',
       check: (s) => (s['reb'] as number || 0) >= item.m
@@ -86,7 +86,7 @@ export const generateAllTimeBadges = (players: PlayerStats[]): Achievement[] => 
     badges.push({
       id: `at-stl-${item.m}`,
       name: item.title,
-      description: `Secured ${item.m.toLocaleString()} career steals through defensive prowess.`,
+      description: `Secured at least ${item.m.toLocaleString()} steals in your career.`,
       requirementText: `${item.m.toLocaleString()} STL`,
       category: 'Steals',
       check: (s) => (s['stl'] as number || 0) >= item.m
@@ -103,7 +103,7 @@ export const generateAllTimeBadges = (players: PlayerStats[]): Achievement[] => 
     badges.push({
       id: `at-eff-${item.m}`,
       name: item.title,
-      description: `Maintained a career statistical impact rating of ${item.m} or higher.`,
+      description: `Maintained a career efficiency rating of ${item.m} or higher.`,
       requirementText: `${item.m}+ EFF`,
       category: 'Efficiency',
       check: (s) => (s['eff'] as number || 0) >= item.m
@@ -114,7 +114,7 @@ export const generateAllTimeBadges = (players: PlayerStats[]): Achievement[] => 
   badges.push({
     id: 'at-champion',
     name: 'Champion',
-    description: 'Reached the mountaintop and secured a league title.',
+    description: 'Reached the top and secured a league title.',
     requirementText: 'Won at least 1 ring.',
     category: 'Legacy',
     check: (_, a) => {
@@ -145,7 +145,7 @@ export const generateAllTimeBadges = (players: PlayerStats[]): Achievement[] => 
   badges.push({
     id: 'at-hof',
     name: 'Hall of Fame',
-    description: 'Immortalized among the greatest to ever play in the NBLL.',
+    description: 'One of the greatest to ever play the game.',
     requirementText: 'HOF Inductee',
     category: 'Legacy',
     check: (_, a) => {
