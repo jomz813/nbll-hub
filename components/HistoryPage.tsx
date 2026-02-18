@@ -144,14 +144,15 @@ const StatPreview: React.FC<{
   stats: any, 
   loadingStats: boolean,
   onClose: () => void, 
-  anchorRect?: DOMRect,
+  offsetTop?: number,
+  offsetLeft?: number,
   accentText: string,
   accentBg: string,
   reducedMotion: boolean,
   seasonId: number,
   isMobile: boolean,
   filter: HistoryFilter
-}> = ({ player, username, stats, loadingStats, onClose, anchorRect, accentText, accentBg, reducedMotion, seasonId, isMobile, filter }) => {
+}> = ({ player, username, stats, loadingStats, onClose, offsetTop, offsetLeft, accentText, accentBg, reducedMotion, seasonId, isMobile, filter }) => {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loadingAvatar, setLoadingAvatar] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -177,22 +178,20 @@ const StatPreview: React.FC<{
   }, [username]);
 
   useEffect(() => {
-    if (!isMobile) {
-      const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-      const handleClickOutside = (e: MouseEvent) => {
-        if (modalRef.current && !modalRef.current.contains(e.target as Node)) onClose();
-      };
-      const timer = setTimeout(() => {
-        window.addEventListener('keydown', handleEsc);
-        window.addEventListener('mousedown', handleClickOutside);
-      }, 0);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('keydown', handleEsc);
-        window.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [onClose, isMobile]);
+    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) onClose();
+    };
+    const timer = setTimeout(() => {
+      window.addEventListener('keydown', handleEsc);
+      window.addEventListener('mousedown', handleClickOutside);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleEsc);
+      window.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
 
   const containerStyle: React.CSSProperties = isMobile ? {
     position: 'absolute',
@@ -205,10 +204,11 @@ const StatPreview: React.FC<{
     display: 'flex',
     flexDirection: 'column'
   } : {
-    position: 'fixed',
-    top: Math.max(100, Math.min(window.innerHeight - 340, (anchorRect?.top ?? 0) + 40)),
-    left: Math.max(20, Math.min(window.innerWidth - 300, (anchorRect?.left ?? 0))),
-    zIndex: 1001
+    position: 'absolute',
+    top: (offsetTop ?? 0) + 45,
+    left: Math.max(0, Math.min(600, (offsetLeft ?? 0))),
+    zIndex: 1001,
+    width: '280px'
   };
 
   const variants = isMobile ? {
@@ -232,11 +232,10 @@ const StatPreview: React.FC<{
       style={containerStyle}
       className={`
         bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden
-        ${isMobile ? (isRostersActive ? 'rounded-[2rem] border' : 'rounded-t-[2rem] border-t') : 'w-[280px] rounded-[2.5rem] md:border'}
+        ${isMobile ? (isRostersActive ? 'rounded-[2rem] border' : 'rounded-t-[2rem] border-t') : 'rounded-[2.5rem] border'}
       `}
     >
       <div className={`flex-1 overflow-y-auto no-scrollbar pt-12 px-8 pb-8`}>
-        {/* Close Button Top-Right Positioning */}
         <button 
           onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onClose(); }} 
           className="absolute top-6 right-6 p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 active:scale-90 z-20"
@@ -305,7 +304,8 @@ const HistoryPage: React.FC = () => {
     player: string, 
     username: string,
     seasonId: number, 
-    rect?: DOMRect
+    offsetTop?: number,
+    offsetLeft?: number
   } | null>(null);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -330,7 +330,6 @@ const HistoryPage: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Update timeline height based on seasons list bounds
   useLayoutEffect(() => {
     if (!seasonsListRef.current) return;
     const update = () => {
@@ -344,7 +343,6 @@ const HistoryPage: React.FC = () => {
     return () => observer.disconnect();
   }, [filter, openSeasonIds]);
 
-  // Desktop-only auto-expand behavior for "Rosters" filter
   useEffect(() => {
     if (filter === 'Rosters' && !isMobile) {
       setOpenSeasonIds(historyData.map(s => s.id));
@@ -363,11 +361,13 @@ const HistoryPage: React.FC = () => {
       setActivePreview(null);
       return;
     }
+    const target = e.currentTarget;
     setActivePreview({
       player: name,
       username: mappedUsername,
       seasonId,
-      rect: e.currentTarget.getBoundingClientRect()
+      offsetTop: target.offsetTop,
+      offsetLeft: target.offsetLeft
     });
   };
 
@@ -410,11 +410,8 @@ const HistoryPage: React.FC = () => {
     return statsSource.find(p => p.player.toLowerCase() === activePreview.username.toLowerCase());
   }, [activePreview, s10Stats, s11Stats]);
 
-  const filterOptions: HistoryFilter[] = ['All', 'Teams', 'MVPs', 'Rosters'];
-
   return (
     <div className="pb-20 animate-page-enter">
-      {/* Header + Filter Row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 items-start">
         <h2 className={`text-4xl md:text-6xl font-black tracking-tighter ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}>
           league history
@@ -422,7 +419,6 @@ const HistoryPage: React.FC = () => {
       </div>
 
       <div className="relative">
-        {/* Vertical Timeline Line - Fixed height logic based on list container */}
         <div 
           className="absolute left-2 md:left-2 w-px bg-zinc-200 dark:bg-zinc-800 z-0" 
           style={{ 
@@ -447,13 +443,12 @@ const HistoryPage: React.FC = () => {
                 key={season.id} 
                 className="relative flex flex-col md:flex-row items-start md:items-center"
               >
-                {/* Dot Marker */}
                 <div className={`absolute left-2 md:left-2 w-4 h-4 rounded-full border-4 border-white dark:border-zinc-950 ${accentBg} shadow-sm z-10 -translate-x-1/2 mt-8 md:mt-0`} />
 
                 <div className="ml-10 md:ml-16 w-[calc(100%-2.5rem)] md:w-auto md:flex-1">
                   <div 
-                    className={`bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2.5rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 group relative ${isLocalPreviewActive && isMobile && filter === 'Rosters' ? 'overflow-visible' : 'overflow-hidden'} ${isRosterOpen && showRosterUI ? 'ring-1 ring-current' : ''}`} 
-                    style={{ borderColor: isRosterOpen && showRosterUI ? 'var(--accent)' : undefined }}
+                    className={`bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2.5rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 group relative ${isLocalPreviewActive ? 'overflow-visible' : 'overflow-hidden'} ${isRosterOpen && showRosterUI ? 'ring-1 ring-current' : ''}`} 
+                    style={{ borderColor: isRosterOpen && showRosterUI ? 'var(--accent)' : undefined, zIndex: isLocalPreviewActive ? 50 : 1 }}
                   >
                     <AnimatePresence>
                       {isLocalPreviewActive && isMobile && (
@@ -533,13 +528,12 @@ const HistoryPage: React.FC = () => {
                             animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
                             exit={{ height: 0, opacity: 0, marginTop: 0 }}
                             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                            className="overflow-hidden"
+                            className={isLocalPreviewActive ? 'overflow-visible' : 'overflow-hidden'}
                           >
-                            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/50 space-y-8">
-                              {/* Champions Section */}
+                            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/50 space-y-8 relative">
                               <div className="space-y-4">
                                 <SectionHeader title="Champions" rightValue={finals.championsTeam} />
-                                <div className="px-1">
+                                <div className="px-1 relative">
                                   <motion.div 
                                     variants={{
                                       hidden: { opacity: 0 },
@@ -554,10 +548,9 @@ const HistoryPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Runner Up Section */}
                               <div className="space-y-4">
                                 <SectionHeader title="Runner Ups" rightValue={finals.runnerUpTeam} />
-                                <div className="px-1">
+                                <div className="px-1 relative">
                                   <motion.div 
                                     variants={{
                                       hidden: { opacity: 0 },
@@ -571,29 +564,32 @@ const HistoryPage: React.FC = () => {
                                   </motion.div>
                                 </div>
                               </div>
+
+                              {/* Desktop & Mobile Popout Anchor */}
+                              <AnimatePresence>
+                                {isLocalPreviewActive && (
+                                  <StatPreview 
+                                    player={activePreview.player}
+                                    username={activePreview.username}
+                                    stats={previewStats}
+                                    loadingStats={loadingGlobalStats}
+                                    onClose={() => setActivePreview(null)}
+                                    offsetTop={activePreview.offsetTop}
+                                    offsetLeft={activePreview.offsetLeft}
+                                    accentText={accentText}
+                                    accentBg={accentBg}
+                                    reducedMotion={settings.reducedMotion}
+                                    seasonId={season.id}
+                                    isMobile={isMobile}
+                                    filter={filter}
+                                  />
+                                )}
+                              </AnimatePresence>
                             </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
                     )}
-
-                    <AnimatePresence>
-                      {isLocalPreviewActive && isMobile && (
-                        <StatPreview 
-                          player={activePreview.player}
-                          username={activePreview.username}
-                          stats={previewStats}
-                          loadingStats={loadingGlobalStats}
-                          onClose={() => setActivePreview(null)}
-                          accentText={accentText}
-                          accentBg={accentBg}
-                          reducedMotion={settings.reducedMotion}
-                          seasonId={season.id}
-                          isMobile={true}
-                          filter={filter}
-                        />
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
@@ -603,28 +599,6 @@ const HistoryPage: React.FC = () => {
         
         <div className="absolute left-2 md:left-2 bottom-10 w-3 h-3 -translate-x-1/2 rounded-full bg-zinc-200 dark:bg-zinc-800" />
       </div>
-
-      {!isMobile && createPortal(
-        <AnimatePresence>
-          {activePreview && (
-            <StatPreview 
-              player={activePreview.player}
-              username={activePreview.username}
-              stats={previewStats}
-              loadingStats={loadingGlobalStats}
-              onClose={() => setActivePreview(null)}
-              anchorRect={activePreview.rect}
-              accentText={accentText}
-              accentBg={accentBg}
-              reducedMotion={settings.reducedMotion}
-              seasonId={activePreview.seasonId}
-              isMobile={false}
-              filter={filter}
-            />
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
     </div>
   );
 };

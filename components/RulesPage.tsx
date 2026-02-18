@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { rulesData } from '../data/rules';
+import { useSettings } from '../context/SettingsContext';
 
 const RulesAccordion: React.FC<{ section: typeof rulesData[0], accentText: string, accentBg: string }> = ({ section, accentText, accentBg }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -56,14 +56,19 @@ const RulesAccordion: React.FC<{ section: typeof rulesData[0], accentText: strin
 };
 
 const RulesPage: React.FC = () => {
-  const accentBg = 'bg-[#D60A07]';
+  const { getThemeColors } = useSettings();
+  const colors = getThemeColors();
+  
+  // Dynamically retrieve current theme accent colors
+  const accentBg = colors.bg;
+  const accentText = colors.text;
 
   return (
     <div className="flex flex-col -mt-6">
       <div className="w-full max-w-4xl flex flex-col gap-16 md:gap-20">
         <div className="md:hidden">
           {rulesData.map((section) => (
-            <RulesAccordion key={section.id} section={section} accentText="text-[#D60A07]" accentBg={accentBg} />
+            <RulesAccordion key={section.id} section={section} accentText={accentText} accentBg={accentBg} />
           ))}
         </div>
         <div className="hidden md:block space-y-16">

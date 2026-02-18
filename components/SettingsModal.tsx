@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Variants, useDragControls } from 'framer-motion';
-import { useSettings, THEME_OPTIONS } from '../context/SettingsContext';
+import { useSettings, THEME_OPTIONS, SiteThemeAccent } from '../context/SettingsContext';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -106,7 +106,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     </button>
   );
 
-  const currentThemeLabel = THEME_OPTIONS.find(opt => opt.id === settings.siteThemeAccent)?.label || 'nbll red';
+  const currentThemeOption = THEME_OPTIONS.find(opt => opt.id === settings.siteThemeAccent) || THEME_OPTIONS[0];
+  const currentThemeLabel = currentThemeOption.label || 'nbll red';
 
   return (
     <AnimatePresence>
@@ -190,6 +191,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     }
                   >
                     <div className="grid grid-cols-5 gap-3 md:gap-4 py-1">
+                      {/* Static "Selected" Preview Swatch - Non-clickable */}
+                      <div
+                        className="relative aspect-square rounded-full border-2 border-zinc-900 dark:border-zinc-100 scale-105 shadow-md flex items-center justify-center cursor-default pointer-events-none"
+                        title="Selected Color"
+                      >
+                        <div 
+                          className="w-full h-full rounded-full border border-black/5 dark:border-white/10 flex items-center justify-center"
+                          style={{ backgroundColor: currentThemeOption.color }}
+                        >
+                          <div className="text-white drop-shadow-sm">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Selectable Swatches */}
                       {THEME_OPTIONS.map((option) => {
                         const isSelected = settings.siteThemeAccent === option.id;
                         return (
