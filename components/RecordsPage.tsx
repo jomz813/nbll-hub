@@ -14,11 +14,11 @@ const RecordsPage: React.FC = () => {
              <h3 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">
                {section.title}
              </h3>
-             <div className="h-px bg-zinc-100 dark:border-zinc-800 flex-1" />
+             <div className="h-px header-divider flex-1" />
           </div>
 
           {/* Desktop Table Header */}
-          <div className="hidden md:grid grid-cols-[1.6fr_0.8fr_0.8fr] px-6 py-3 border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.2em]">
+          <div className="hidden md:grid grid-cols-[1.6fr_0.8fr_0.8fr] px-6 py-3 border-b text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.2em]" style={{ borderColor: 'var(--divider)' }}>
             <div>Record</div>
             <div className="text-center">Value</div>
             <div className="text-right">Holder</div>
@@ -29,7 +29,8 @@ const RecordsPage: React.FC = () => {
             {section.items.map((record) => (
               <div 
                 key={record.id}
-                className="group border-b border-zinc-100 dark:border-zinc-900 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors"
+                className="group border-b last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors"
+                style={{ borderColor: 'var(--divider)' }}
               >
                 {/* Desktop Layout */}
                 <div className="hidden md:grid grid-cols-[1.6fr_0.8fr_0.8fr] items-center px-6 py-6">

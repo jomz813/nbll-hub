@@ -40,7 +40,7 @@ const HOFEligibility: React.FC = () => {
       
       <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
         <div className="overflow-hidden">
-          <ul className="space-y-2 border-l border-zinc-200 dark:border-zinc-800 pl-4 ml-1">
+          <ul className="space-y-2 border-l pl-4 ml-1" style={{ borderColor: 'var(--divider)' }}>
             {[
               "1x Championship Ring",
               "2x Finals Appearances",
@@ -157,7 +157,7 @@ const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
            </div>
            
            {/* 3. Footer - Bottom Pinned */}
-           <div className="mt-4 pt-3 border-t border-white/10 relative z-10 shrink-0">
+           <div className="mt-4 pt-3 subtle-divider relative z-10 shrink-0" style={{ borderTop: '1px solid var(--divider)', background: 'transparent' }}>
              <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em]">nbll hall of fame</span>
            </div>
         </div>
@@ -183,7 +183,7 @@ const HallOfFamePage: React.FC = () => {
           <h3 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">
             Inducted Members
           </h3>
-          <div className="h-px bg-zinc-100 dark:border-zinc-800 flex-1" />
+          <div className="h-px header-divider flex-1" />
         </div>
 
         {/* 1 col mobile, 2 col tablet, 3 col desktop */}

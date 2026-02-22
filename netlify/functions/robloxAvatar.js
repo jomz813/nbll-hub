@@ -34,6 +34,20 @@ export const handler = async (event) => {
     const thumbJson = await thumbRes.json();
     const t = thumbJson?.data?.[0];
 
+    if (event.queryStringParameters?.format === 'image' && t?.imageUrl) {
+      const imgRes = await fetch(t.imageUrl);
+      const buffer = await imgRes.arrayBuffer();
+      return {
+        statusCode: 200,
+        headers: { 
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400'
+        },
+        body: Buffer.from(buffer).toString('base64'),
+        isBase64Encoded: true,
+      };
+    }
+
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },

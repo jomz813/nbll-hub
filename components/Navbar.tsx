@@ -330,15 +330,11 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
       >
         <motion.div
           layout={!reducedMotion}
+          whileHover="hover"
           onClick={() => !isSearchOpen && openSearch()}
           animate={{ 
             width: isSearchOpen ? 300 : 40,
             backgroundColor: searchStyles.bg
-          }}
-          whileHover={{ 
-            backgroundColor: isSearchOpen 
-              ? searchStyles.bg 
-              : `color-mix(in srgb, ${searchStyles.bg} 85%, ${theme === 'dark' ? 'white' : 'black'})` 
           }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
           className={`
@@ -347,6 +343,18 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
             ${isHOF && !isSearchOpen ? 'ring-1 ring-[#D4AF37]/50' : ''}
           `}
         >
+          {/* Hover Overlay to avoid color-mix animation warning */}
+          {!isSearchOpen && (
+            <motion.div
+              variants={{
+                hover: { opacity: 0.15 }
+              }}
+              initial={{ opacity: 0 }}
+              className="absolute inset-0 pointer-events-none z-0"
+              style={{ backgroundColor: theme === 'dark' ? '#ffffff' : '#000000' }}
+            />
+          )}
+
           <div className={`absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center pointer-events-none z-10 ${searchStyles.icon}`}>
              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -419,8 +427,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                                   <div 
                                     className={`shrink-0 px-2 py-0.5 rounded-full border text-[9px] font-black tracking-widest transition-all duration-300`}
                                     style={isSelected ? {
-                                      backgroundColor: 'color-mix(in srgb, var(--accent) 10%, transparent)',
-                                      borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)',
+                                      backgroundColor: 'rgba(var(--accent-rgb), 0.1)',
+                                      borderColor: 'rgba(var(--accent-rgb), 0.3)',
                                       color: 'var(--accent)',
                                       transform: 'scale(1.05)'
                                     } : {
@@ -482,7 +490,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                 ? (isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)')
                 : undefined,
               border: (isMenuOpen && window.innerWidth < 768)
-                ? (isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid color-mix(in srgb, var(--accent) 30%, transparent)`)
+                ? (isHomeLightMobile ? '1px solid rgba(0, 0, 0, 0.2)' : `1px solid rgba(var(--accent-rgb), 0.3)`)
                 : undefined
             }}
             transition={{ 
@@ -506,7 +514,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
               WebkitBackdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
               border: !isMenuOpen ? (isHomeLightMobile 
                   ? '1px solid rgba(0, 0, 0, 0.15)' 
-                  : `1px solid color-mix(in srgb, var(--accent) 20%, transparent)`) : undefined
+                  : `1px solid rgba(var(--accent-rgb), 0.2)`) : undefined
             } : {}}
           >
             {/* Noise Texture Overlay for liquid glass effect (Visible on mobile both states) */}
@@ -704,7 +712,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                             <motion.div
                               layoutId="mobile-active-indicator"
                               className={`absolute left-0 w-[5px] h-[32px] ${accentBg} rounded-r-full z-20`}
-                              style={{ boxShadow: `0 0 12px color-mix(in srgb, var(--accent) 30%, transparent)` }}
+                              style={{ boxShadow: `0 0 12px rgba(var(--accent-rgb), 0.3)` }}
                               initial={{ opacity: 0, scaleY: 0.5 }}
                               animate={{ opacity: 1, scaleY: 1 }}
                               exit={{ opacity: 0, scaleY: 0.5 }}

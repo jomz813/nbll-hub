@@ -8,9 +8,6 @@ import { generateAllTimeBadges, getHighestBadgesByCategory } from '../data/achie
 import { useSettings } from '../context/SettingsContext';
 import { toPng } from 'html-to-image';
 
-// In-memory cache for avatar URLs
-const AVATAR_CACHE: Record<string, string | null> = {};
-
 // Standardization helper for robust matching
 const normalizeName = (name: string): string => {
   return String(name || '').trim().toLowerCase().replace(/\s+/g, '');
@@ -68,8 +65,7 @@ const PlayersPage: React.FC = () => {
   const [showResults, setShowResults] = useState(false);
 
   // Avatar state
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [avatarLoading, setAvatarLoading] = useState(false);
+  const avatarUrl = selectedPlayer ? `/.netlify/functions/robloxAvatar?username=${encodeURIComponent(selectedPlayer.player)}&format=image` : null;
 
   // Refs for search interaction and profile capture
   const pillAreaRef = useRef<HTMLDivElement>(null);
@@ -99,35 +95,6 @@ const PlayersPage: React.FC = () => {
     load();
     return () => controller.abort();
   }, []);
-
-  useEffect(() => {
-    if (!selectedPlayer) {
-      setAvatarUrl(null);
-      return;
-    }
-
-    const username = selectedPlayer.player;
-    if (AVATAR_CACHE[username] !== undefined) {
-      setAvatarUrl(AVATAR_CACHE[username]);
-      return;
-    }
-
-    setAvatarLoading(true);
-    fetch(`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}`)
-      .then(res => res.json())
-      .then(data => {
-        const url = data.imageUrl || null;
-        AVATAR_CACHE[username] = url;
-        setAvatarUrl(url);
-      })
-      .catch(() => {
-        AVATAR_CACHE[username] = null;
-        setAvatarUrl(null);
-      })
-      .finally(() => {
-        setAvatarLoading(false);
-      });
-  }, [selectedPlayer?.player]);
 
   const filteredPlayers = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -205,6 +172,26 @@ const PlayersPage: React.FC = () => {
     
     setIsExporting(true);
     closeSearch(); 
+
+    // Helper to wait for all images to load or timeout
+    const waitForImages = async (container: HTMLElement) => {
+      const imgs = Array.from(container.querySelectorAll('img'));
+      const promises = imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      // Timeout after 2.5s
+      return Promise.race([
+        Promise.all(promises),
+        new Promise(resolve => setTimeout(resolve, 2500))
+      ]);
+    };
+
+    // Wait for any <img> within the target to be fully loaded/completed
+    await waitForImages(target);
 
     const originalHeight = target.style.height;
     const originalMaxHeight = target.style.maxHeight;
@@ -475,13 +462,14 @@ const PlayersPage: React.FC = () => {
              
              {/* Mobile-only Background Avatar Cover */}
              <div className="md:hidden absolute inset-0 z-0">
-               {avatarLoading ? (
-                 <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 animate-pulse">
-                    <div className={`w-8 h-8 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
-                 </div>
-               ) : avatarUrl ? (
+               {avatarUrl ? (
                  <>
-                   <img src={avatarUrl} alt="" className="w-full h-full object-contain" />
+                   <img 
+                     src={avatarUrl} 
+                     alt="" 
+                     className="w-full h-full object-contain" 
+                     crossOrigin="anonymous"
+                   />
                    <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent dark:from-black/80 dark:via-black/40 to-black/20 md:from-transparent md:to-transparent" />
                  </>
                ) : (
@@ -493,12 +481,13 @@ const PlayersPage: React.FC = () => {
                {/* Profile Avatar (Desktop Only) */}
                <div className="hidden md:block relative shrink-0 w-28 h-28 md:w-40 md:h-40 group">
                  <div className={`absolute inset-0 bg-white dark:bg-zinc-950 border-2 ${accentBorder} rounded-3xl md:rounded-[2.5rem] shadow-xl overflow-hidden z-10`}>
-                    {avatarLoading ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 animate-pulse">
-                        <div className={`w-8 h-8 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
-                      </div>
-                    ) : avatarUrl ? (
-                      <img src={avatarUrl} alt={selectedPlayer.player} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt={selectedPlayer.player} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        crossOrigin="anonymous"
+                      />
                     ) : (
                       <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
                         <svg className="w-12 h-12 text-zinc-200 dark:text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>

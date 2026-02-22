@@ -135,8 +135,105 @@ const AppContent: React.FC = () => {
           --accent-soft-dark: rgba(${accentRgb}, 0.10);
           --accent-shadow: rgba(${accentRgb}, 0.05);
           --fluid-opacity: ${fluidOpacity};
+          
+          /* Base Contrast Variables */
+          --text: ${theme === 'dark' ? '#f4f4f5' : '#18181b'};
+          --mutedText: ${theme === 'dark' ? '#a1a1aa' : '#71717a'};
+          --border: ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+          --panel: ${theme === 'dark' ? '#09090b' : '#ffffff'};
+          --chipBg: ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'};
+          --shadow: 0 4px 12px rgba(0,0,0,0.1);
+          --divider: ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
         }
         
+        /* High Contrast Overrides */
+        .high-contrast {
+          --text: ${theme === 'dark' ? '#ffffff' : '#000000'};
+          --mutedText: ${theme === 'dark' ? '#f4f4f5' : '#18181b'};
+          --border: ${theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)'};
+          --panel: ${theme === 'dark' ? '#000000' : '#ffffff'};
+          --chipBg: ${theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'};
+          --shadow: 0 0 0 2px var(--border);
+          --divider: ${theme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'};
+        }
+
+        .subtle-divider {
+          background: var(--divider);
+        }
+
+        .header-divider {
+          background: linear-gradient(to right, var(--divider), transparent);
+        }
+
+        /* Global High Contrast Class Selectors */
+        .high-contrast .text-zinc-900, 
+        .high-contrast .dark\\:text-zinc-100,
+        .high-contrast .text-zinc-800,
+        .high-contrast .dark\\:text-zinc-200,
+        .high-contrast .text-zinc-950,
+        .high-contrast .dark\\:text-white {
+          color: var(--text) !important;
+        }
+
+        .high-contrast .text-zinc-500,
+        .high-contrast .dark\\:text-zinc-400,
+        .high-contrast .text-zinc-600,
+        .high-contrast .dark\\:text-zinc-300,
+        .high-contrast .text-zinc-700 {
+          color: var(--mutedText) !important;
+        }
+
+        .high-contrast .text-zinc-400,
+        .high-contrast .dark\\:text-zinc-500 {
+          color: var(--mutedText) !important;
+          opacity: 1 !important;
+        }
+
+        .high-contrast .border-zinc-100,
+        .high-contrast .dark\\:border-zinc-800,
+        .high-contrast .border-zinc-200,
+        .high-contrast .dark\\:border-zinc-700,
+        .high-contrast .border-zinc-50,
+        .high-contrast .dark\\:border-zinc-900,
+        .high-contrast .border-white\\/10,
+        .high-contrast .dark\\:border-white\\/5,
+        .high-contrast .border-white\\/20,
+        .high-contrast .dark\\:border-zinc-800\\/50,
+        .high-contrast .border-zinc-200\\/50 {
+          border-color: var(--border) !important;
+          border-width: 1.5px !important;
+        }
+
+        .high-contrast .bg-zinc-50,
+        .high-contrast .dark\\:bg-zinc-900,
+        .high-contrast .bg-zinc-100,
+        .high-contrast .dark\\:bg-zinc-800,
+        .high-contrast .bg-zinc-50\\/50,
+        .high-contrast .dark\\:bg-zinc-900\\/50 {
+          background-color: var(--panel) !important;
+        }
+
+        .high-contrast .bg-\\[var\\(--accent\\)\\]\\/10,
+        .high-contrast .bg-\\[var\\(--accent\\)\\]\\/5 {
+          background-color: rgba(var(--accent-rgb), 0.3) !important;
+        }
+
+        .high-contrast .shadow-sm,
+        .high-contrast .shadow-md,
+        .high-contrast .shadow-lg,
+        .high-contrast .shadow-xl,
+        .high-contrast .shadow-2xl {
+          box-shadow: var(--shadow) !important;
+        }
+
+        .high-contrast .opacity-40,
+        .high-contrast .opacity-50,
+        .high-contrast .opacity-60,
+        .high-contrast .opacity-70,
+        .high-contrast .opacity-80 {
+          opacity: 1 !important;
+        }
+
         /* Apply dynamic accent to all elements using the variable */
         .rahbizzy-theme {
           --accent: #3B82F6 !important;
