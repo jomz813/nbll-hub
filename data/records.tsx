@@ -31,7 +31,7 @@ export const recordsData: RecordSection[] = [
     items: [
       { id: 'game-pts', title: 'Most points in a game', valueLabel: 'PTS', value: '163', holder: 'aDrexelAvenue886' },
       { id: 'game-ast', title: 'Most assists in a game', valueLabel: 'AST', value: '55', holder: 'metalmanfrr' },
-      { id: 'game-reb', title: 'Most rebounds in a game', valueLabel: 'REB', value: '11', holder: 'alwayzbizzy40', context: 'achieved 2x' },
+      { id: 'game-reb', title: 'Most rebounds in a game', valueLabel: 'REB', value: '11', holder: 'alwayzbizzy40 & rroundyy'},
       { id: 'game-stl', title: 'Most steals in a game', valueLabel: 'STL', value: '15', holder: 'alwayzbizzy40', context: 'achieved 2x' },
     ]
   },

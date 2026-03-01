@@ -86,9 +86,9 @@ const finalsData: Record<number, SeasonFinals> = {
   },
   9: {
     championsTeam: "Cavaliers",
-    championsRoster: ["Albrx", "Cola", "Compxsharp", "Geek", "i2qn", "Jamal", "Packed", "Prt", "Rah", "Soulz"],
+    championsRoster: ["Albrx", "Cola", "Compxsharp", "Geek", "i2qn", "Jamal", "Marsh", "Packed", "Prt", "Rah", "Soulz"],
     runnerUpTeam: "Lakers",
-    runnerUpRoster: ["Ghost", "Lavixey", "Marsh", "Phattie", "Polar"]
+    runnerUpRoster: ["Ghost", "Lavixey", "Phattie", "Polar"]
   },
   10: {
     championsTeam: "Heat",

@@ -11,7 +11,7 @@ export const creditsData: CreditSection[] = [
   },
   {
     title: 'CO-OWNERS',
-    names: ['punkmonk', 'ghost', 'colt', 'dave']
+    names: ['punkmonk', 'colt', 'dave']
   },
   {
     title: 'BOARD OF DIRECTORS',

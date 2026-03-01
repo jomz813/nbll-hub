@@ -83,7 +83,7 @@ const ThemeOnboardingModal: React.FC<ThemeOnboardingModalProps> = ({ isOpen, onC
               >
                 <h2 className="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase italic leading-none mb-3 transition-colors duration-500">personalize</h2>
                 <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed">
-                  you can always change this later in settings
+                  you can change this later in settings
                 </p>
               </motion.div>
 

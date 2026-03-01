@@ -4,36 +4,18 @@ import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
 import { fetchS12Stats, S12Row } from '../data/s12Stats';
 
-const RARE_TITLE = "first person to ping jomz in general and say - you're right jomz, pansho does have 3 legs! - gets a free mythic";
-
 const HERO_TITLES = [
   "soulz has the most points in nbll history with 4,307 and counting",
   "marsh has the most steals in nbll history with 423 and counting",
   "taser was the first to reach 1,000 points",
-  "pansho and taser are tied for the most rings at 5 each",
-  "rah holds the most nbll records with 6",
+  "goat pansho has the same amount of rings as kobe",
+  "alwayzbizzy41 holds the most nbll records with 6",
   "pansho has an 83% chance to win the finals when he appears in one",
   "soulz's 71.2 ppg in s11 is the highest of all time",
   "phattie's 5.4 spg in s11 is the highest of all time",
-  "tip - use the desktop site for a better experience",
+  "use the desktop site for a better experience",
+  "veiny ahh dih",
 ];
-
-/**
- * Custom selection logic that treats the RARE_TITLE with a lower weight.
- * This makes it appear much less frequently than standard titles.
- */
-const pickWeightedTitle = (pool: string[]) => {
-  // 2% chance to pick the rare title if it exists in the logical set
-  const isRareRoll = Math.random() < 0.02;
-  
-  if (isRareRoll) {
-    return RARE_TITLE;
-  }
-
-  // Otherwise pick from non-rare titles
-  const commonPool = pool.filter(t => t !== RARE_TITLE);
-  return commonPool[Math.floor(Math.random() * commonPool.length)];
-};
 
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -97,8 +79,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
   const { settings } = useSettings();
   const [dynamicTitles, setDynamicTitles] = useState<string[]>([]);
   
-  // Use weighted selection for the initial title
-  const [heroTitle, setHeroTitle] = useState(() => pickWeightedTitle(HERO_TITLES));
+  // Use random selection for the initial title
+  const [heroTitle, setHeroTitle] = useState(() => pickRandom(HERO_TITLES));
 
   // Fetch S12 stats in the background to populate the rotation pool.
   useEffect(() => {
@@ -141,10 +123,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
     const rotationInterval = setInterval(() => {
       const fullPool = [...HERO_TITLES, ...dynamicTitles];
       setHeroTitle((current) => {
-        let next = pickWeightedTitle(fullPool);
+        let next = pickRandom(fullPool);
         // Avoid repeating the same title if possible
         while (next === current && fullPool.length > 1) {
-          next = pickWeightedTitle(fullPool);
+          next = pickRandom(fullPool);
         }
         return next;
       });
@@ -161,8 +143,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
     };
   }, []);
 
-  const isRare = heroTitle === RARE_TITLE;
-
   return (
     <div className="relative h-screen bg-black selection:bg-[#D60A07] selection:text-white overflow-hidden">
       <FluidBackground />
@@ -177,12 +157,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
           <div className="space-y-3 relative group">
             <h1 
               key={heroTitle}
-              className={`
-                font-medium tracking-tight text-white transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none animate-title-fade
-                ${isRare 
-                  ? 'text-2xl md:text-4xl lg:text-5xl leading-tight max-w-4xl mx-auto' 
-                  : 'text-5xl md:text-7xl lg:text-8xl leading-[1.05]'}
-              `}
+              className="font-medium tracking-tight text-white transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.01] hover:text-zinc-300 cursor-default select-none animate-title-fade text-5xl md:text-7xl lg:text-8xl leading-[1.05]"
             >
               {heroTitle}
             </h1>
