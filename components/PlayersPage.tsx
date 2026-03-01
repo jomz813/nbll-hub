@@ -161,7 +161,7 @@ const PlayersPage: React.FC = () => {
       accolades.push({ label: 'ROTY' });
     }
     if (isHOF) {
-      accolades.push({ label: 'HALL OF FAME' });
+      accolades.push({ label: 'HOF' });
     }
     Object.entries(awards).forEach(([cat, val]) => {
       const normCat = cat.toUpperCase().trim();
@@ -298,18 +298,20 @@ const PlayersPage: React.FC = () => {
   }, [isSearchOpen]);
 
   const StatBox = ({ label, value }: { label: string, value: any }) => (
-    <div className="flex flex-col px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-xl border border-zinc-100 dark:border-zinc-800/40">
-      <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-0.5">{label}</span>
-      <span className={`text-base md:text-xl tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100 font-black`}>
-        {value === 0 || value === null || value === '' ? '—' : value}
-      </span>
+    <div className="flex flex-col justify-center px-5 py-4 bg-zinc-50/50 dark:bg-zinc-900/40 rounded-2xl border border-zinc-100 dark:border-zinc-800/60 transition-all hover:shadow-md">
+      <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.15em] mb-1.5">{label}</span>
+      <div className="flex items-baseline gap-1">
+        <span className="text-2xl md:text-3xl tabular-nums tracking-tighter text-zinc-900 dark:text-zinc-100 font-black leading-none">
+          {value === 0 || value === null || value === '' ? '—' : value}
+        </span>
+      </div>
     </div>
   );
 
   const SectionHeading = ({ title }: { title: string }) => (
-    <div className="flex items-center gap-4 mb-6 pt-2">
-      <h4 className="text-[10px] font-black text-zinc-900 dark:text-zinc-300 uppercase tracking-[0.4em] shrink-0">{title}</h4>
-      <div className="h-[1px] bg-zinc-100 dark:bg-zinc-900 flex-1" />
+    <div className="flex items-center gap-4 mb-8 pt-4">
+      <h4 className="text-[11px] font-black text-zinc-600 dark:text-zinc-400 uppercase tracking-[0.3em] shrink-0">{title}</h4>
+      <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60 flex-1" />
     </div>
   );
 
@@ -466,63 +468,69 @@ const PlayersPage: React.FC = () => {
       </div>
 
       {selectedPlayer && playerDetails ? (
-        <div ref={profileRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 flex flex-col">
+        <motion.div 
+          key={selectedPlayer.player}
+          initial={settings.reducedMotion ? {} : { opacity: 0, y: 20, filter: 'blur(10px)' }}
+          animate={settings.reducedMotion ? {} : { opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          ref={profileRef} 
+          className="relative bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 flex flex-col"
+        >
           
           {/* Identity Header */}
-          <div className="relative p-8 md:p-12 bg-zinc-50/50 dark:bg-zinc-900/10 border-b border-zinc-100 dark:border-zinc-900 overflow-hidden min-h-[220px] flex items-end md:items-center">
+          <div className="relative p-8 md:p-16 bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900 overflow-hidden min-h-[240px] md:min-h-[260px] flex items-end md:items-center">
              {/* Desktop Decorative Background */}
-             <div className="hidden md:block absolute inset-0 opacity-[0.02] pointer-events-none select-none overflow-hidden" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+             <div className="hidden md:block absolute inset-0 opacity-[0.03] pointer-events-none select-none overflow-hidden" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
              
              {/* Mobile-only Background Avatar Cover */}
              <div className="md:hidden absolute inset-0 z-0">
                {avatarLoading ? (
                  <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 animate-pulse">
-                    <div className={`w-8 h-8 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
+                    <div className={`w-10 h-10 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
                  </div>
                ) : avatarUrl ? (
                  <>
-                   <img src={avatarUrl} alt="" className="w-full h-full object-contain" />
-                   <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent dark:from-black/80 dark:via-black/40 to-black/20 md:from-transparent md:to-transparent" />
+                   <img src={avatarUrl} alt="" className="w-full h-full object-cover opacity-40 dark:opacity-60" />
+                   <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 dark:from-black dark:via-black/40 to-transparent" />
                  </>
                ) : (
                  <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900/50" />
                )}
              </div>
 
-             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8 md:gap-12 w-full">
+             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6 md:gap-16 w-full">
                {/* Profile Avatar (Desktop Only) */}
-               <div className="hidden md:block relative shrink-0 w-28 h-28 md:w-40 md:h-40 group">
-                 <div className={`absolute inset-0 bg-white dark:bg-zinc-950 border-2 ${accentBorder} rounded-3xl md:rounded-[2.5rem] shadow-xl overflow-hidden z-10`}>
+               <div className="hidden md:block relative shrink-0 w-32 h-32 md:w-48 md:h-48 group">
+                 <div className={`absolute inset-0 bg-white dark:bg-zinc-950 border-2 ${accentBorder} rounded-[2.5rem] md:rounded-[3rem] shadow-2xl overflow-hidden z-10`}>
                     {avatarLoading ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 animate-pulse">
-                        <div className={`w-8 h-8 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
+                        <div className={`w-10 h-10 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
                       </div>
                     ) : avatarUrl ? (
                       <img src={avatarUrl} alt={selectedPlayer.player} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     ) : (
                       <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
-                        <svg className="w-12 h-12 text-zinc-200 dark:text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                        <svg className="w-16 h-16 text-zinc-200 dark:text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       </div>
                     )}
                  </div>
-                 <div className="absolute -inset-2 bg-zinc-100 dark:bg-zinc-900 rounded-[2.8rem] blur-xl opacity-50" />
+                 <div className="absolute -inset-4 bg-zinc-100 dark:bg-zinc-900 rounded-[3.5rem] blur-2xl opacity-40" />
                </div>
 
                {/* Name and HOF Info Container */}
-               <div className="flex flex-col gap-3 md:gap-4 w-full text-left min-w-0">
-                  <div className="flex items-center flex-wrap gap-2 md:gap-3">
+               <div className="flex flex-col gap-2 md:gap-6 w-full text-left min-w-0">
+                  <div className="flex items-center flex-wrap gap-2 md:gap-4">
                     {playerDetails.isHOF && (
-                      <span className={`px-4 py-1.5 ${accentBg} text-white text-[10px] font-black uppercase tracking-[0.25em] rounded-full shadow-lg shadow-current/10 border border-white/10`}>Hall of Fame</span>
+                      <span className={`px-3 py-1 md:px-5 md:py-2 ${accentBg} text-white text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] rounded-full shadow-xl shadow-current/20 border border-white/10`}>HOF</span>
                     )}
                   </div>
                   
-                  <div className="relative md:bg-transparent w-full max-w-full">
+                  <div className="relative md:bg-transparent w-full max-w-full overflow-hidden">
                     {/* Subtle localized background gradient for readability on mobile */}
-                    <div className="md:hidden absolute -inset-6 bg-gradient-to-r from-white/90 dark:from-black/80 to-transparent blur-2xl -z-10" />
+                    <div className="md:hidden absolute -inset-8 bg-gradient-to-r from-white dark:from-black to-transparent blur-3xl -z-10" />
                     
                     <h3 
-                      className="text-xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] md:leading-[0.9] whitespace-nowrap overflow-visible md:overflow-hidden"
-                      style={{ textOverflow: window.innerWidth <= 768 ? 'clip' : undefined }}
+                      className="text-2xl md:text-[clamp(2.5rem,8vw,5.5rem)] font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-[1.1] md:leading-[0.85] truncate max-w-full"
                     >
                       {selectedPlayer.player}
                     </h3>
@@ -531,25 +539,25 @@ const PlayersPage: React.FC = () => {
              </div>
           </div>
 
-          <div className="p-8 md:p-12 space-y-16">
+          <div className="p-6 md:p-16 space-y-12 md:space-y-20">
             {/* Unified Stats Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16">
                <section>
-                 <SectionHeading title="ALL-TIME STATS" />
-                 <div className="grid grid-cols-2 gap-4">
-                    <StatBox label="PTS" value={selectedPlayer.pts.toLocaleString()} />
-                    <StatBox label="AST" value={selectedPlayer.ast.toLocaleString()} />
-                    <StatBox label="REB" value={selectedPlayer.reb.toLocaleString()} />
-                    <StatBox label="STL" value={selectedPlayer.stl.toLocaleString()} />
+                 <SectionHeading title="ALL-TIME TOTALS" />
+                 <div className="grid grid-cols-2 gap-4 md:gap-5">
+                    <StatBox label="POINTS" value={selectedPlayer.pts.toLocaleString()} />
+                    <StatBox label="ASSISTS" value={selectedPlayer.ast.toLocaleString()} />
+                    <StatBox label="REBOUNDS" value={selectedPlayer.reb.toLocaleString()} />
+                    <StatBox label="STEALS" value={selectedPlayer.stl.toLocaleString()} />
                  </div>
                </section>
 
                <section>
-                 <SectionHeading title="RATINGS" />
-                 <div className="grid grid-cols-3 gap-4">
-                    <StatBox label="EFF" value={selectedPlayer.eff} />
-                    <StatBox label="OFF" value={selectedPlayer.off} />
-                    <StatBox label="DEF" value={selectedPlayer.def} />
+                 <SectionHeading title="ALL-TIME RATINGS" />
+                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
+                    <StatBox label="EFFICIENCY" value={selectedPlayer.eff} />
+                    <StatBox label="OFFENSE" value={selectedPlayer.off} />
+                    <StatBox label="DEFENSE" value={selectedPlayer.def} />
                  </div>
                </section>
             </div>
@@ -557,19 +565,19 @@ const PlayersPage: React.FC = () => {
             {/* Badges Section */}
             {playerDetails.highestBadges.length > 0 && (
               <section>
-                <SectionHeading title="MILESTONES" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <SectionHeading title="ACHIEVEMENTS" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {playerDetails.highestBadges.map(ach => (
-                    <div key={ach.id} className="relative group p-6 rounded-[2rem] bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                      <div className="flex items-center justify-between mb-4">
-                        <h5 className={`text-base font-black tracking-tight ${accentText}`}>{ach.name}</h5>
-                        <div className={`w-1.5 h-1.5 rounded-full ${accentBg} animate-pulse`} />
+                    <div key={ach.id} className="relative group p-6 md:p-7 rounded-[2rem] md:rounded-[2.5rem] bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-500">
+                      <div className="flex items-center justify-between mb-4 md:mb-5">
+                        <h5 className={`text-base md:text-lg font-black tracking-tight ${accentText}`}>{ach.name}</h5>
+                        <div className={`w-2 h-2 rounded-full ${accentBg} animate-pulse shadow-[0_0_10px_currentColor]`} />
                       </div>
-                      <div className="space-y-1">
-                        <span className="text-[8px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest block">{ach.category}</span>
-                        <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest line-clamp-1">{ach.requirementText}</p>
+                      <div className="space-y-2">
+                        <span className="text-[9px] md:text-[10px] font-black text-zinc-500 dark:text-zinc-500 uppercase tracking-[0.2em] block">{ach.category}</span>
+                        <p className="text-[10px] md:text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest line-clamp-2 leading-relaxed">{ach.requirementText}</p>
                       </div>
-                      <div className={`absolute top-0 right-0 w-12 h-12 bg-gradient-to-bl from-zinc-50 dark:from-zinc-900 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-tr-[2rem] pointer-events-none`} />
+                      <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-zinc-50 dark:from-zinc-900 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-tr-[2rem] md:rounded-tr-[2.5rem] pointer-events-none`} />
                     </div>
                   ))}
                 </div>
@@ -580,17 +588,17 @@ const PlayersPage: React.FC = () => {
             {playerDetails.accolades.length > 0 && (
               <section>
                 <SectionHeading title="ACCOLADES" />
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2 md:gap-4">
                   {playerDetails.accolades.map((item, i) => (
                     <div 
                       key={i} 
-                      className="flex items-center gap-3 px-4 py-2.5 bg-zinc-900 dark:bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg hover:border-zinc-700 transition-all duration-300 group"
+                      className="flex items-center gap-2 md:gap-4 px-3 py-2 md:px-5 md:py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl md:rounded-2xl shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 group hover:shadow-lg"
                     >
-                      <span className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-300">
+                      <span className="text-[9px] md:text-[11px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-zinc-800 dark:text-zinc-300 truncate max-w-[100px] md:max-w-none">
                         {item.label}
                       </span>
                       {item.count && (
-                        <div className={`px-1.5 py-0.5 rounded-full ${accentBg} text-white text-[9px] font-black leading-none shadow-sm group-hover:scale-110 transition-transform`}>
+                        <div className={`px-1.5 py-0.5 md:px-2 md:py-1 rounded-full ${accentBg} text-white text-[8px] md:text-[10px] font-black leading-none shadow-lg group-hover:scale-110 transition-transform`}>
                           {item.count}
                         </div>
                       )}
@@ -603,19 +611,19 @@ const PlayersPage: React.FC = () => {
             {/* Records Section */}
             {playerDetails.heldRecords.length > 0 && (
               <section>
-                <SectionHeading title="RECORDS" />
-                <div className="space-y-4">
+                <SectionHeading title="LEAGUE RECORDS" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {playerDetails.heldRecords.map((rec, i) => (
-                    <div key={i} className="flex items-center justify-between p-6 bg-zinc-50/50 dark:bg-zinc-900/20 rounded-3xl border border-zinc-100 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs md:text-sm font-bold text-zinc-900 dark:text-zinc-100 group-hover:translate-x-1 transition-transform">{rec.title}</span>
+                    <div key={i} className="flex items-center justify-between p-8 bg-zinc-50/50 dark:bg-zinc-900/20 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all duration-300 hover:shadow-lg">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm md:text-base font-bold text-zinc-900 dark:text-zinc-100 group-hover:translate-x-1 transition-transform">{rec.title}</span>
                         {rec.context && rec.context !== '—' && (
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{rec.context}</span>
+                          <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-500 uppercase tracking-[0.15em]">{rec.context}</span>
                         )}
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className={`text-2xl font-black ${accentText} tabular-nums leading-none`}>{rec.value}</span>
-                        <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mt-1">{rec.valueLabel}</span>
+                        <span className={`text-3xl font-black ${accentText} tabular-nums leading-none tracking-tighter`}>{rec.value}</span>
+                        <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest mt-2">{rec.valueLabel}</span>
                       </div>
                     </div>
                   ))}
@@ -623,7 +631,7 @@ const PlayersPage: React.FC = () => {
               </section>
             )}
           </div>
-        </div>
+        </motion.div>
       ) : (
         <motion.div 
           initial={false}
