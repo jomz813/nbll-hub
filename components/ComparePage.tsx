@@ -6,11 +6,7 @@ import { useSettings } from '../context/SettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toPng } from 'html-to-image';
 
-const SEASONS: SeasonID[] = ['s10', 's11', 's12', 'all-time'];
-
-// In-memory cache for avatar URLs to prevent redundant requests
-// Now stores base64 strings to guarantee cross-origin snapshot capability
-const AVATAR_CACHE: Record<string, string | null> = {};
+const SEASONS: SeasonID[] = ['s10', 's11', 's12', 's13', 'all-time'];
 
 // Standardization helper matching the one in awards.ts for robust lookups
 const normalizeName = (name: string | null): string => {
@@ -25,79 +21,19 @@ const DropdownIcon = () => (
 );
 
 const PlayerAvatar: React.FC<{ username: string | null; isMobile?: boolean }> = ({ username, isMobile }) => {
-  const [url, setUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!username) {
-      setUrl(null);
-      return;
-    }
-
-    if (AVATAR_CACHE[username] !== undefined) {
-      setUrl(AVATAR_CACHE[username]);
-      return;
-    }
-
-    const fetchAvatar = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}`);
-        const data = await res.json();
-        const imageUrl = data.imageUrl || null;
-
-        if (imageUrl) {
-          // To fix mobile export issues where cross-origin images are blocked by canvas/html-to-image,
-          // we convert the URL to a base64 Data URL immediately.
-          const imgRes = await fetch(imageUrl);
-          const blob = await imgRes.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64data = reader.result as string;
-            AVATAR_CACHE[username] = base64data;
-            setUrl(base64data);
-            setLoading(false);
-          };
-          reader.readAsDataURL(blob);
-        } else {
-          AVATAR_CACHE[username] = null;
-          setUrl(null);
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Failed to load avatar:", err);
-        AVATAR_CACHE[username] = null;
-        setUrl(null);
-        setLoading(false);
-      }
-    };
-
-    fetchAvatar();
-  }, [username]);
-
   if (!username) return null;
+
+  const avatarUrl = `/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}&format=image`;
 
   return (
     <div className={`relative shrink-0 flex items-center justify-center transition-all duration-300 ${isMobile ? 'h-32 w-32' : 'h-16 md:h-24 w-16 md:w-24'}`}>
-      {loading ? (
-        <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 rounded-3xl md:rounded-[2rem] animate-pulse flex items-center justify-center shadow-inner">
-           <div className="w-4 h-4 md:w-6 md:h-6 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-400 animate-spin rounded-full" />
-        </div>
-      ) : url ? (
-        <img 
-          src={url} 
-          alt={username} 
-          className="h-full w-auto object-contain" 
-          crossOrigin="anonymous"
-          onLoad={(e) => (e.currentTarget.dataset.loaded = "true")}
-        />
-      ) : (
-        <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900 rounded-3xl md:rounded-[2rem] flex items-center justify-center opacity-40">
-          <svg className="w-8 h-8 md:w-12 md:h-12 text-zinc-400 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-      )}
+      <img 
+        src={avatarUrl} 
+        alt={username} 
+        className="h-full w-auto object-contain" 
+        crossOrigin="anonymous"
+        onLoad={(e) => (e.currentTarget.dataset.loaded = "true")}
+      />
     </div>
   );
 };
@@ -108,9 +44,28 @@ const ComparePage: React.FC = () => {
   const accentBg = colors.bg;
   const accentText = colors.text;
   
-  const [season, setSeason] = useState<SeasonID>('s12');
+  const [season, setSeason] = useState<SeasonID>('s13');
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<PlayerStats[]>([]);
+  
+  // Load selection from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedSeason = localStorage.getItem('compareSeason') as SeasonID;
+      if (SEASONS.includes(savedSeason)) {
+        setSeason(savedSeason);
+      }
+    } catch (e) {
+      console.warn('Failed to load compareSeason from localStorage', e);
+    }
+  }, []);
+
+  const handleSeasonChange = (s: SeasonID) => {
+    setSeason(s);
+    try {
+      localStorage.setItem('compareSeason', s);
+    } catch (e) {}
+  };
   
   // Store only names to persist selection across season data swaps
   const [selectedNames, setSelectedNames] = useState<(string | null)[]>([null, null]);
@@ -266,15 +221,26 @@ const ComparePage: React.FC = () => {
     setIsExporting(true);
     closeSearch(); 
 
+    // Helper to wait for all images to load or timeout
+    const waitForImages = async (container: HTMLElement) => {
+      const imgs = Array.from(container.querySelectorAll('img'));
+      const promises = imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      // Timeout after 2.5s
+      return Promise.race([
+        Promise.all(promises),
+        new Promise(resolve => setTimeout(resolve, 2500))
+      ]);
+    };
+
     // Mobile-friendly snapshot reliability: 
     // Wait for any <img> within the target to be fully loaded/completed
-    const images = Array.from(target.querySelectorAll('img'));
-    const allLoaded = images.every(img => img.complete && img.naturalHeight !== 0);
-    
-    if (!allLoaded) {
-      // Brief retry if images aren't ready
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
+    await waitForImages(target);
 
     const originalHeight = target.style.height;
     const originalMaxHeight = target.style.maxHeight;
@@ -605,7 +571,7 @@ const ComparePage: React.FC = () => {
             <div className="relative flex items-center px-3 h-full group">
               <select 
                 value={season} 
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSeason(e.target.value as SeasonID)} 
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSeasonChange(e.target.value as SeasonID)} 
                 className="bg-transparent border-none text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none appearance-none pr-4 relative z-10"
               >
                 {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -719,7 +685,7 @@ const ComparePage: React.FC = () => {
                     return (
                       <button
                         key={s}
-                        onClick={() => setSeason(s)}
+                        onClick={() => handleSeasonChange(s)}
                         className={`relative flex-none rounded-full font-black uppercase tracking-widest transition-colors duration-300 whitespace-nowrap px-4 py-2 text-[10px] ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
                       >
                         <span className="relative z-20">{s}</span>
@@ -860,8 +826,9 @@ const ComparePage: React.FC = () => {
                     <>
                       <SectionHeader title="Awards" />
                       {awardsData.categories.map(cat => {
-                        const normCat = cat.toLowerCase().trim();
-                        const isBool = ['ROTY', 'HOF'].includes(cat.toUpperCase());
+                        if (!cat) return null;
+                        const normCat = String(cat).toLowerCase().trim();
+                        const isBool = ['ROTY', 'HOF'].includes(String(cat).toUpperCase());
                         
                         const normPlayer1 = normalizeName(selectedNames[0] || '');
                         const normPlayer2 = normalizeName(selectedNames[1] || '');

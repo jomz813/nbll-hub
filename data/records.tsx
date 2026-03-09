@@ -31,8 +31,8 @@ export const recordsData: RecordSection[] = [
     items: [
       { id: 'game-pts', title: 'Most points in a game', valueLabel: 'PTS', value: '163', holder: 'aDrexelAvenue886' },
       { id: 'game-ast', title: 'Most assists in a game', valueLabel: 'AST', value: '55', holder: 'metalmanfrr' },
-      { id: 'game-reb', title: 'Most rebounds in a game', valueLabel: 'REB', value: '11', holder: 'alwayzbizzy40 & rroundyy'},
-      { id: 'game-stl', title: 'Most steals in a game', valueLabel: 'STL', value: '15', holder: 'alwayzbizzy40', context: 'achieved 2x' },
+      { id: 'game-reb', title: 'Most rebounds in a game', valueLabel: 'REB', value: '11', holder: 'alwayzbizzy41 & rroundyy'},
+      { id: 'game-stl', title: 'Most steals in a game', valueLabel: 'STL', value: '15', holder: 'alwayzbizzy41', context: 'achieved 2x' },
     ]
   },
   {
@@ -47,10 +47,10 @@ export const recordsData: RecordSection[] = [
       </svg>
     ),
     items: [
-      { id: 'season-pts', title: 'Most points in a season', valueLabel: 'PTS', value: '867', holder: 'alwayzbizzy40' },
+      { id: 'season-pts', title: 'Most points in a season', valueLabel: 'PTS', value: '867', holder: 'alwayzbizzy41' },
       { id: 'season-ast', title: 'Most assists in a season', valueLabel: 'AST', value: '260', holder: 'aDrexelAvenue886' },
-      { id: 'season-reb', title: 'Most rebounds in a season', valueLabel: 'REB', value: '65', holder: 'alwayzbizzy40' },
-      { id: 'season-stl', title: 'Most steals in a season', valueLabel: 'STL', value: '80', holder: 'alwayzbizzy40' },
+      { id: 'season-reb', title: 'Most rebounds in a season', valueLabel: 'REB', value: '65', holder: 'alwayzbizzy41' },
+      { id: 'season-stl', title: 'Most steals in a season', valueLabel: 'STL', value: '80', holder: 'alwayzbizzy41' },
     ]
   },
   {
@@ -66,7 +66,7 @@ export const recordsData: RecordSection[] = [
     items: [
       { id: 'avg-ppg', title: 'Highest PPG in a season', valueLabel: 'PPG', value: '71.2', holder: 'qleerinsGoon1' },
       { id: 'avg-apg', title: 'Highest APG in a season', valueLabel: 'APG', value: '20.0', holder: 'aDrexelAvenue886' },
-      { id: 'avg-rpg', title: 'Highest RPG in a season', valueLabel: 'RPG', value: '4.3', holder: 'alwayzbizzy40' },
+      { id: 'avg-rpg', title: 'Highest RPG in a season', valueLabel: 'RPG', value: '4.3', holder: 'alwayzbizzy41' },
       { id: 'avg-spg', title: 'Highest SPG in a season', valueLabel: 'SPG', value: '5.4', holder: 'phatspacepirate' },
     ]
   },
@@ -81,9 +81,9 @@ export const recordsData: RecordSection[] = [
       </svg>
     ),
     items: [
-      { id: 'career-pts', title: 'Most points in career', valueLabel: 'PTS', value: '4,307+', holder: 'qleerinsGoon1' },
+      { id: 'career-pts', title: 'Most points in career', valueLabel: 'PTS', value: '4,556+', holder: 'qleerinsGoon1' },
       { id: 'career-ast', title: 'Most assists in career', valueLabel: 'AST', value: '1,245+', holder: 'joey13429' },
-      { id: 'career-reb', title: 'Most rebounds in career', valueLabel: 'REB', value: '281+', holder: 'joey13429' },
+      { id: 'career-reb', title: 'Most rebounds in career', valueLabel: 'REB', value: '297+', holder: 'alwayzbizzy41' },
       { id: 'career-stl', title: 'Most steals in career', valueLabel: 'STL', value: '423+', holder: 'Urmarshboi77' },
     ]
   },
@@ -98,7 +98,7 @@ export const recordsData: RecordSection[] = [
     items: [
       { id: 'adv-eff', title: 'Highest career efficiency', valueLabel: 'EFF', value: '410.6+/-', holder: 'joey13429' },
       { id: 'adv-off', title: 'Highest career offensive impact', valueLabel: 'O-IMP', value: '333.3+/-', holder: 'joey13429' },
-      { id: 'adv-def', title: 'Highest career defensive impact', valueLabel: 'D-IMP', value: '101.5+/-', holder: 'Urmarshboi77' },
+      { id: 'adv-def', title: 'Highest career defensive impact', valueLabel: 'D-IMP', value: '105.8+/-', holder: 'Urmarshboi77' },
     ]
   },
   {
@@ -111,11 +111,11 @@ export const recordsData: RecordSection[] = [
       </svg>
     ),
     items: [
-      { id: 'awd-rings', title: 'Most rings', valueLabel: 'RINGS', value: '5x', holder: 'ff2frs' },
+      { id: 'awd-rings', title: 'Most rings', valueLabel: 'RINGS', value: '6x', holder: 'ff2frs' },
       { id: 'awd-mvp', title: 'Most MVP awards', valueLabel: 'MVP', value: 'N/A', holder: 'N/A' },
-      { id: 'awd-fmvp', title: 'Most FMVP awards', valueLabel: 'FMVP', value: '2x', holder: 'ff2frs & aaronthekiii' },
+      { id: 'awd-fmvp', title: 'Most FMVP awards', valueLabel: 'FMVP', value: '2x', holder: 'ff2frs & aaronthekiii & aim' },
       { id: 'awd-opoty', title: 'Most OPOTY awards', valueLabel: 'OPOTY', value: '3x', holder: 'ff2frs' },
-      { id: 'awd-dpoty', title: 'Most DPOTY awards', valueLabel: 'DPOTY', value: 'N/A', holder: 'N/A' },
+      { id: 'awd-dpoty', title: 'Most DPOTY awards', valueLabel: 'DPOTY', value: '2x', holder: 'phattie' },
     ]
   }
 ];

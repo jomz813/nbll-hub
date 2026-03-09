@@ -7,7 +7,7 @@ import { recordsData } from '../data/records';
 // --- SEARCH DATA CONSTANTS ---
 const PAGES: { name: TabID; label: string; keywords?: string[] }[] = [
   { name: 'home', label: 'home' },
-  { name: 'stats', label: 'stats', keywords: ['s10', 's11', 's12', 'stats', 'statistics', 'current', 'all-time'] },
+  { name: 'stats', label: 'stats', keywords: ['s10', 's11', 's12', 's13', 'stats', 'statistics', 'current', 'all-time'] },
   { name: 'compare', label: 'compare', keywords: ['comparison', 'matchup', 'vs'] },
   { name: 'achievements', label: 'achievements', keywords: ['badges', 'trophies', 'earned', 'index'] },
   { name: 'legacy', label: 'legacy' },

@@ -8,13 +8,12 @@ const HERO_TITLES = [
   "soulz has the most points in nbll history with 4,307 and counting",
   "marsh has the most steals in nbll history with 423 and counting",
   "taser was the first to reach 1,000 points",
-  "goat pansho has the same amount of rings as kobe",
-  "alwayzbizzy41 holds the most nbll records with 6",
+  "pansho has the same amount of rings as kobe",
+  "rah holds the most nbll records with 6",
   "pansho has an 83% chance to win the finals when he appears in one",
   "soulz's 71.2 ppg in s11 is the highest of all time",
   "phattie's 5.4 spg in s11 is the highest of all time",
-  "use the desktop site for a better experience",
-  "veiny ahh dih",
+  "tip - use the desktop site for a better experience",
 ];
 
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];

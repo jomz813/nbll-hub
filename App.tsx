@@ -7,6 +7,7 @@ import SettingsModal from './components/SettingsModal';
 import ThemeOnboardingModal from './components/ThemeOnboardingModal';
 import RouteTransition from './components/RouteTransition';
 import ScrollToTopButton from './components/ScrollToTopButton';
+import ErrorBoundary from './components/ErrorBoundary';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 
 export type TabID = 'home' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | 'compare' | 'achievements' | string;
@@ -26,31 +27,37 @@ const AppContent: React.FC = () => {
 
   // Initialize theme and onboarding status from localStorage
   useEffect(() => {
-    // Theme setup
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      setTheme('light');
-      document.documentElement.classList.remove('dark');
-    } else {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-      if (!savedTheme) {
-        localStorage.setItem('theme', 'dark');
+    try {
+      // Theme setup
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'light') {
+        setTheme('light');
+        document.documentElement.classList.remove('dark');
+      } else {
+        setTheme('dark');
+        document.documentElement.classList.add('dark');
+        if (!savedTheme) {
+          localStorage.setItem('theme', 'dark');
+        }
       }
-    }
 
-    // Onboarding check
-    const onboarded = localStorage.getItem('nbll_theme_onboarded');
-    if (!onboarded) {
-      // Delay onboarding slightly for visual impact
-      const timer = setTimeout(() => setIsOnboardingOpen(true), 1500);
-      return () => clearTimeout(timer);
+      // Onboarding check
+      const onboarded = localStorage.getItem('nbll_theme_onboarded');
+      if (!onboarded) {
+        // Delay onboarding slightly for visual impact
+        const timer = setTimeout(() => setIsOnboardingOpen(true), 1500);
+        return () => clearTimeout(timer);
+      }
+    } catch (e) {
+      console.warn('LocalStorage access failed:', e);
     }
   }, []);
 
   const handleOnboardingComplete = () => {
     setIsOnboardingOpen(false);
-    localStorage.setItem('nbll_theme_onboarded', '1');
+    try {
+      localStorage.setItem('nbll_theme_onboarded', '1');
+    } catch (e) {}
   };
 
   const triggerThemeTransition = () => {
@@ -64,7 +71,9 @@ const AppContent: React.FC = () => {
 
   // Sync theme changes
   useEffect(() => {
-    localStorage.setItem('theme', theme);
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (e) {}
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -295,24 +304,26 @@ const AppContent: React.FC = () => {
       />
 
       <div className="relative flex-1">
-        <AnimatePresence mode="wait">
-          {activeTab === 'home' ? (
-            <RouteTransition key="home">
-              <LandingPage 
-                onSearchTrigger={() => {}} 
-                onTabChange={setActiveTab}
-              />
-            </RouteTransition>
-          ) : (
-            <RouteTransition key={activeTab}>
-              <TabPage 
-                tabId={activeTab} 
-                onBack={() => setActiveTab('home')} 
-                onTabChange={setActiveTab}
-              />
-            </RouteTransition>
-          )}
-        </AnimatePresence>
+        <ErrorBoundary>
+          <AnimatePresence mode="wait">
+            {activeTab === 'home' ? (
+              <RouteTransition key="home">
+                <LandingPage 
+                  onSearchTrigger={() => {}} 
+                  onTabChange={setActiveTab}
+                />
+              </RouteTransition>
+            ) : (
+              <RouteTransition key={activeTab}>
+                <TabPage 
+                  tabId={activeTab} 
+                  onBack={() => setActiveTab('home')} 
+                  onTabChange={setActiveTab}
+                />
+              </RouteTransition>
+            )}
+          </AnimatePresence>
+        </ErrorBoundary>
       </div>
       
       <ScrollToTopButton />

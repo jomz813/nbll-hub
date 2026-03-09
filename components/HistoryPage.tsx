@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
 import { fetchS10Stats } from '../data/s10Stats';
 import { fetchS11Stats } from '../data/s11Stats';
+import { fetchS12Stats } from '../data/s12Stats';
 
 interface HistorySeason {
   id: number;
@@ -15,6 +16,7 @@ interface HistorySeason {
 type HistoryFilter = 'All' | 'Teams' | 'MVPs' | 'Rosters';
 
 const historyData: HistorySeason[] = [
+  { id: 12, champion: 'Sacramento Kings', mvp: 'Phattie' },
   { id: 11, champion: 'Milwaukee Bucks', mvp: 'Aim' },
   { id: 10, champion: 'Miami Heat', mvp: 'Pansho' },
   { id: 9, champion: 'Cleveland Cavaliers', mvp: 'Packed' },
@@ -28,14 +30,42 @@ const historyData: HistorySeason[] = [
   { id: 1, champion: 'Chicago Bulls', mvp: 'Tend' },
 ];
 
+interface RosterEntry {
+  nickname: string;
+  username?: string;
+  clickable?: boolean;
+}
+
 interface SeasonFinals {
   championsTeam: string;
-  championsRoster: string[];
+  championsRoster: (string | RosterEntry)[];
   runnerUpTeam: string;
-  runnerUpRoster: string[];
+  runnerUpRoster: (string | RosterEntry)[];
 }
 
 const finalsData: Record<number, SeasonFinals> = {
+  12: {
+    championsTeam: "Kings",
+    championsRoster: [
+      { nickname: "phattie", username: "phatspacepirate", clickable: true },
+      { nickname: "bum", username: "Xlerent", clickable: true },
+      { nickname: "chino", username: "chinophobia", clickable: true },
+      { nickname: "rock", username: "RockWayHunterYT", clickable: true },
+      { nickname: "cam", username: "Offprkx_13", clickable: true },
+      { nickname: "kaza" },
+      { nickname: "silver", username: "jcoolclubs", clickable: true }
+    ],
+    runnerUpTeam: "Pistons",
+    runnerUpRoster: [
+      { nickname: "packed", username: "lalpack125", clickable: true },
+      { nickname: "rah", username: "alwayzbizzy41", clickable: true },
+      { nickname: "tend", username: "aaronthekiii", clickable: true },
+      { nickname: "liminal" },
+      { nickname: "doge", username: "DogeShadowDragon", clickable: true },
+      { nickname: "gmz", username: "heygmz", clickable: true },
+      { nickname: "perc" }
+    ]
+  },
   1: {
     championsTeam: "Bulls",
     championsRoster: ["2hyped", "Koda", "Mateo", "Reticent", "Tend", "Voceity"],
@@ -133,6 +163,22 @@ const USERNAME_MAPPING: Record<number, Record<string, string>> = {
     "Junior": "jr49ers12",
     "Polar": "polurhx",
     "Rah": "alwayzbizzy41"
+  },
+  12: {
+    "phattie": "phatspacepirate",
+    "bum": "Xlerent",
+    "chino": "chinophobia",
+    "rock": "RockWayHunterYT",
+    "cam": "Offprkx_13",
+    "kaza": "kazas",
+    "silver": "jcoolclubs",
+    "packed": "lalpack125",
+    "rah": "alwayzbizzy41",
+    "tend": "aaronthekiii",
+    "liminal": "liminal",
+    "doge": "DogeShadowDragon",
+    "gmz": "heygmz",
+    "perc": "perc"
   }
 };
 
@@ -299,6 +345,7 @@ const HistoryPage: React.FC = () => {
   const [openSeasonIds, setOpenSeasonIds] = useState<number[]>([]);
   const [s10Stats, setS10Stats] = useState<any[]>([]);
   const [s11Stats, setS11Stats] = useState<any[]>([]);
+  const [s12Stats, setS12Stats] = useState<any[]>([]);
   const [loadingGlobalStats, setLoadingGlobalStats] = useState(true);
   const [activePreview, setActivePreview] = useState<{ 
     player: string, 
@@ -317,9 +364,14 @@ const HistoryPage: React.FC = () => {
     window.addEventListener('resize', handleResize);
     const load = async () => {
       try {
-        const [s10, s11] = await Promise.all([fetchS10Stats(), fetchS11Stats()]);
+        const [s10, s11, s12] = await Promise.all([
+          fetchS10Stats(), 
+          fetchS11Stats(),
+          fetchS12Stats()
+        ]);
         setS10Stats(s10);
         setS11Stats(s11);
+        setS12Stats(s12);
       } catch (e) {
         console.error("Failed to prefetch history stats", e);
       } finally {
@@ -371,20 +423,36 @@ const HistoryPage: React.FC = () => {
     });
   };
 
-  const renderRosterChip = (name: string, seasonId: number) => {
-    const isFO = name.includes('(FO)');
-    const displayName = name.replace('(FO)', '').trim();
-    const mappedUsername = USERNAME_MAPPING[seasonId]?.[displayName];
-    const isInteractive = !!mappedUsername && (seasonId === 10 || seasonId === 11);
+  const sortRoster = (roster: (string | RosterEntry)[]) => {
+    return [...roster].sort((a, b) => {
+      const nameA = typeof a === 'string' ? a : a.nickname;
+      const nameB = typeof b === 'string' ? b : b.nickname;
+      return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
+    });
+  };
+
+  const renderRosterChip = (entry: string | RosterEntry, seasonId: number) => {
+    const isObject = typeof entry !== 'string';
+    const nickname = isObject ? entry.nickname : entry;
+    const isFO = nickname.includes('(FO)');
+    const displayName = nickname.replace('(FO)', '').trim();
+    
+    let mappedUsername = USERNAME_MAPPING[seasonId]?.[displayName];
+    let isInteractive = !!mappedUsername && (seasonId === 10 || seasonId === 11 || seasonId === 12);
+
+    if (isObject) {
+      mappedUsername = entry.username || '';
+      isInteractive = !!entry.clickable && !!entry.username;
+    }
 
     return (
       <motion.div
-        key={name}
+        key={nickname}
         variants={{
           hidden: { opacity: 0, y: 5 },
           show: { opacity: 1, y: 0 }
         }}
-        onClick={(e: React.MouseEvent<HTMLDivElement>) => isInteractive && handleRosterNameClick(e, displayName, seasonId, mappedUsername)}
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => isInteractive && handleRosterNameClick(e, displayName, seasonId, mappedUsername!)}
         className={`
           flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all duration-300
           ${isInteractive 
@@ -406,9 +474,13 @@ const HistoryPage: React.FC = () => {
 
   const previewStats = useMemo(() => {
     if (!activePreview) return null;
-    const statsSource = activePreview.seasonId === 10 ? s10Stats : s11Stats;
+    let statsSource: any[] = [];
+    if (activePreview.seasonId === 10) statsSource = s10Stats;
+    else if (activePreview.seasonId === 11) statsSource = s11Stats;
+    else if (activePreview.seasonId === 12) statsSource = s12Stats;
+    
     return statsSource.find(p => p.player.toLowerCase() === activePreview.username.toLowerCase());
-  }, [activePreview, s10Stats, s11Stats]);
+  }, [activePreview, s10Stats, s11Stats, s12Stats]);
 
   return (
     <div className="pb-20 animate-page-enter">
@@ -543,7 +615,7 @@ const HistoryPage: React.FC = () => {
                                     animate="show"
                                     className="flex flex-wrap gap-2"
                                   >
-                                    {finals.championsRoster.map((name) => renderRosterChip(name, season.id))}
+                                    {sortRoster(finals.championsRoster).map((entry) => renderRosterChip(entry, season.id))}
                                   </motion.div>
                                 </div>
                               </div>
@@ -560,7 +632,7 @@ const HistoryPage: React.FC = () => {
                                     animate="show"
                                     className="flex flex-wrap gap-2"
                                   >
-                                    {finals.runnerUpRoster.map((name) => renderRosterChip(name, season.id))}
+                                    {sortRoster(finals.runnerUpRoster).map((entry) => renderRosterChip(entry, season.id))}
                                   </motion.div>
                                 </div>
                               </div>

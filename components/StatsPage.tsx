@@ -5,11 +5,17 @@ import AllTimeStatsTable from './AllTimeStatsTable';
 import S11StatsTable from './S11StatsTable';
 import S10StatsTable from './S10StatsTable';
 import S12StatsTable from './S12StatsTable';
+import S13StatsTable from './S13StatsTable';
 
-const SEASONS = ['s10', 's11', 's12', 'all-time'] as const;
+const SEASONS = ['s10', 's11', 's12', 's13', 'all-time'] as const;
 type Season = typeof SEASONS[number];
 
 const SORT_OPTIONS: Record<Season, { key: string; label: string }[]> = {
+  's13': [
+    { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
+    { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
+    { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
+  ],
   's12': [
     { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
     { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
@@ -37,7 +43,7 @@ const StatsPage: React.FC = () => {
   const accentBg = colors.bg;
   const accentText = colors.text;
 
-  const [season, setSeason] = useState<Season>('s12');
+  const [season, setSeason] = useState<Season>('s13');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sortKey, setSortKey] = useState('pts');
@@ -49,17 +55,23 @@ const StatsPage: React.FC = () => {
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
-  // Load selection from URL on mount
+  // Load selection from localStorage on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const s = params.get('season') as Season;
-    if (SEASONS.includes(s)) {
-      setSeason(s);
+    try {
+      const savedSeason = localStorage.getItem('statsSeason') as Season;
+      if (SEASONS.includes(savedSeason)) {
+        setSeason(savedSeason);
+      }
+    } catch (e) {
+      console.warn('Failed to load statsSeason from localStorage', e);
     }
   }, []);
 
   const handleSeasonChange = (s: Season) => {
     setSeason(s);
+    try {
+      localStorage.setItem('statsSeason', s);
+    } catch (e) {}
     // Reset sort key if invalid for the new season
     const validKeys = SORT_OPTIONS[s].map(o => o.key);
     if (!validKeys.includes(sortKey)) {
@@ -69,9 +81,6 @@ const StatsPage: React.FC = () => {
     if (showStat !== 'ALL' && !validKeys.includes(showStat)) {
       setShowStat('ALL');
     }
-    const url = new URL(window.location.href);
-    url.searchParams.set('season', s);
-    window.history.replaceState({}, '', url);
   };
 
   const handleSortChange = (newSort: string) => {
@@ -165,8 +174,9 @@ const StatsPage: React.FC = () => {
       case 's10': return <S10StatsTable isEmbedded={true} {...commonProps} />;
       case 's11': return <S11StatsTable isEmbedded={true} {...commonProps} />;
       case 's12': return <S12StatsTable isEmbedded={true} {...commonProps} />;
+      case 's13': return <S13StatsTable isEmbedded={true} {...commonProps} />;
       case 'all-time': return <AllTimeStatsTable {...commonProps} />;
-      default: return <S12StatsTable isEmbedded={true} {...commonProps} />;
+      default: return <S13StatsTable isEmbedded={true} {...commonProps} />;
     }
   };
 
