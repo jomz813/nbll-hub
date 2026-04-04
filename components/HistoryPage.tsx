@@ -16,7 +16,7 @@ interface HistorySeason {
 type HistoryFilter = 'All' | 'Teams' | 'MVPs' | 'Rosters';
 
 const historyData: HistorySeason[] = [
-  { id: 12, champion: 'Sacramento Kings', mvp: 'Phattie' },
+  { id: 12, champion: 'Detroit Pistons', mvp: 'Packed' },
   { id: 11, champion: 'Milwaukee Bucks', mvp: 'Aim' },
   { id: 10, champion: 'Miami Heat', mvp: 'Pansho' },
   { id: 9, champion: 'Cleveland Cavaliers', mvp: 'Packed' },
@@ -45,18 +45,8 @@ interface SeasonFinals {
 
 const finalsData: Record<number, SeasonFinals> = {
   12: {
-    championsTeam: "Kings",
+    championsTeam: "Pistons",
     championsRoster: [
-      { nickname: "phattie", username: "phatspacepirate", clickable: true },
-      { nickname: "bum", username: "Xlerent", clickable: true },
-      { nickname: "chino", username: "chinophobia", clickable: true },
-      { nickname: "rock", username: "RockWayHunterYT", clickable: true },
-      { nickname: "cam", username: "Offprkx_13", clickable: true },
-      { nickname: "kaza" },
-      { nickname: "silver", username: "jcoolclubs", clickable: true }
-    ],
-    runnerUpTeam: "Pistons",
-    runnerUpRoster: [
       { nickname: "packed", username: "lalpack125", clickable: true },
       { nickname: "rah", username: "alwayzbizzy41", clickable: true },
       { nickname: "tend", username: "aaronthekiii", clickable: true },
@@ -64,6 +54,16 @@ const finalsData: Record<number, SeasonFinals> = {
       { nickname: "doge", username: "DogeShadowDragon", clickable: true },
       { nickname: "gmz", username: "heygmz", clickable: true },
       { nickname: "perc" }
+    ],
+    runnerUpTeam: "Kings",
+    runnerUpRoster: [
+      { nickname: "phattie", username: "phatspacepirate", clickable: true },
+      { nickname: "bum", username: "Xlerent", clickable: true },
+      { nickname: "chino", username: "chinophobia", clickable: true },
+      { nickname: "rock", username: "RockWayHunterYT", clickable: true },
+      { nickname: "cam", username: "Offprkx_13", clickable: true },
+      { nickname: "kaza" },
+      { nickname: "silver", username: "jcoolclubs", clickable: true }
     ]
   },
   1: {
