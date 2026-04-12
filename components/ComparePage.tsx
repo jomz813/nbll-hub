@@ -5,8 +5,9 @@ import { fetchAwards, AwardsData } from '../data/awards';
 import { useSettings } from '../context/SettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toPng } from 'html-to-image';
+import RobloxAvatar from './RobloxAvatar';
 
-const SEASONS: SeasonID[] = ['s10', 's11', 's12', 's13', 'all-time'];
+const SEASONS: SeasonID[] = ['s14', 's13', 's12', 's11', 's10', 'all-time'];
 
 // Standardization helper matching the one in awards.ts for robust lookups
 const normalizeName = (name: string | null): string => {
@@ -20,31 +21,13 @@ const DropdownIcon = () => (
   </svg>
 );
 
-const PlayerAvatar: React.FC<{ username: string | null; isMobile?: boolean }> = ({ username, isMobile }) => {
-  if (!username) return null;
-
-  const avatarUrl = `/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}&format=image`;
-
-  return (
-    <div className={`relative shrink-0 flex items-center justify-center transition-all duration-300 ${isMobile ? 'h-32 w-32' : 'h-16 md:h-24 w-16 md:w-24'}`}>
-      <img 
-        src={avatarUrl} 
-        alt={username} 
-        className="h-full w-auto object-contain" 
-        crossOrigin="anonymous"
-        onLoad={(e) => (e.currentTarget.dataset.loaded = "true")}
-      />
-    </div>
-  );
-};
-
 const ComparePage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
   const accentBg = colors.bg;
   const accentText = colors.text;
   
-  const [season, setSeason] = useState<SeasonID>('s13');
+  const [season, setSeason] = useState<SeasonID>('s14');
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<PlayerStats[]>([]);
   
@@ -766,7 +749,7 @@ const ComparePage: React.FC = () => {
                    className={`flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-3 focus:outline-none min-w-0 w-full group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
                    title={selectedNames[0] ? "Click to remove" : ""}
                  >
-                   <PlayerAvatar username={selectedNames[0]} isMobile={window.innerWidth <= 768} />
+                   <RobloxAvatar username={selectedNames[0]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
                    <span className={`text-sm md:text-3xl font-medium md:font-black text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-left md:text-left ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
                      {selectedNames[0] ? selectedNames[0] : '...'}
                    </span>
@@ -787,7 +770,7 @@ const ComparePage: React.FC = () => {
                    title={selectedNames[1] ? "Click to remove" : ""}
                  >
                    <div className="flex flex-col md:hidden items-center gap-2 w-full">
-                     <PlayerAvatar username={selectedNames[1]} isMobile={window.innerWidth <= 768} />
+                     <RobloxAvatar username={selectedNames[1]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
                      <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-right`}>
                         {selectedNames[1] ? selectedNames[1] : '...'}
                      </span>
@@ -796,7 +779,7 @@ const ComparePage: React.FC = () => {
                      <span className={`text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 truncate uppercase ${selectedNames[1] ? 'group-hover:underline decoration-current underline-offset-4' : ''}`}>
                        {selectedNames[1] ? selectedNames[1] : '...'}
                      </span>
-                     <PlayerAvatar username={selectedNames[1]} />
+                     <RobloxAvatar username={selectedNames[1]} size="md" />
                    </div>
                  </button>
               </div>

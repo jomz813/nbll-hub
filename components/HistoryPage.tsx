@@ -5,6 +5,7 @@ import { useSettings } from '../context/SettingsContext';
 import { fetchS10Stats } from '../data/s10Stats';
 import { fetchS11Stats } from '../data/s11Stats';
 import { fetchS12Stats } from '../data/s12Stats';
+import { fetchS13Stats } from '../data/s13Stats';
 
 interface HistorySeason {
   id: number;
@@ -16,6 +17,7 @@ interface HistorySeason {
 type HistoryFilter = 'All' | 'Teams' | 'MVPs' | 'Rosters';
 
 const historyData: HistorySeason[] = [
+  { id: 13, champion: 'Colorado Comets', mvp: 'aim' },
   { id: 12, champion: 'Detroit Pistons', mvp: 'Packed' },
   { id: 11, champion: 'Milwaukee Bucks', mvp: 'Aim' },
   { id: 10, champion: 'Miami Heat', mvp: 'Pansho' },
@@ -44,6 +46,32 @@ interface SeasonFinals {
 }
 
 const finalsData: Record<number, SeasonFinals> = {
+  13: {
+    championsTeam: "Comets",
+    championsRoster: [
+      { nickname: "aim", username: "dndaim", clickable: true },
+      { nickname: "chino", username: "chinophobia", clickable: true },
+      { nickname: "junior", username: "jr49ers12", clickable: true },
+      { nickname: "virnadol" },
+      { nickname: "dannygreen", username: "D4NNYGREEN", clickable: true },
+      { nickname: "kbh" },
+      { nickname: "yoshida" },
+      { nickname: "sinful" }
+    ],
+    runnerUpTeam: "Plague",
+    runnerUpRoster: [
+      { nickname: "1luv", username: "xr1r0", clickable: true },
+      { nickname: "trae", username: "trae", clickable: true },
+      { nickname: "pansho", username: "ff2frs", clickable: true },
+      { nickname: "rock", username: "RockWayHunterYT", clickable: true },
+      { nickname: "meme" },
+      { nickname: "punkmonk", username: "PunkMonk00", clickable: true },
+      { nickname: "jomz", username: "spidermonkeywastaken", clickable: true },
+      { nickname: "halo", username: "Corey", clickable: true },
+      { nickname: "kaji", username: "timeownsyou", clickable: true },
+      { nickname: "rah", username: "alwayzbizzy41", clickable: true }
+    ]
+  },
   12: {
     championsTeam: "Pistons",
     championsRoster: [
@@ -346,6 +374,7 @@ const HistoryPage: React.FC = () => {
   const [s10Stats, setS10Stats] = useState<any[]>([]);
   const [s11Stats, setS11Stats] = useState<any[]>([]);
   const [s12Stats, setS12Stats] = useState<any[]>([]);
+  const [s13Stats, setS13Stats] = useState<any[]>([]);
   const [loadingGlobalStats, setLoadingGlobalStats] = useState(true);
   const [activePreview, setActivePreview] = useState<{ 
     player: string, 
@@ -364,14 +393,16 @@ const HistoryPage: React.FC = () => {
     window.addEventListener('resize', handleResize);
     const load = async () => {
       try {
-        const [s10, s11, s12] = await Promise.all([
+        const [s10, s11, s12, s13] = await Promise.all([
           fetchS10Stats(), 
           fetchS11Stats(),
-          fetchS12Stats()
+          fetchS12Stats(),
+          fetchS13Stats()
         ]);
         setS10Stats(s10);
         setS11Stats(s11);
         setS12Stats(s12);
+        setS13Stats(s13);
       } catch (e) {
         console.error("Failed to prefetch history stats", e);
       } finally {
@@ -478,9 +509,10 @@ const HistoryPage: React.FC = () => {
     if (activePreview.seasonId === 10) statsSource = s10Stats;
     else if (activePreview.seasonId === 11) statsSource = s11Stats;
     else if (activePreview.seasonId === 12) statsSource = s12Stats;
+    else if (activePreview.seasonId === 13) statsSource = s13Stats;
     
     return statsSource.find(p => p.player.toLowerCase() === activePreview.username.toLowerCase());
-  }, [activePreview, s10Stats, s11Stats, s12Stats]);
+  }, [activePreview, s10Stats, s11Stats, s12Stats, s13Stats]);
 
   return (
     <div className="pb-20 animate-page-enter">

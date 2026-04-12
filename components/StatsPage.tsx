@@ -2,15 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
 import AllTimeStatsTable from './AllTimeStatsTable';
+import S14StatsTable from './S14StatsTable';
+import S13StatsTable from './S13StatsTable';
+import S12StatsTable from './S12StatsTable';
 import S11StatsTable from './S11StatsTable';
 import S10StatsTable from './S10StatsTable';
-import S12StatsTable from './S12StatsTable';
-import S13StatsTable from './S13StatsTable';
 
-const SEASONS = ['s10', 's11', 's12', 's13', 'all-time'] as const;
+const SEASONS = ['s14', 's13', 's12', 's11', 's10', 'all-time'] as const;
 type Season = typeof SEASONS[number];
 
 const SORT_OPTIONS: Record<Season, { key: string; label: string }[]> = {
+  's14': [
+    { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
+    { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
+    { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
+  ],
   's13': [
     { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
     { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
@@ -43,7 +49,7 @@ const StatsPage: React.FC = () => {
   const accentBg = colors.bg;
   const accentText = colors.text;
 
-  const [season, setSeason] = useState<Season>('s13');
+  const [season, setSeason] = useState<Season>('s14');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sortKey, setSortKey] = useState('pts');
@@ -175,8 +181,9 @@ const StatsPage: React.FC = () => {
       case 's11': return <S11StatsTable isEmbedded={true} {...commonProps} />;
       case 's12': return <S12StatsTable isEmbedded={true} {...commonProps} />;
       case 's13': return <S13StatsTable isEmbedded={true} {...commonProps} />;
+      case 's14': return <S14StatsTable isEmbedded={true} {...commonProps} />;
       case 'all-time': return <AllTimeStatsTable {...commonProps} />;
-      default: return <S13StatsTable isEmbedded={true} {...commonProps} />;
+      default: return <S14StatsTable isEmbedded={true} {...commonProps} />;
     }
   };
 

@@ -2,16 +2,16 @@ import React, { useEffect, useState, useMemo } from 'react';
 import FluidBackground from './FluidBackground';
 import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
-import { fetchS13Stats, S13Row } from '../data/s13Stats';
+import { fetchS14Stats, S14Row } from '../data/s14Stats';
 
 const HERO_TITLES = [
-  "soulz has the most points in nbll history with 4,556 and counting",
-  "marsh has the most steals in nbll history with 441 and counting",
-  "rah has the most rebounds in nbll history with 297 and counting",
+  "soulz has the most points in nbll history with 5,149 and counting",
+  "marsh has the most steals in nbll history with 460 and counting",
+  "rah has the most rebounds in nbll history with 346 and counting",
   "taser was the first to reach 1,000 points",
-  "pansho has the same amount of rings as michael jordan",
+  "pansho has the same amount of rings as kobe",
   "rah holds the most nbll records with 6",
-  "pansho has an 86% chance to win the finals when he appears in one",
+  "stat data from s10-s11 will be deprecated from the site in s15",
   "soulz's 71.2 ppg in s11 is the highest of all time",
   "phattie's 5.4 spg in s11 is the highest of all time",
   "use the desktop site for a better experience",
@@ -82,14 +82,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
   // Use random selection for the initial title
   const [heroTitle, setHeroTitle] = useState(() => pickRandom(HERO_TITLES));
 
-  // Fetch S13 stats in the background to populate the rotation pool.
+  // Fetch S14 stats in the background to populate the rotation pool.
   useEffect(() => {
     let active = true;
-    const loadS13Leaders = async () => {
+    const loadS14Leaders = async () => {
       try {
-        const stats = await fetchS13Stats();
+        const stats = await fetchS14Stats();
         if (active && stats && stats.length > 0) {
-          const getLeader = (data: S13Row[], key: keyof S13Row) => {
+          const getLeader = (data: S14Row[], key: keyof S14Row) => {
             return [...data].sort((a, b) => (b[key] as number) - (a[key] as number))[0];
           };
 
@@ -99,7 +99,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
           const stlL = getLeader(stats, 'stl');
           const ppgL = getLeader(stats, 'ppg');
 
-          const s13LeaderTitles = [
+          const s14LeaderTitles = [
             `${ptsL.player} currently leads the league in points with ${Math.round(ptsL.pts)}`,
             `${astL.player} currently leads the league in assists with ${Math.round(astL.ast)}`,
             `${rebL.player} currently leads the league in rebounds with ${Math.round(rebL.reb)}`,
@@ -107,14 +107,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
             `${ppgL.player} currently leads the league in ppg with ${ppgL.ppg.toFixed(1)}`,
           ];
 
-          setDynamicTitles(s13LeaderTitles);
+          setDynamicTitles(s14LeaderTitles);
         }
       } catch (err) {
-        console.error("Failed to load S13 leader titles", err);
+        console.error("Failed to load S14 leader titles", err);
       }
     };
 
-    loadS13Leaders();
+    loadS14Leaders();
     return () => { active = false; };
   }, []);
 
