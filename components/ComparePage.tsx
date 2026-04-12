@@ -5,7 +5,7 @@ import { fetchAwards, AwardsData } from '../data/awards';
 import { useSettings } from '../context/SettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toPng } from 'html-to-image';
-import RobloxAvatar from './RobloxAvatar';
+import RobloxAvatar from './RobloxAvatar.js';
 
 const SEASONS: SeasonID[] = ['s14', 's13', 's12', 's11', 's10', 'all-time'];
 
