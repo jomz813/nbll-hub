@@ -8,9 +8,6 @@ import { generateAllTimeBadges, getHighestBadgesByCategory } from '../data/achie
 import { useSettings } from '../context/SettingsContext';
 import { toPng } from 'html-to-image';
 
-// In-memory cache for avatar URLs
-const AVATAR_CACHE: Record<string, string | null> = {};
-
 // Standardization helper for robust matching
 const normalizeName = (name: string): string => {
   return String(name || '').trim().toLowerCase().replace(/\s+/g, '');
@@ -50,6 +47,41 @@ const ProfileSkeleton: React.FC = () => (
   </div>
 );
 
+const RobloxAvatarImg: React.FC<{ username: string | null, size?: 'sm' | 'md' | 'lg' | 'xl', className?: string }> = ({ username, size = 'md', className = '' }) => {
+  const [error, setError] = useState(false);
+  const normalized = username?.trim();
+
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-16 h-16 md:w-24 md:h-24',
+    lg: 'w-28 h-28 md:w-40 md:h-40',
+    xl: 'w-32 h-32 md:w-48 md:h-48',
+  };
+
+  const placeholder = (
+    <div className={`bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${className}`}>
+      <svg className="w-1/2 h-1/2 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    </div>
+  );
+
+  if (!normalized || error) return placeholder;
+
+  return (
+    <img
+      src={`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(normalized)}&format=image`}
+      alt={normalized}
+      className={`object-contain rounded-2xl ${sizeClasses[size]} ${className}`}
+      crossOrigin="anonymous"
+      loading="lazy"
+      decoding="async"
+      onError={() => setError(true)}
+    />
+  );
+};
+
 const PlayersPage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
@@ -67,11 +99,6 @@ const PlayersPage: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // Avatar state
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [avatarLoading, setAvatarLoading] = useState(false);
-
-  // Refs for search interaction and profile capture
   const pillAreaRef = useRef<HTMLDivElement>(null);
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
@@ -99,35 +126,6 @@ const PlayersPage: React.FC = () => {
     load();
     return () => controller.abort();
   }, []);
-
-  useEffect(() => {
-    if (!selectedPlayer) {
-      setAvatarUrl(null);
-      return;
-    }
-
-    const username = selectedPlayer.player;
-    if (AVATAR_CACHE[username] !== undefined) {
-      setAvatarUrl(AVATAR_CACHE[username]);
-      return;
-    }
-
-    setAvatarLoading(true);
-    fetch(`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}`)
-      .then(res => res.json())
-      .then(data => {
-        const url = data.imageUrl || null;
-        AVATAR_CACHE[username] = url;
-        setAvatarUrl(url);
-      })
-      .catch(() => {
-        AVATAR_CACHE[username] = null;
-        setAvatarUrl(null);
-      })
-      .finally(() => {
-        setAvatarLoading(false);
-      });
-  }, [selectedPlayer?.player]);
 
   const filteredPlayers = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -484,35 +482,15 @@ const PlayersPage: React.FC = () => {
              
              {/* Mobile-only Background Avatar Cover */}
              <div className="md:hidden absolute inset-0 z-0">
-               {avatarLoading ? (
-                 <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 animate-pulse">
-                    <div className={`w-10 h-10 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
-                 </div>
-               ) : avatarUrl ? (
-                 <>
-                   <img src={avatarUrl} alt="" className="w-full h-full object-cover opacity-40 dark:opacity-60" />
-                   <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 dark:from-black dark:via-black/40 to-transparent" />
-                 </>
-               ) : (
-                 <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900/50" />
-               )}
+               <RobloxAvatarImg username={selectedPlayer.player} className="w-full h-full object-cover opacity-40 dark:opacity-60" />
+               <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 dark:from-black dark:via-black/40 to-transparent" />
              </div>
 
              <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6 md:gap-16 w-full">
                {/* Profile Avatar (Desktop Only) */}
                <div className="hidden md:block relative shrink-0 w-32 h-32 md:w-48 md:h-48 group">
                  <div className={`absolute inset-0 bg-white dark:bg-zinc-950 border-2 ${accentBorder} rounded-[2.5rem] md:rounded-[3rem] shadow-2xl overflow-hidden z-10`}>
-                    {avatarLoading ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 animate-pulse">
-                        <div className={`w-10 h-10 border-2 border-zinc-100 dark:border-zinc-800 border-t-zinc-400 dark:border-t-zinc-500 animate-spin rounded-full`} />
-                      </div>
-                    ) : avatarUrl ? (
-                      <img src={avatarUrl} alt={selectedPlayer.player} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    ) : (
-                      <div className="w-full h-full bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
-                        <svg className="w-16 h-16 text-zinc-200 dark:text-zinc-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                      </div>
-                    )}
+                    <RobloxAvatarImg username={selectedPlayer.player} size="xl" className="w-full h-full transition-transform duration-700 group-hover:scale-110" />
                  </div>
                  <div className="absolute -inset-4 bg-zinc-100 dark:bg-zinc-900 rounded-[3.5rem] blur-2xl opacity-40" />
                </div>

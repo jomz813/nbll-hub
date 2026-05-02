@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { fetchAllTimeStats, AllTimeRow } from '../data/allTimeStats';
+import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 import { useSettings } from '../context/SettingsContext';
 
-type SortKey = keyof AllTimeRow;
+type SortKey = keyof PlayerStats;
 
 interface AllTimeStatsTableProps {
   season?: string;
@@ -34,8 +34,8 @@ const TableSkeleton: React.FC = () => (
   </div>
 );
 
-const getColumnMaxes = (rows: AllTimeRow[], keys: (keyof AllTimeRow)[]) => {
-  const maxes: Partial<Record<keyof AllTimeRow, number>> = {};
+const getColumnMaxes = (rows: PlayerStats[], keys: (keyof PlayerStats)[]) => {
+  const maxes: Partial<Record<keyof PlayerStats, number>> = {};
   keys.forEach(key => {
     const values = rows
       .map(row => row[key] as number)
@@ -53,7 +53,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
   const accentBg = colors.bg;
   const accentText = colors.text;
 
-  const [data, setData] = useState<AllTimeRow[]>([]);
+  const [data, setData] = useState<PlayerStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
@@ -69,7 +69,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
       try {
         setLoading(true);
         setError(null);
-        const stats = await fetchAllTimeStats({ signal: controller.signal });
+        const stats = await fetchSeasonStats('all-time', controller.signal);
         if (alive) {
           setData(stats);
         }
@@ -124,7 +124,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
   }, [sortedData, searchQuery]);
 
   const columnMaxes = useMemo(() => {
-    const numericKeys: (keyof AllTimeRow)[] = ['pts', 'ast', 'reb', 'stl', 'eff', 'off', 'def'];
+    const numericKeys: (keyof PlayerStats)[] = ['pts', 'ast', 'reb', 'stl', 'eff', 'off', 'def'];
     return getColumnMaxes(filteredData, numericKeys);
   }, [filteredData]);
 
@@ -136,7 +136,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
     setSortConfig({ key, direction });
   };
 
-  const HighlightedCell = ({ value, colKey, isBold = false }: { value: number, colKey: keyof AllTimeRow, isBold?: boolean }) => {
+  const HighlightedCell = ({ value, colKey, isBold = false }: { value: number, colKey: keyof PlayerStats, isBold?: boolean }) => {
     const isLeader = value > 0 && value === columnMaxes[colKey];
     
     // Logic for high contrast EFF in light mode
@@ -259,7 +259,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
         {filteredData.length > 0 ? (
           filteredData.map((row, idx) => {
             if (showStat !== 'ALL') {
-              const val = row[showStat as keyof AllTimeRow];
+              const val = row[showStat as keyof PlayerStats];
               const label = showStat.toUpperCase();
               const displayVal = showStat === 'val' ? formatCurrency(val as number) : (typeof val === 'number' ? val : '—');
               
@@ -298,7 +298,7 @@ const AllTimeStatsTable: React.FC<AllTimeStatsTableProps> = ({ season, onSeasonC
                   <StatGroup label="EFF" value={row.eff} />
                   <StatGroup label="OFF" value={row.off} />
                   <StatGroup label="DEF" value={row.def} />
-                  <StatGroup label="VAL" value={formatCurrency(row.val)} />
+                  <StatGroup label="VAL" value={formatCurrency(row.val ?? 0)} />
                 </div>
               </div>
             );

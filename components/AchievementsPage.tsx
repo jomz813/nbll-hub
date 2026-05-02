@@ -454,7 +454,7 @@ const AchievementsPage: React.FC = () => {
             )}
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {selectedPlayer && showBadges ? (
               <motion.div 
                 key={`badges-${selectedPlayer.player}`}

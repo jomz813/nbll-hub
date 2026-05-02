@@ -1,8 +1,10 @@
 
 import Papa from 'papaparse';
 
+export const ALL_TIME_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpbI0iBshMjG0A-ilbu2Tc0OEJuHGYZlIjH9e2mPCIGX2vGp6HfMPVBsglH1givd9AGTWRKxaH0_Ek/pub?output=csv';
+
 export const STAT_SOURCES = {
-  'all-time': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpbI0iBshMjG0A-ilbu2Tc0OEJuHGYZlIjH9e2mPCIGX2vGp6HfMPVBsglH1givd9AGTWRKxaH0_Ek/pub?gid=329257056&single=true&output=csv',
+  'all-time': ALL_TIME_CSV_URL,
   's14': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJOo3GZSlEW7E4Mqmn7-ktNP7zQKM4djiwi0_4ptjmZKn2imY7FihYWln4kV6_MGAFi2asPuCx77F9/pub?gid=0&single=true&output=csv',
   's13': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSXs54PAbDnp_PgxYIigdldr72bC0Pm3BSYzm5f7acohgjTv342vA0n87GsonKu82P2A3mg6x45v7iV/pub?gid=0&single=true&output=csv',
   's12': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRt0_--RlgbIXxVLV67Qi1q50iM9apZoG7aaXc-HHYCDWSX55EcsA27u9-pNqnUJqRWart-DuyEmkuF/pub?gid=0&single=true&output=csv',
@@ -32,6 +34,20 @@ export interface PlayerStats {
 }
 
 const cache: Record<string, PlayerStats[]> = {};
+
+export const clearCache = () => {
+  for (const key in cache) {
+    delete cache[key];
+  }
+};
+
+export const getCacheInfo = () => {
+  const info: Record<string, number> = {};
+  for (const key in cache) {
+    info[key] = cache[key].length;
+  }
+  return info;
+};
 
 const normalizeKey = (k: string) => k.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
 

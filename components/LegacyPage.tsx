@@ -116,7 +116,7 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ initialSegment = 'hof' }) => {
 
       {/* Content Area */}
       <div className="relative min-h-[400px]">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={activeSegment}
             initial={{ opacity: 0, y: 10 }}

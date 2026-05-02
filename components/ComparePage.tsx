@@ -5,7 +5,6 @@ import { fetchAwards, AwardsData } from '../data/awards';
 import { useSettings } from '../context/SettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toPng } from 'html-to-image';
-import RobloxAvatar from './RobloxAvatar.js';
 
 const SEASONS: SeasonID[] = ['s14', 's13', 's12', 's11', 's10', 'all-time'];
 
@@ -21,6 +20,39 @@ const DropdownIcon = () => (
   </svg>
 );
 
+const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl', className?: string }> = ({ username, size, className = '' }) => {
+  const [error, setError] = useState(false);
+  const normalized = username?.trim();
+
+  const sizeClasses = {
+    md: 'w-16 h-16 md:w-24 md:h-24',
+    xl: 'w-32 h-32 md:w-48 md:h-48',
+  };
+
+  const placeholder = (
+    <div className={`bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${className}`}>
+      <svg className="w-1/2 h-1/2 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    </div>
+  );
+
+  if (!normalized || error) return placeholder;
+
+  return (
+    <img
+      src={`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(normalized)}&format=image`}
+      alt={normalized}
+      className={`object-contain rounded-2xl ${sizeClasses[size]} ${className}`}
+      crossOrigin="anonymous"
+      loading="lazy"
+      decoding="async"
+      onError={() => setError(true)}
+    />
+  );
+};
+
 const ComparePage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
@@ -33,21 +65,13 @@ const ComparePage: React.FC = () => {
   
   // Load selection from localStorage on mount
   useEffect(() => {
-    try {
-      const savedSeason = localStorage.getItem('compareSeason') as SeasonID;
-      if (SEASONS.includes(savedSeason)) {
-        setSeason(savedSeason);
-      }
-    } catch (e) {
-      console.warn('Failed to load compareSeason from localStorage', e);
-    }
+    // Reset season to default on mount per new requirements
+    setSeason('s14');
   }, []);
 
   const handleSeasonChange = (s: SeasonID) => {
     setSeason(s);
-    try {
-      localStorage.setItem('compareSeason', s);
-    } catch (e) {}
+    // Removed localStorage.setItem
   };
   
   // Store only names to persist selection across season data swaps
@@ -749,7 +773,7 @@ const ComparePage: React.FC = () => {
                    className={`flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-3 focus:outline-none min-w-0 w-full group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
                    title={selectedNames[0] ? "Click to remove" : ""}
                  >
-                   <RobloxAvatar username={selectedNames[0]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
+                   <RobloxAvatarImg username={selectedNames[0]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
                    <span className={`text-sm md:text-3xl font-medium md:font-black text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-left md:text-left ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
                      {selectedNames[0] ? selectedNames[0] : '...'}
                    </span>
@@ -770,7 +794,7 @@ const ComparePage: React.FC = () => {
                    title={selectedNames[1] ? "Click to remove" : ""}
                  >
                    <div className="flex flex-col md:hidden items-center gap-2 w-full">
-                     <RobloxAvatar username={selectedNames[1]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
+                     <RobloxAvatarImg username={selectedNames[1]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
                      <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-right`}>
                         {selectedNames[1] ? selectedNames[1] : '...'}
                      </span>
@@ -779,7 +803,7 @@ const ComparePage: React.FC = () => {
                      <span className={`text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 truncate uppercase ${selectedNames[1] ? 'group-hover:underline decoration-current underline-offset-4' : ''}`}>
                        {selectedNames[1] ? selectedNames[1] : '...'}
                      </span>
-                     <RobloxAvatar username={selectedNames[1]} size="md" />
+                     <RobloxAvatarImg username={selectedNames[1]} size="md" />
                    </div>
                  </button>
               </div>

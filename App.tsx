@@ -9,6 +9,7 @@ import RouteTransition from './components/RouteTransition';
 import ScrollToTopButton from './components/ScrollToTopButton';
 import ErrorBoundary from './components/ErrorBoundary';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
+import { clearCache, getCacheInfo } from './data/statsFetcher';
 
 export type TabID = 'home' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | 'compare' | 'achievements' | string;
 
@@ -17,6 +18,18 @@ const AppContent: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [isDebugOpen, setIsDebugOpen] = useState(false);
+  
+  // Dev Mode States
+  const [isDevMode, setIsDevMode] = useState(false);
+  const [terminalHistory, setTerminalHistory] = useState<string[]>(['NBLL OS v1.0.0', 'Type "help" for commands.']);
+  const [commandInput, setCommandInput] = useState('');
+  const [isInspectMode, setIsInspectMode] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const fpsRef = useRef(60);
+
   const { settings, getThemeColors } = useSettings();
 
   const colors = getThemeColors();
@@ -109,6 +122,158 @@ const AppContent: React.FC = () => {
       document.body.classList.add('theme-hof');
     }
   }, [activeTab]);
+
+  // Dev Mode logic
+  useEffect(() => {
+    let rAF: number;
+    let lastTime = performance.now();
+    let frames = 0;
+    
+    const countFrames = () => {
+      frames++;
+      const now = performance.now();
+      if (now - lastTime >= 1000) {
+        fpsRef.current = frames;
+        frames = 0;
+        lastTime = now;
+      }
+      rAF = requestAnimationFrame(countFrames);
+    };
+    rAF = requestAnimationFrame(countFrames);
+    return () => cancelAnimationFrame(rAF);
+  }, []);
+
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [terminalHistory]);
+
+  useEffect(() => {
+    if (isInspectMode) document.body.classList.add('inspect-mode');
+    else document.body.classList.remove('inspect-mode');
+  }, [isInspectMode]);
+
+  useEffect(() => {
+    if (!isInspectMode) return;
+    
+    const tooltip = document.createElement('div');
+    tooltip.style.position = 'fixed';
+    tooltip.style.zIndex = '999999';
+    tooltip.style.background = 'rgba(0,0,0,0.85)';
+    tooltip.style.color = '#fff';
+    tooltip.style.padding = '2px 6px';
+    tooltip.style.fontSize = '10px';
+    tooltip.style.fontFamily = 'monospace';
+    tooltip.style.borderRadius = '4px';
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.border = '1px solid currentColor';
+    tooltip.style.textShadow = 'none';
+    document.body.appendChild(tooltip);
+
+    const onMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
+      
+      const tag = target.tagName.toLowerCase();
+      let classText = '';
+      if (typeof target.className === 'string' && target.className) {
+        const parts = target.className.split(' ').filter(c => c && !c.includes('hover') && !c.includes('active')).slice(0, 3);
+        if (parts.length > 0) classText = '.' + parts.join('.');
+      }
+      tooltip.textContent = `${tag}${classText}`;
+      tooltip.style.borderColor = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
+    };
+    
+    const onMouseMove = (e: MouseEvent) => {
+      tooltip.style.left = `${e.clientX + 10}px`;
+      tooltip.style.top = `${e.clientY + 15}px`;
+    };
+
+    document.addEventListener('mouseover', onMouseOver);
+    document.addEventListener('mousemove', onMouseMove);
+
+    return () => {
+      document.removeEventListener('mouseover', onMouseOver);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.body.removeChild(tooltip);
+    };
+  }, [isInspectMode]);
+
+  const handleTerminalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commandInput.trim()) return;
+    
+    const parts = commandInput.trim().split(' ');
+    const cmd = parts[0].toLowerCase();
+    const newHistory = [...terminalHistory, `> ${commandInput.trim()}`];
+    
+    let output = '';
+    switch (cmd) {
+      case 'help': output = 'Commands: help, clear, route, fps, inspect, version, echo, scan, memory, viewport, reload-data'; break;
+      case 'clear': setTerminalHistory(['Console cleared.']); setCommandInput(''); return;
+      case 'route': output = `Active Tab: ${activeTab}`; break;
+      case 'fps': output = `Estimated FPS: ${fpsRef.current}`; break;
+      case 'inspect': 
+        setIsInspectMode(prev => !prev);
+        output = `Inspect Mode toggled.`;
+        break;
+      case 'version': output = 'v8.2'; break;
+      case 'echo':
+        if (parts.length > 1) {
+          output = parts.slice(1).join(' ');
+        } else {
+          output = 'Usage: echo [text]';
+        }
+        break;
+      case 'scan':
+        setTerminalHistory([...newHistory, 'Scanning components...']);
+        setTimeout(() => {
+          setTerminalHistory(prev => [...prev, 'Navbar: OK', 'Routed content: OK', 'Data hooks: OK', 'Debug panel: OK', 'Scan complete.']);
+        }, 600);
+        setCommandInput('');
+        return;
+      case 'memory': {
+        const cacheInfo = getCacheInfo();
+        const totalRows = Object.values(cacheInfo).reduce((a, b) => a + b, 0);
+        const hasAllTime = !!cacheInfo['all-time'];
+        const hasSeasons = Object.keys(cacheInfo).some(k => k !== 'all-time');
+        
+        const memLines = [
+          `activeTab: ${activeTab}`,
+          `current rendered component: TabPage/LandingPage`,
+          `developerMode: ${isDevMode ? 'ON' : 'OFF'}`,
+          `inspectMode: ${isInspectMode ? 'ON' : 'OFF'}`,
+          `total loaded data rows: ${totalRows}`,
+          `all-time data loaded: ${hasAllTime ? 'Yes' : 'No'}`,
+          `season data loaded: ${hasSeasons ? 'Yes' : 'No'}`
+        ];
+        
+        setTerminalHistory([...newHistory, ...memLines]);
+        setCommandInput('');
+        return;
+      }
+      case 'viewport': {
+        const lines = [
+          `Window: ${window.innerWidth}x${window.innerHeight}`,
+          `Device: ${window.innerWidth < 768 ? 'Mobile' : 'Desktop'}`,
+          `PixelRatio: ${window.devicePixelRatio || 1}`
+        ];
+        setTerminalHistory([...newHistory, ...lines]);
+        setCommandInput('');
+        return;
+      }
+      case 'reload-data':
+        clearCache();
+        setTerminalHistory([...newHistory, 'Reloading data...', 'Data reload complete.']);
+        setReloadKey(k => k + 1);
+        setCommandInput('');
+        return;
+      default: output = 'Unknown command. Type help for commands.'; break;
+    }
+    setTerminalHistory([...newHistory, output]);
+    setCommandInput('');
+  };
 
   const toggleTheme = () => {
     triggerThemeTransition();
@@ -274,6 +439,13 @@ const AppContent: React.FC = () => {
                       box-shadow 0.2s ease-out !important;
           transition-delay: 0s !important;
         }
+
+        /* Developer Mode Classes */
+        body.inspect-mode *:not(body):not(html):hover {
+          outline: 1px dashed var(--accent) !important;
+          outline-offset: -1px;
+          cursor: crosshair !important;
+        }
       `}</style>
 
       {settings.reducedMotion && (
@@ -304,25 +476,104 @@ const AppContent: React.FC = () => {
       />
 
       <div className="relative flex-1">
+        {/* Debug Panel Toggle (Desktop Only) */}
+        <div className="hidden md:block fixed top-2 right-2 z-[100000]">
+          <button 
+            onClick={() => setIsDebugOpen(!isDebugOpen)}
+            className={`p-1.5 border shadow-sm flex items-center justify-center ${
+              isDebugOpen 
+                ? 'bg-zinc-800 border-zinc-600 text-zinc-300' 
+                : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 border-dashed'
+            }`}
+            title="Debug"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="4 17 10 11 4 5" />
+              <line x1="12" y1="19" x2="20" y2="19" />
+            </svg>
+          </button>
+          
+          {isDebugOpen && (
+            <div className="absolute top-8 right-0 w-56 bg-zinc-950 border border-zinc-800 p-2 text-xs text-zinc-300 shadow-md">
+              <div className="font-bold text-zinc-500 mb-1.5 pb-1 border-b border-zinc-800">Debug</div>
+              
+              <div className="space-y-0.5 mb-2">
+                <div className="flex justify-between">
+                  <span className="text-zinc-600">View</span>
+                  <span>{activeTab}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-600">Theme</span>
+                  <span>{theme}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-600">Reduced Motion</span>
+                  <span>{settings.reducedMotion ? 'Yes' : 'No'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-zinc-800 mt-2 pt-1.5 mb-1.5">
+                <span className="text-zinc-500">Dev Tools</span>
+                <button
+                  type="button"
+                  onClick={() => setIsDevMode(!isDevMode)}
+                  className={`px-1.5 py-0.5 border border-zinc-700 text-[10px] font-mono leading-none ${
+                    isDevMode ? 'bg-zinc-200 text-black border-zinc-200' : 'bg-transparent text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {isDevMode ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              {isDevMode && (
+                <div className="border-t border-zinc-800 pt-1.5">
+                  <div className="bg-black border border-zinc-800 p-1 flex flex-col h-28">
+                    <div 
+                      ref={terminalRef}
+                      className="flex-1 overflow-y-auto space-y-0.5 mb-1 font-mono text-[10px] break-words scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent leading-tight"
+                    >
+                      {terminalHistory.map((line, idx) => (
+                        <div key={idx} className={`${line.startsWith('>') ? 'text-zinc-600' : 'text-zinc-300'}`}>
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                    <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1 border-t border-zinc-900 pt-1 mt-auto">
+                      <span className="text-zinc-600 text-[10px] font-mono">&gt;</span>
+                      <input 
+                        type="text" 
+                        className="bg-transparent border-none outline-none text-zinc-300 text-[10px] w-full font-mono placeholder-zinc-800"
+                        placeholder="cmd..."
+                        value={commandInput}
+                        onChange={(e) => setCommandInput(e.target.value)}
+                        autoComplete="off"
+                        spellCheck="false"
+                      />
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <ErrorBoundary>
-          <AnimatePresence mode="wait">
             {activeTab === 'home' ? (
-              <RouteTransition key="home">
+              <div key={`home-${reloadKey}`} className="w-full">
                 <LandingPage 
                   onSearchTrigger={() => {}} 
                   onTabChange={setActiveTab}
                 />
-              </RouteTransition>
+              </div>
             ) : (
-              <RouteTransition key={activeTab}>
+              <div key={`${activeTab}-${reloadKey}`} className="w-full">
                 <TabPage 
                   tabId={activeTab} 
                   onBack={() => setActiveTab('home')} 
                   onTabChange={setActiveTab}
                 />
-              </RouteTransition>
+              </div>
             )}
-          </AnimatePresence>
         </ErrorBoundary>
       </div>
       

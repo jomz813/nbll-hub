@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { fetchAllTimeStats, AllTimeRow } from '../data/allTimeStats';
+import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 import { useSettings } from '../context/SettingsContext';
 
-type SortKey = keyof AllTimeRow;
+type SortKey = keyof PlayerStats;
 
 interface AllTimeStatsPageProps {
   isEmbedded?: boolean;
@@ -14,7 +14,7 @@ const AllTimeStatsPage: React.FC<AllTimeStatsPageProps> = ({ isEmbedded = false 
   const accentText = colors.text;
   const accentBg = colors.bg;
 
-  const [data, setData] = useState<AllTimeRow[]>([]);
+  const [data, setData] = useState<PlayerStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' }>({
@@ -35,7 +35,7 @@ const AllTimeStatsPage: React.FC<AllTimeStatsPageProps> = ({ isEmbedded = false 
       try {
         setLoading(true);
         setError(null);
-        const stats = await fetchAllTimeStats({ signal: controller.signal });
+        const stats = await fetchSeasonStats('all-time', controller.signal);
         if (alive) {
           setData(stats);
         }

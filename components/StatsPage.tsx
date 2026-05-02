@@ -63,21 +63,13 @@ const StatsPage: React.FC = () => {
 
   // Load selection from localStorage on mount
   useEffect(() => {
-    try {
-      const savedSeason = localStorage.getItem('statsSeason') as Season;
-      if (SEASONS.includes(savedSeason)) {
-        setSeason(savedSeason);
-      }
-    } catch (e) {
-      console.warn('Failed to load statsSeason from localStorage', e);
-    }
+    // Reset season to default on mount per new requirements
+    setSeason('s14');
   }, []);
 
   const handleSeasonChange = (s: Season) => {
     setSeason(s);
-    try {
-      localStorage.setItem('statsSeason', s);
-    } catch (e) {}
+    // Removed localStorage.setItem('statsSeason', s);
     // Reset sort key if invalid for the new season
     const validKeys = SORT_OPTIONS[s].map(o => o.key);
     if (!validKeys.includes(sortKey)) {
@@ -387,7 +379,7 @@ const StatsPage: React.FC = () => {
       </div>
 
       <div className="animate-page-enter">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={`${season}-${showStat}`}
             initial={{ opacity: 0, x: 10 }}
