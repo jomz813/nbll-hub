@@ -117,6 +117,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
     { name: 'more', label: 'more' }
   ];
 
+  // Calculate safe dynamic height for mobile menu to prevent auto-height reflow freezes
+  // 64(base) + 8(mb-2) + 60 per tab + 16(pb-4) + 1(border)
+  const mobileMenuHeight = 64 + 8 + (tabs.length * 60) + 16 + 1;
+
   const getParentTab = (tabId: TabID): TabID => {
     const parentMap: Partial<Record<TabID, TabID>> = {
       'partner-hub': 'more',
@@ -481,10 +485,11 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
       <div className="relative flex items-center justify-center w-full">
         {/* Main Navbar Pill Container - Exactly matches site content width */}
         <div className="w-full max-w-6xl relative">
+          {/* Note: We do not animate to height: 'auto' because it causes a massive layout thrash and freeze on mobile with the homepage background filters */}
           <motion.div 
             initial={false}
             animate={{ 
-              height: isMenuOpen ? 'auto' : '4rem',
+              height: isMenuOpen ? mobileMenuHeight : 64,
               borderRadius: isMenuOpen ? '2.5rem' : '2rem',
               boxShadow: (isMenuOpen && window.innerWidth < 768) 
                 ? (isHomeLightMobile ? '0 15px 40px -10px rgba(0, 0, 0, 0.3)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)')
