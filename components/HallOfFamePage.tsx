@@ -1,6 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { hallOfFameMembers, HOFMember } from '../data/hof';
+import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 
 /**
  * Fisher-Yates shuffle algorithm to ensure an unbiased randomization
@@ -61,8 +62,24 @@ const HOFEligibility: React.FC = () => {
   );
 };
 
-const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
+const HOFCard: React.FC<{ member: HOFMember; statsData?: PlayerStats }> = ({ member, statsData }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+
+  const displayStats = useMemo(() => {
+    if (statsData) {
+      return [
+        { label: 'PTS', val: statsData.pts.toLocaleString() },
+        { label: 'AST', val: statsData.ast.toLocaleString() },
+        { label: 'REB', val: statsData.reb.toLocaleString() },
+        { label: 'STL', val: statsData.stl.toLocaleString() }
+      ];
+    }
+    // Fallback to hardcoded stats if data fetch fails or player not found
+    return (member.stats || '0 PTS • 0 AST • 0 REB • 0 STL').split(' • ').map(s => {
+      const [val, label] = s.split(' ');
+      return { label, val };
+    });
+  }, [statsData, member.stats]);
 
   return (
     <div 
@@ -117,7 +134,6 @@ const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
            {/* 1. Header Area - Top Pinned */}
            <div className="relative z-10 shrink-0 mb-4">
                <h4 className="text-3xl md:text-4xl font-black text-[#D4AF37] tracking-tight mb-2 drop-shadow-sm">{member.name}</h4>
-               <div className="w-10 h-0.5 bg-[#D4AF37] mx-auto rounded-full shadow-[0_0_8px_#D4AF37]" />
            </div>
 
            {/* 2. Content Area - Fills remaining height */}
@@ -142,12 +158,11 @@ const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
               <div className="flex-1 flex flex-col min-h-0">
                  <div className="h-full w-full bg-black/40 border border-[#D4AF37]/20 rounded-2xl p-2 md:p-3 backdrop-blur-sm shadow-inner flex flex-col">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 md:gap-y-2 flex-1 items-center content-center">
-                       {member.stats?.split(' • ').map((stat, sIdx) => {
-                         const [val, label] = stat.split(' ');
+                       {displayStats.map((stat, sIdx) => {
                          return (
                            <div key={sIdx} className="flex flex-col items-center justify-center p-1 md:p-0">
-                             <span className="text-3xl md:text-3xl lg:text-3xl xl:text-4xl font-black text-white leading-none tracking-tight drop-shadow-md">{val}</span>
-                             <span className="text-[9px] md:text-[10px] font-black text-[#D4AF37] uppercase tracking-widest opacity-90 mt-1">{label}</span>
+                             <span className="text-3xl md:text-3xl lg:text-3xl xl:text-4xl font-black text-white leading-none tracking-tight drop-shadow-md">{stat.val}</span>
+                             <span className="text-[9px] md:text-[10px] font-black text-[#D4AF37] uppercase tracking-widest opacity-90 mt-1">{stat.label}</span>
                            </div>
                          );
                        })}
@@ -167,12 +182,40 @@ const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
 };
 
 const HallOfFamePage: React.FC = () => {
+  const [allTimeStats, setAllTimeStats] = useState<PlayerStats[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const stats = await fetchSeasonStats('all-time');
+        setAllTimeStats(stats);
+      } catch (err) {
+        console.error('Failed to fetch all-time stats for HOF:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadStats();
+  }, []);
+
   /**
    * We initialize the shuffled order on component mount (visit).
    * Since this component is conditionally rendered by the parent router,
    * a remount (visiting the page) will trigger a new shuffle.
    */
   const shuffledMembers = useMemo(() => shuffleArray(hallOfFameMembers), []);
+
+  const getStatsForMember = (member: HOFMember) => {
+    if (!member.username) return undefined;
+    const playerStat = allTimeStats.find(s => s.player.toLowerCase() === member.username?.toLowerCase());
+    
+    if (!playerStat && !loading && process.env.NODE_ENV === 'development') {
+      console.warn(`HOF member ${member.name} with username ${member.username} not found in all-time stats.`);
+    }
+    
+    return playerStat;
+  };
 
   return (
     <div className="space-y-16 animate-page-enter pt-4">
@@ -189,7 +232,11 @@ const HallOfFamePage: React.FC = () => {
         {/* 1 col mobile, 2 col tablet, 3 col desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {shuffledMembers.map((member) => (
-            <HOFCard key={member.name} member={member} />
+            <HOFCard 
+              key={member.name} 
+              member={member} 
+              statsData={getStatsForMember(member)}
+            />
           ))}
         </div>
       </div>
