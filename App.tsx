@@ -11,7 +11,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { clearCache, getCacheInfo } from './data/statsFetcher';
 
-export type TabID = 'home' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'credits' | 'records' | 'compare' | 'achievements' | string;
+export type TabID = 'home' | 'stats' | 'legacy' | 'rules' | 'more' | 'partner-hub' | 'hall-of-fame' | 'league-history' | 'records' | 'compare' | 'achievements' | string;
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabID>('home');

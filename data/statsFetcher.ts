@@ -9,7 +9,6 @@ export const STAT_SOURCES = {
   's13': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSXs54PAbDnp_PgxYIigdldr72bC0Pm3BSYzm5f7acohgjTv342vA0n87GsonKu82P2A3mg6x45v7iV/pub?gid=0&single=true&output=csv',
   's12': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRt0_--RlgbIXxVLV67Qi1q50iM9apZoG7aaXc-HHYCDWSX55EcsA27u9-pNqnUJqRWart-DuyEmkuF/pub?gid=0&single=true&output=csv',
   's11': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ40oM4VxQKSbZoD6NQXO3vb9GYVP6bQvZczPVAYaw-6lcLsGlWIdEhJUshk2lOe5wp2flh3QsLP4As/pub?gid=0&single=true&output=csv',
-  's10': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDYSvY-GvrxjLiRr_HHiY1pFurZxa86Oeg2yE8FiURFwmjpFO7xd1BJI27DJQCodpYGSoxRO3g95cd/pub?gid=0&single=true&output=csv'
 };
 
 export type SeasonID = keyof typeof STAT_SOURCES;

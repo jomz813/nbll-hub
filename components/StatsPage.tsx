@@ -6,9 +6,8 @@ import S14StatsTable from './S14StatsTable';
 import S13StatsTable from './S13StatsTable';
 import S12StatsTable from './S12StatsTable';
 import S11StatsTable from './S11StatsTable';
-import S10StatsTable from './S10StatsTable';
 
-const SEASONS = ['s14', 's13', 's12', 's11', 's10', 'all-time'] as const;
+const SEASONS = ['s14', 's13', 's12', 's11', 'all-time'] as const;
 type Season = typeof SEASONS[number];
 
 const SORT_OPTIONS: Record<Season, { key: string; label: string }[]> = {
@@ -28,11 +27,6 @@ const SORT_OPTIONS: Record<Season, { key: string; label: string }[]> = {
     { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
   ],
   's11': [
-    { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
-    { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
-    { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
-  ],
-  's10': [
     { key: 'pts', label: 'PTS' }, { key: 'ast', label: 'AST' }, { key: 'reb', label: 'REB' }, { key: 'stl', label: 'STL' },
     { key: 'gp', label: 'GP' }, { key: 'ppg', label: 'PPG' }, { key: 'apg', label: 'APG' }, { key: 'rpg', label: 'RPG' },
     { key: 'spg', label: 'SPG' }, { key: 'eff', label: 'EFF' }
@@ -169,7 +163,6 @@ const StatsPage: React.FC = () => {
     };
 
     switch (season) {
-      case 's10': return <S10StatsTable isEmbedded={true} {...commonProps} />;
       case 's11': return <S11StatsTable isEmbedded={true} {...commonProps} />;
       case 's12': return <S12StatsTable isEmbedded={true} {...commonProps} />;
       case 's13': return <S13StatsTable isEmbedded={true} {...commonProps} />;

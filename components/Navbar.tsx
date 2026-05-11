@@ -16,7 +16,6 @@ const PAGES: { name: TabID; label: string; keywords?: string[] }[] = [
   { name: 'hall-of-fame', label: 'hall of fame', keywords: ['hof', 'legends', 'hall'] },
   { name: 'league-history', label: 'history', keywords: ['timeline', 'archives', 'history'] },
   { name: 'records', label: 'records', keywords: ['history', 'stats', 'highs', 'best'] },
-  { name: 'credits', label: 'credits', keywords: ['contributors', 'staff', 'creators', 'team', 'devs'] },
 ];
 
 interface NavbarProps {
@@ -128,7 +127,6 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
       'hall-of-fame': 'legacy',
       'league-history': 'more',
       'records': 'legacy',
-      'credits': 'more',
       'achievements': 'more',
       'players': 'more',
       'unknown': 'more'
@@ -191,7 +189,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
       type: 'Page', 
       id: `page-${p.name}`,
       tag: (p.name === 'hall-of-fame' || p.name === 'league-history' || p.name === 'records') ? 'LEGACY' : 
-           (p.name === 'credits') ? 'TEAM' : (p.name === 'stats' || p.name === 'compare' || p.name === 'achievements') ? 'STATS' : 'HUB'
+           (p.name === 'stats' || p.name === 'compare' || p.name === 'achievements') ? 'STATS' : 'HUB'
     }));
     
     // 2. Records
@@ -297,6 +295,57 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isSearchOpen]);
+
+  useEffect(() => {
+    const handleTabCycling = (e: KeyboardEvent) => {
+      // Desktop only
+      if (window.innerWidth < 768) return;
+
+      // Only handle Tab
+      if (e.key !== 'Tab') return;
+
+      // Check if we should ignore (typing in input, textarea, etc.)
+      const target = e.target as HTMLElement;
+      const isEditable = target.tagName === 'INPUT' || 
+                         target.tagName === 'TEXTAREA' || 
+                         target.tagName === 'SELECT' || 
+                         target.isContentEditable;
+      
+      if (isEditable) return;
+
+      // Don't interfere if search is open
+      if (isSearchOpen) return;
+
+      // Intercept Tab for navigation
+      e.preventDefault();
+
+      const currentParent = getParentTab(activeTab);
+      const currentIndex = tabs.findIndex(t => t.name === currentParent);
+      
+      // If not found, start from home
+      if (currentIndex === -1) {
+        handleTabClick('home');
+        return;
+      }
+
+      let nextIndex;
+      if (e.shiftKey) {
+        // Shift + Tab: backward
+        nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+      } else {
+        // Tab: forward
+        nextIndex = (currentIndex + 1) % tabs.length;
+      }
+
+      const nextTab = tabs[nextIndex];
+      if (nextTab) {
+        handleTabClick(nextTab.name);
+      }
+    };
+
+    window.addEventListener('keydown', handleTabCycling);
+    return () => window.removeEventListener('keydown', handleTabCycling);
+  }, [activeTab, tabs, isSearchOpen, onTabChange]);
 
   const stickyClass = settings.stickyHeader ? 'fixed top-8' : 'absolute top-8';
   

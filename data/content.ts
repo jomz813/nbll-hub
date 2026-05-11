@@ -44,11 +44,9 @@ export const contentMap: Record<string, TabContent> = {
     description: '',
     items: [
       { label: 'Achievements', category: 'Legacy' },
-      { label: 'Players', category: 'Database' },
-      { label: 'Glossary', category: 'Reference' },
       { label: 'History', category: 'Archives' },
-      { label: 'Rules', category: 'Official' },
-      { label: 'Credits', category: 'Team' }
+      { label: 'Players', category: 'Database' },
+      { label: 'Rules', category: 'Official' }
     ]
   },
   'partner-hub': {
@@ -58,11 +56,6 @@ export const contentMap: Record<string, TabContent> = {
       { label: 'Sponsor Portal', category: 'Network' },
       { label: 'Brand Assets', category: 'Media' }
     ]
-  },
-  'credits': {
-    title: 'credits',
-    description: '',
-    items: []
   },
   records: {
     title: 'league records',

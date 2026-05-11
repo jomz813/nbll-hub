@@ -5,7 +5,6 @@ import { contentMap, TabContent } from '../data/content';
 import StatsPage from './StatsPage';
 import HallOfFamePage from './HallOfFamePage';
 import RulesPage from './RulesPage';
-import CreditsPage from './CreditsPage';
 import LegacyPage from './LegacyPage';
 import MorePage from './MorePage';
 import MenuGridPage from './MenuGridPage';
@@ -27,13 +26,11 @@ const getParentTab = (tabId: TabID): TabID => {
   const parentMap: Partial<Record<TabID, TabID>> = {
     'partner-hub': 'more',
     'rules': 'more',
-    'credits': 'more',
     'records': 'legacy',
     'hall-of-fame': 'legacy',
     'league-history': 'more',
     'achievements': 'more',
-    'players': 'more',
-    'glossary': 'more'
+    'players': 'more'
   };
   return parentMap[tabId] || tabId;
 };
@@ -52,7 +49,7 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     window.scrollTo(0, 0);
   }, [tabId]);
 
-  const subPages: TabID[] = ['partner-hub', 'rules', 'hall-of-fame', 'league-history', 'credits', 'records', 'achievements', 'players', 'glossary'];
+  const subPages: TabID[] = ['partner-hub', 'rules', 'hall-of-fame', 'league-history', 'records', 'achievements', 'players'];
   const isSubPage = subPages.includes(tabId);
   
   // Always use neutral theme colors for the TabPage shell (like the back button)
@@ -91,16 +88,14 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
       'rules': 'rules',
       'hall of fame': 'hall-of-fame',
       'history': 'league-history',
-      'credits': 'credits',
       'records': 'records',
       'compare': 'compare',
       'achievements': 'achievements',
-      'players': 'players',
-      'glossary': 'glossary'
+      'players': 'players'
     };
     
     const target = slugMap[label.toLowerCase()] || label.toLowerCase() as TabID;
-    const validTabs: TabID[] = ['stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'credits', 'records', 'compare', 'achievements', 'players', 'glossary'];
+    const validTabs: TabID[] = ['stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'records', 'compare', 'achievements', 'players'];
     
     if (onTabChange && validTabs.includes(target)) {
       onTabChange(target);
@@ -116,9 +111,6 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     }
     if (tabId === 'stats') {
       return <StatsPage />;
-    }
-    if (tabId === 'credits') {
-      return <CreditsPage />;
     }
     if (tabId === 'league-history') {
       return <HistoryPage />;

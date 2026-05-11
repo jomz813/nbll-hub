@@ -22,7 +22,6 @@ const PAGES: { name: TabID; label: string; keywords?: string[] }[] = [
   { name: 'hall-of-fame', label: 'hall of fame', keywords: ['hof', 'legends', 'hall'] },
   { name: 'league-history', label: 'history', keywords: ['timeline', 'archives', 'history'] },
   { name: 'records', label: 'records', keywords: ['history', 'stats', 'highs', 'best'] },
-  { name: 'credits', label: 'credits', keywords: ['contributors', 'staff', 'creators', 'team', 'devs'] },
 ];
 
 interface SearchOverlayProps {
@@ -57,8 +56,7 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose, onSelect
       tabId: p.name, 
       type: 'Page', 
       id: `page-${p.name}`,
-      category: (p.name === 'hall-of-fame' || p.name === 'league-history' || p.name === 'records') ? 'Legacy' : 
-                (p.name === 'credits') ? 'Team' : 'System'
+      category: (p.name === 'hall-of-fame' || p.name === 'league-history' || p.name === 'records') ? 'Legacy' : 'System'
     }));
     
     // 2. Records

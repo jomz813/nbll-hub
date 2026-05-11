@@ -9,12 +9,13 @@ const HERO_TITLES = [
   "marsh has the most steals in nbll history with 460 and counting",
   "rah has the most rebounds in nbll history with 346 and counting",
   "taser was the first to reach 1,000 points",
-  "pansho and taser have the same amount of rings as kobe",
+  "pansho and taser are tied for the most rings with 6 each ",
   "rah holds the most nbll records with 6",
-  "stat data from s10-s11 will be deprecated from the site in s15",
+  "stat data from s10 has been deprecated from the site",
   "soulz's 71.2 ppg in s11 is the highest of all time",
   "kaza's 6.6 spg in s13 is the highest of all time",
   "use the desktop site for a better experience",
+  "use the tab key to cycle through tabs",
 ];
 
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];

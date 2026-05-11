@@ -6,7 +6,7 @@ import { useSettings } from '../context/SettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toPng } from 'html-to-image';
 
-const SEASONS: SeasonID[] = ['s14', 's13', 's12', 's11', 's10', 'all-time'];
+const SEASONS: SeasonID[] = ['s14', 's13', 's12', 's11', 'all-time'];
 
 // Standardization helper matching the one in awards.ts for robust lookups
 const normalizeName = (name: string | null): string => {
@@ -103,8 +103,7 @@ const ComparePage: React.FC = () => {
     let rows = 4;
     let sections = 1;
 
-    if (season === 's10') {
-    } else if (season === 'all-time') {
+    if (season === 'all-time') {
       rows += 3;
       sections += 1;
       if (awardsData) {
@@ -199,10 +198,6 @@ const ComparePage: React.FC = () => {
     const p2 = pool[idx2];
     setSelectedNames([p1.player, p2.player]);
     if (isSearchOpen) closeSearch();
-  };
-
-  const handleSwapPlayers = () => {
-    setSelectedNames([selectedNames[1], selectedNames[0]]);
   };
 
   const resetTable = () => {
@@ -397,7 +392,7 @@ const ComparePage: React.FC = () => {
     ]
   };
 
-  const showRatings = season !== 's10';
+  const showRatings = true;
   const showAverages = season !== 'all-time';
   const showAwards = season === 'all-time' && awardsData;
 
@@ -597,15 +592,6 @@ const ComparePage: React.FC = () => {
             </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
             <button 
-              onClick={handleSwapPlayers}
-              className="w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all shrink-0"
-            >
-               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m7 21-4-4 4-4"/><path d="M3 17h18"/><path d="m17 3 4 4-4 4"/><path d="M21 7H3"/>
-              </svg>
-            </button>
-            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0" />
-            <button 
               onClick={handleRandomMatchup}
               disabled={players.length < 2}
               className={`w-10 h-10 flex items-center justify-center text-zinc-900 dark:text-zinc-100 active:scale-90 transition-all shrink-0 ${players.length < 2 ? 'opacity-30 cursor-not-allowed' : ''}`}
@@ -642,17 +628,6 @@ const ComparePage: React.FC = () => {
             >
                <svg className="w-4 h-4 transition-all duration-300 group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M12 12h.01"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>
-              </svg>
-            </button>
-            <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
-            <button 
-              onClick={handleSwapPlayers}
-              disabled={!hasSelection}
-              className={`w-10 h-full flex items-center justify-center transition-all shrink-0 group/btn ${hasSelection ? `${accentText} hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 cursor-pointer` : 'text-zinc-300 dark:text-zinc-600 opacity-50 cursor-not-allowed'}`}
-              title="swap players"
-            >
-              <svg className={`w-4 h-4 transition-all duration-300 ${hasSelection ? 'group-hover/btn:drop-shadow-[0_0_8px_rgba(214,10,7,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m7 21-4-4 4-4"/><path d="M3 17h18"/><path d="m17 3 4 4-4 4"/><path d="M21 7H3"/>
               </svg>
             </button>
             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 shrink-0 opacity-50" />
