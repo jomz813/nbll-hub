@@ -2,6 +2,7 @@
 export interface HOFMember {
   name: string;
   image?: string;
+  photo?: string;
   awards?: string[];
   stats?: string;
   description?: string;
@@ -13,6 +14,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Pansho',
     username: 'ff2frs',
     image: '/hof/pansho.gif',
+    photo: '/hof/pansho.png',
     awards: ['6x CHAMP', '1x MVP', '2x FMVP', '3x OPOTY', '1x ROTY', '4x AS', '7x POTS'],
     stats: '2,332 PTS • 351 AST • 139 REB • 180 STL'
   },
@@ -20,6 +22,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Tend',
     username: 'aaronthekiii',
     image: '/hof/tend.gif',
+    photo: '/hof/tend.png',
     awards: ['2x CHAMP', '2x FMVP', '1x ROTY', '1x MIP', '3x AS', '2x RS', '2x POTS'],
     stats: '1,805 PTS • 1,012 AST • 224 REB • 181 STL'
   },
@@ -27,6 +30,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Packed',
     username: 'lalpack125',
     image: '/hof/packed2.gif',
+    photo: '/hof/packed.png',
     awards: ['2x CHAMP', '1x FMVP', '4x AS', '25x+ POTG'],
     stats: '3,413 PTS • 199 AST • 180 REB • 149 STL'
   },
@@ -34,6 +38,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Marsh',
     username: 'Urmarshboi77',
     image: '/hof/marsh2.gif',
+    photo: '/hof/marsh.png',
     awards: ['2x CHAMP', '1x MVP', '1x FMVP', '1x DPOTY', '15x+ DPOTG'],
     stats: '2,527 PTS • 1,108 AST • 191 REB • 441 STL'
   },
@@ -41,6 +46,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Dannygreen',
     username: 'D4NNYGREEN',
     image: '/hof/dannygreen.gif',
+    photo: '/hof/dannygreen.png',
     awards: ['1x CHAMP', '1x FMVP', '2x AS', '15x+ POTG', '7x DPOTG'],
     stats: '1,007 PTS • 674 AST • 145 REB • 132 STL'
   },
@@ -48,6 +54,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: '1luv',
     username: 'xr1r0',
     image: '/hof/1luv.gif',
+    photo: '/hof/1luv.png',
     awards: ['3x CHAMP', '6x AS', '5x 1ST TEAMS', '20x+ DPOTG'],
     stats: '481 PTS • 672 AST • 151 REB • 180 STL'
   },
@@ -55,6 +62,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Rah',
     username: 'alwayzbizzy41',
     image: '/hof/rah.gif',
+    photo: '/hof/rah.png',
     awards: ['3x CHAMP', '1x MVP', '1x FMVP', '1x DPOTY', '6x AS', '6x 1ST TEAMS', '7x POTS', '25x+ POTG', '25x+ DPOTG', 'REB LEADER'],
     stats: '3,271 PTS • 285 AST • 297 REB • 343 STL'
   },
@@ -62,6 +70,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Dre',
     username: 'aDrexelAvenue886',
     image: '/hof/dre2.gif',
+    photo: '/hof/dre.png',
     awards: ['2x CHAMP', '1x 5MOTY', '1x TMOTY', '1x MIP', '3x AS', '1x POTS', '20x+ POTG'],
     stats: '2,286 PTS • 429 AST • 151 REB • 124 STL'
   },
@@ -69,6 +78,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Soulz',
     username: 'qleerinsGoon1',
     image: '/hof/soulz.gif',
+    photo: '/hof/soulz.png',
     awards: ['3x CHAMP', '2x OPOTY', '1x DPOTY', '4x AS', '25x+ POTG'],
     stats: '4,556 PTS • 894 AST • 227 REB • 254 STL'
   },
@@ -76,6 +86,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Polar',
     username: 'polurhx',
     image: '/hof/polar.gif',
+    photo: '/hof/polar.png',
     awards: ['4x CHAMP', '1x DPOTY', '5x 1ST TEAMS', '5x AS', '25x+ DPOTG'],
     stats: '487 PTS • 1,028 AST • 155 REB • 187 STL'
   },
@@ -83,6 +94,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Aim',
     username: 'dndaim',
     image: '/hof/aim.gif',
+    photo: '/hof/aim.png',
     awards: ['3x CHAMP', '3x FMVP', '1x MIP', '3x AS', '4x POTS', '25x+ POTG'],
     stats: '2,563 PTS • 312 AST • 126 REB • 128 STL'
   },
@@ -90,6 +102,7 @@ export const hallOfFameMembers: HOFMember[] = [
     name: 'Cam',
     username: 'offprkx_13',
     image: '/hof/cam.gif',
+    photo: '/hof/cam.png',
     awards: ['1x CHAMP', '1x AS', '4x RS', '2x POTS', '1x ECF MVP', '21x POTG', '7x DPOTG' ],
     stats: '1,933 PTS • 502 AST • 197 REB • 128 STL'
   },

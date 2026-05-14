@@ -23,6 +23,8 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
     "jeffrey epstein is coming for you"
   ];
 
+  const [bannerError, setBannerError] = useState(false);
+
   const renderCard = (item: TabItem, idx: number) => {
     const isComingSoon = COMING_SOON_LABELS.includes(item.label.toLowerCase());
     
@@ -64,6 +66,25 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
     <div className="animate-page-enter">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {items.map((item, idx) => renderCard(item, idx))}
+      </div>
+
+      <div className="mt-8 mb-4 w-full">
+        <div className="w-full rounded-[2rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 relative" style={{ aspectRatio: '8200/1800' }}>
+          {!bannerError ? (
+            <img 
+              src="/hof/banner.png" 
+              alt="More Banner" 
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setBannerError(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+              <span className="text-[10px] md:text-xs font-black text-zinc-500 uppercase tracking-widest">
+                Banner
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="pt-20 pb-8 text-center">

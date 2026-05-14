@@ -20,17 +20,18 @@ const DropdownIcon = () => (
   </svg>
 );
 
-const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl', className?: string }> = ({ username, size, className = '' }) => {
+const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl' | 'compare', className?: string }> = ({ username, size, className = '' }) => {
   const [error, setError] = useState(false);
   const normalized = username?.trim();
 
   const sizeClasses = {
     md: 'w-16 h-16 md:w-24 md:h-24',
     xl: 'w-32 h-32 md:w-48 md:h-48',
+    compare: 'w-24 h-24 md:w-24 md:h-24',
   };
 
   const placeholder = (
-    <div className={`bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${className}`}>
+    <div className={`bg-zinc-100 dark:bg-zinc-900 shrink-0 flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${className}`}>
       <svg className="w-1/2 h-1/2 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />
@@ -44,7 +45,7 @@ const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl', cl
     <img
       src={`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(normalized)}&format=image`}
       alt={normalized}
-      className={`object-contain rounded-2xl ${sizeClasses[size]} ${className}`}
+      className={`object-contain shrink-0 rounded-2xl ${sizeClasses[size]} ${className}`}
       crossOrigin="anonymous"
       loading="lazy"
       decoding="async"
@@ -748,10 +749,18 @@ const ComparePage: React.FC = () => {
                    className={`flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-3 focus:outline-none min-w-0 w-full group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
                    title={selectedNames[0] ? "Click to remove" : ""}
                  >
-                   <RobloxAvatarImg username={selectedNames[0]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
-                   <span className={`text-sm md:text-3xl font-medium md:font-black text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-left md:text-left ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
-                     {selectedNames[0] ? selectedNames[0] : '...'}
-                   </span>
+                   <div className="flex flex-col md:hidden items-center gap-2 w-full">
+                     <RobloxAvatarImg username={selectedNames[0]} size="compare" />
+                     <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-center`}>
+                       {selectedNames[0] ? selectedNames[0] : '...'}
+                     </span>
+                   </div>
+                   <div className="hidden md:flex flex-row items-center gap-3 w-full justify-start">
+                     <RobloxAvatarImg username={selectedNames[0]} size="md" />
+                     <span className={`text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-left ${selectedNames[0] ? 'group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                       {selectedNames[0] ? selectedNames[0] : '...'}
+                     </span>
+                   </div>
                  </button>
               </div>
 
@@ -769,8 +778,8 @@ const ComparePage: React.FC = () => {
                    title={selectedNames[1] ? "Click to remove" : ""}
                  >
                    <div className="flex flex-col md:hidden items-center gap-2 w-full">
-                     <RobloxAvatarImg username={selectedNames[1]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
-                     <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-right`}>
+                     <RobloxAvatarImg username={selectedNames[1]} size="compare" />
+                     <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-center`}>
                         {selectedNames[1] ? selectedNames[1] : '...'}
                      </span>
                    </div>
