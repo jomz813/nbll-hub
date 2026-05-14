@@ -69,12 +69,12 @@ const MorePage: React.FC<MorePageProps> = ({ items, onItemClick, accentText, acc
       </div>
 
       <div className="mt-8 mb-4 w-full">
-        <div className="w-full rounded-[2rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 relative" style={{ aspectRatio: '8200/1800' }}>
+        <div className="w-full rounded-2xl md:rounded-[2rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 relative" style={{ aspectRatio: '2844/532' }}>
           {!bannerError ? (
             <img 
               src="/hof/banner.png" 
               alt="More Banner" 
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain"
               onError={() => setBannerError(true)}
             />
           ) : (
