@@ -34,7 +34,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "wary",
     position: "WR/DEEP/FS",
-    image: '/hof/warywase424.gif',
+    image: '/hof/wary.gif',
     username: 'lalpack125',
     stats: [
       { label: "REC", value: "426" },
@@ -61,7 +61,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "silver",
     position: "WR/DEEP/FS/DE",
-    image: '/hof/soulz.gif',
+    image: '/hof/silver.gif',
     username: 'qleerinsGoon1',
     stats: [
       { label: "REC", value: "358" },
@@ -77,7 +77,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "rino",
     position: "TE/DE",
-    image: '/hof/dannygreen.gif',
+    image: '/hof/rino.gif',
     username: 'D4NNYGREEN',
     stats: [
       { label: "TCK", value: "175" },
@@ -89,7 +89,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "rahbizzy",
     position: "STREAK/SHORT/DEEP/FS",
-    image: '/hof/1luv.gif',
+    image: '/hof/rahbizzy.gif',
     username: 'xr1r0',
     stats: [
       { label: "REC", value: "251" },
@@ -103,7 +103,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "missingspray",
     position: "STREAK/MLB/FS/QB",
-    image: '/hof/rah.gif',
+    image: '/hof/missingspray.gif',
     username: 'alwayzbizzy41',
     stats: [
       { label: "REC", value: "124" },
@@ -119,7 +119,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "st breezy",
     position: "STREAK/FOLD/DEEP/SHORT",
-    image: '/hof/dre2.gif',
+    image: '/hof/stbreezy.gif',
     username: 'aDrexelAvenue886',
     stats: [
       { label: "REC", value: "155" },
@@ -133,7 +133,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "wx",
     position: "FOLD/STREAK/DEEP/FS",
-    image: '/hof/soulz.gif',
+    image: '/hof/wx.gif',
     username: 'qleerinsGoon1',
     stats: [
       { label: "REC", value: "138" },
@@ -147,7 +147,7 @@ export const hallOfFameMembers: HOFMember[] = [
   {
     name: "oxy",
     position: "STREAK/FOLD/DEEP",
-    image: '/hof/polar.gif',
+    image: '/hof/oxy.gif',
     username: 'polurhx',
     stats: [
       { label: "REC", value: "181" },
