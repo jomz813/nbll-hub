@@ -2,20 +2,27 @@ import React, { useEffect, useState, useMemo } from 'react';
 import FluidBackground from './FluidBackground';
 import { TabID } from '../App';
 import { useSettings } from '../context/SettingsContext';
-import { fetchS14Stats, S14Row } from '../data/s14Stats';
 
 const HERO_TITLES = [
-  "soulz has the most points in nbll history with 5,149 and counting",
-  "marsh has the most steals in nbll history with 460 and counting",
-  "rah has the most rebounds in nbll history with 346 and counting",
-  "taser was the first to reach 1,000 points",
-  "pansho and taser are tied for the most rings with 6 each ",
-  "rah holds the most nbll records with 6",
-  "stat data from s10 has been deprecated from the site",
-  "soulz's 71.2 ppg in s11 is the highest of all time",
-  "kaza's 6.6 spg in s13 is the highest of all time",
   "use the desktop site for a better experience",
+  "we are aware of a mobile navbar bug",
   "use the tab key to cycle through tabs",
+  "konjure is the only qb to 4-peat",
+  "static played 15 seasons just to not be in the hof",
+  "rah is the fastest player to reach the hof at just six season played",
+  "ben is the best qb to not win a ring or reach the hof",
+  "breezy has the best sb record at 4-0",
+  "mirmir has the most rings with 5",
+  "scalphunter has most all-time passing yards and tds",
+  "jalen is the only decent qb to come from 7v7",
+  "wary has the most all-time tds and rec yards",
+  "rino has the most all-time sacks and safeties",
+  "silver and alam have the most koty awards with 2 each",
+  "tify is the only player to become transgender in fl history",
+  "twizzy is the best player in ufl that hasn't reached the hof",
+  "the saints are the most dominant franchise of all time",
+  "the best wr of all time is st breezy",
+  "rah is the only wr to 4-peat",
 ];
 
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
@@ -78,63 +85,72 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange }) => {
   const { settings } = useSettings();
-  const [dynamicTitles, setDynamicTitles] = useState<string[]>([]);
   
-  // Use random selection for the initial title
-  const [heroTitle, setHeroTitle] = useState(() => pickRandom(HERO_TITLES));
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Fetch S14 stats in the background to populate the rotation pool.
   useEffect(() => {
-    let active = true;
-    const loadS14Leaders = async () => {
-      try {
-        const stats = await fetchS14Stats();
-        if (active && stats && stats.length > 0) {
-          const getLeader = (data: S14Row[], key: keyof S14Row) => {
-            return [...data].sort((a, b) => (b[key] as number) - (a[key] as number))[0];
-          };
-
-          const ptsL = getLeader(stats, 'pts');
-          const astL = getLeader(stats, 'ast');
-          const rebL = getLeader(stats, 'reb');
-          const stlL = getLeader(stats, 'stl');
-          const ppgL = getLeader(stats, 'ppg');
-
-          const s14LeaderTitles = [
-            `${ptsL.player} currently leads the league in points with ${Math.round(ptsL.pts)}`,
-            `${astL.player} currently leads the league in assists with ${Math.round(astL.ast)}`,
-            `${rebL.player} currently leads the league in rebounds with ${Math.round(rebL.reb)}`,
-            `${stlL.player} currently leads the league in steals with ${Math.round(stlL.stl)}`,
-            `${ppgL.player} currently leads the league in ppg with ${ppgL.ppg.toFixed(1)}`,
-          ];
-
-          setDynamicTitles(s14LeaderTitles);
-        }
-      } catch (err) {
-        console.error("Failed to load S14 leader titles", err);
-      }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
-
-    loadS14Leaders();
-    return () => { active = false; };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  const currentPool = useMemo(() => {
+    const mobileOnly = [
+      "use the desktop site for a better experience",
+      "we are aware of a mobile navbar bug"
+    ];
+    if (isMobile) {
+      return HERO_TITLES;
+    } else {
+      return HERO_TITLES.filter(title => !mobileOnly.includes(title));
+    }
+  }, [isMobile]);
+
+  // Use random selection for the initial title, excluding those two on desktop/initial render
+  const [heroTitle, setHeroTitle] = useState(() => {
+    const mobileOnly = [
+      "use the desktop site for a better experience",
+      "we are aware of a mobile navbar bug"
+    ];
+    const initialPool = HERO_TITLES.filter(title => !mobileOnly.includes(title));
+    return pickRandom(initialPool);
+  });
+
+  // Ensure title is switched if we transition from mobile -> desktop and have a mobile-only title
+  useEffect(() => {
+    if (!currentPool.includes(heroTitle)) {
+      setHeroTitle(pickRandom(currentPool));
+    }
+  }, [currentPool, heroTitle]);
 
   // Title rotation interval - ensures the page feels alive
   useEffect(() => {
     const rotationInterval = setInterval(() => {
-      const fullPool = [...HERO_TITLES, ...dynamicTitles];
+      const isMobileNow = window.innerWidth < 768;
+      const mobileOnly = [
+        "use the desktop site for a better experience",
+        "we are aware of a mobile navbar bug"
+      ];
+      const pool = isMobileNow 
+        ? HERO_TITLES 
+        : HERO_TITLES.filter(title => !mobileOnly.includes(title));
+
       setHeroTitle((current) => {
-        let next = pickRandom(fullPool);
+        let next = pickRandom(pool);
         // Avoid repeating the same title if possible
-        while (next === current && fullPool.length > 1) {
-          next = pickRandom(fullPool);
+        for (let attempt = 0; attempt < 10 && next === current && pool.length > 1; attempt++) {
+          next = pickRandom(pool);
         }
         return next;
       });
     }, 10000); 
 
     return () => clearInterval(rotationInterval);
-  }, [dynamicTitles]);
+  }, []);
 
   // Lock scroll on Home page
   useEffect(() => {
@@ -167,7 +183,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSearchTrigger, onTabChange 
           {/* CTA Buttons Stack */}
           <div className="flex flex-col items-center gap-4 pt-6">
             <a
-              href="https://discord.gg/nbll"
+              href="https://discord.gg/ultimatefootball"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative flex items-center justify-center gap-2.5 px-6 py-2.5 bg-white text-[#5865F2] border border-[#5865F2]/30 rounded-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 hover:border-[#5865F2] hover:shadow-[0_0_20px_rgba(88,101,242,0.2)] active:scale-95 no-underline overflow-hidden"

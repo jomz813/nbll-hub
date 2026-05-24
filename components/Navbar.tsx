@@ -9,7 +9,8 @@ const PAGES: { name: TabID; label: string; keywords?: string[] }[] = [
   { name: 'home', label: 'home' },
   { name: 'stats', label: 'stats', keywords: ['s10', 's11', 's12', 's13', 'stats', 'statistics', 'current', 'all-time'] },
   { name: 'compare', label: 'compare', keywords: ['comparison', 'matchup', 'vs'] },
-  { name: 'achievements', label: 'achievements', keywords: ['badges', 'trophies', 'earned', 'index'] },
+  { name: 'awards', label: 'awards', keywords: ['awards', 'history', 'badge'] },
+  { name: 'gallery', label: 'gallery', keywords: ['gfx', 'graphics', 'images'] },
   { name: 'legacy', label: 'legacy' },
   { name: 'rules', label: 'rules' },
   { name: 'more', label: 'more' },
@@ -127,8 +128,8 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
       'hall-of-fame': 'legacy',
       'league-history': 'more',
       'records': 'legacy',
-      'achievements': 'more',
-      'players': 'more',
+      'awards': 'more',
+      'gallery': 'more',
       'unknown': 'more'
     };
     return parentMap[tabId] || tabId;
@@ -189,7 +190,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
       type: 'Page', 
       id: `page-${p.name}`,
       tag: (p.name === 'hall-of-fame' || p.name === 'league-history' || p.name === 'records') ? 'LEGACY' : 
-           (p.name === 'stats' || p.name === 'compare' || p.name === 'achievements') ? 'STATS' : 'HUB'
+           (p.name === 'stats' || p.name === 'compare' || p.name === 'awards' || p.name === 'gallery') ? 'STATS' : 'HUB'
     }));
     
     // 2. Records
@@ -587,9 +588,10 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
               <div className="relative flex items-center justify-center md:justify-self-start">
                 <button 
                   onClick={handleLogoClick}
-                  className={`${isHomeLightMobile ? 'text-zinc-950' : accentText} text-2xl font-black tracking-tighter transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-110 active:scale-95 shrink-0 relative z-10 ${isPopping ? 'scale-105' : ''}`}
+                  style={{ fontFamily: "'Lilita One', sans-serif" }}
+                  className={`${isHomeLightMobile ? 'text-zinc-950' : accentText} text-3xl font-normal italic transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-110 active:scale-95 shrink-0 relative z-10 ${isPopping ? 'scale-105' : ''}`}
                 >
-                  nbll
+                  UFL
                 </button>
                 
                 <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">

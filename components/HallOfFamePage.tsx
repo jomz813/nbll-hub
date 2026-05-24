@@ -1,7 +1,6 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { hallOfFameMembers, HOFMember } from '../data/hof';
-import { fetchSeasonStats, PlayerStats } from '../data/statsFetcher';
 
 /**
  * Fisher-Yates shuffle algorithm to ensure an unbiased randomization
@@ -16,73 +15,22 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
-const HOFEligibility: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <div className="w-full max-w-2xl">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center gap-3 text-left focus:outline-none"
-      >
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 group-hover:text-[#D4AF37] transition-colors">
-          Eligibility Requirements
-        </span>
-        <svg 
-          className={`w-3 h-3 text-zinc-400 dark:text-zinc-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} group-hover:text-[#D4AF37]`} 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="3"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-      
-      <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
-        <div className="overflow-hidden">
-          <ul className="space-y-2 border-l pl-4 ml-1" style={{ borderColor: 'var(--divider)' }}>
-            {[
-              "1x Championship Ring",
-              "2x Finals Appearances",
-              "25x+ POTG // DPOTG Total",
-              "4x Seasons Played",
-              "5x Awards",
-              "Ring Riding Excluded",
-              "Exceptions can be made at any time"
-            ].map((item, idx) => (
-              <li key={idx} className="text-xs font-bold text-zinc-500 dark:text-zinc-400">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-const HOFCard: React.FC<{ member: HOFMember; statsData?: PlayerStats }> = ({ member, statsData }) => {
+const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showPhoto, setShowPhoto] = useState(false);
-  const [gifError, setGifError] = useState(false);
-  const [photoError, setPhotoError] = useState(false);
 
   const displayStats = useMemo(() => {
-    if (statsData) {
-      return [
-        { label: 'PTS', val: statsData.pts.toLocaleString() },
-        { label: 'AST', val: statsData.ast.toLocaleString() },
-        { label: 'REB', val: statsData.reb.toLocaleString() },
-        { label: 'STL', val: statsData.stl.toLocaleString() }
-      ];
-    }
-    // Fallback to hardcoded stats if data fetch fails or player not found
-    return (member.stats || '0 PTS • 0 AST • 0 REB • 0 STL').split(' • ').map(s => {
-      const [val, label] = s.split(' ');
-      return { label, val };
-    });
-  }, [statsData, member.stats]);
+    return member.stats || [];
+  }, [member.stats]);
+
+  const nameLength = member.name.length;
+  let nameSizeClass = "text-4xl md:text-5xl";
+  if (nameLength > 14) {
+    nameSizeClass = "text-2xl md:text-3xl";
+  } else if (nameLength > 10) {
+    nameSizeClass = "text-3xl md:text-4xl";
+  }
 
   return (
     <div 
@@ -99,84 +47,32 @@ const HOFCard: React.FC<{ member: HOFMember; statsData?: PlayerStats }> = ({ mem
         <div className="absolute inset-0 backface-hidden bg-white dark:bg-zinc-900 border-2 border-zinc-100 dark:border-zinc-800 rounded-[2rem] overflow-hidden flex flex-col transition-colors">
            {/* Image Section */}
            <div className="relative h-full bg-zinc-50 dark:bg-zinc-800 overflow-hidden shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 dark:from-zinc-800 dark:via-zinc-900 dark:to-black opacity-50 z-0" />
-              
-              <div className="absolute inset-0 flex transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0" style={{ transform: showPhoto ? 'translateX(-100%)' : 'translateX(0)' }}>
-                {/* Slide 1: GIF */}
-                <div className="relative w-full h-full shrink-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/80">
-                  {member.image && !gifError ? (
-                    <img
-                      src={member.image}
-                      alt={`${member.name} gif`}
-                      className="absolute inset-0 h-full w-full object-cover object-top"
-                      onError={() => setGifError(true)}
-                    />
-                  ) : null}
+              <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 dark:from-zinc-800 dark:via-zinc-900 dark:to-black opacity-50" />
+              {member.image ? (
+                <img
+                  src={member.image}
+                  alt={`${member.name} headshot`}
+                  className="absolute inset-0 h-full w-full object-cover object-top"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-[11px] font-black text-[#D4AF37]/50 uppercase tracking-[0.2em] text-center px-4">
+                    Image coming soon
+                  </span>
                 </div>
-
-                {/* Slide 2: Photo */}
-                <div className="relative w-full h-full shrink-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/80">
-                  {member.photo && !photoError ? (
-                    <img
-                      src={member.photo}
-                      alt={`${member.name} photo`}
-                      className="absolute inset-0 h-full w-full object-cover object-top"
-                      onError={() => setPhotoError(true)}
-                    />
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="absolute inset-0 bg-gradient-to-t from-[#D4AF37]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#D4AF37]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
               {/* Floating Badge */}
-              <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 dark:bg-black/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm z-20 pointer-events-none">
+              <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 dark:bg-black/80 backdrop-blur-md rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
                 <span className="text-[9px] font-black text-zinc-500 dark:text-zinc-300 tracking-widest uppercase">flip</span>
               </div>
               
-              {/* Arrows */}
-              <button
-                className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 transition-opacity z-20 ${!showPhoto ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                onClick={(e) => { e.stopPropagation(); setShowPhoto(false); }}
-                disabled={!showPhoto}
-              >
-                <svg className="w-6 h-6 text-white drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              
-              <button
-                className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 transition-opacity z-20 ${showPhoto ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'}`}
-                onClick={(e) => { e.stopPropagation(); setShowPhoto(true); }}
-                disabled={showPhoto}
-              >
-                <svg className="w-6 h-6 text-white drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-
-              {/* Name Overlay & Dots */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-12 z-20 flex items-end justify-between">
-                <h4 className="text-3xl font-black text-[#D4AF37] tracking-tighter drop-shadow-md truncate flex-1 pr-4">
+              {/* Name Overlay (Bottom of Image) */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent pt-12">
+                <h4 className="text-3xl font-black text-[#D4AF37] tracking-tighter drop-shadow-md truncate">
                   {member.name}
                 </h4>
-
-                <div className="flex items-center gap-2 pb-1" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={(e) => { e.preventDefault(); setShowPhoto(false); }}
-                    className="p-1 -m-1 focus:outline-none"
-                    aria-label="View GIF"
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all ${!showPhoto ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'}`} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.preventDefault(); setShowPhoto(true); }}
-                    className="p-1 -m-1 focus:outline-none"
-                    aria-label="View Photo"
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all ${showPhoto ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'}`} />
-                  </button>
-                </div>
               </div>
            </div>
         </div>
@@ -187,53 +83,99 @@ const HOFCard: React.FC<{ member: HOFMember; statsData?: PlayerStats }> = ({ mem
            <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#D4AF37]/20 to-transparent pointer-events-none" />
            
            {/* 1. Header Area - Top Pinned */}
-           <div className="relative z-10 shrink-0 mb-3 md:mb-4">
-               <h4 className="text-3xl md:text-4xl font-black text-[#D4AF37] tracking-tight drop-shadow-sm">{member.name}</h4>
+           <div className="relative z-10 shrink-0 mb-3 sm:mb-4 text-center">
+               <h4 className={`${nameSizeClass} font-black text-[#D4AF37] tracking-tight mb-0.5 drop-shadow-sm uppercase leading-none`}>{member.name}</h4>
            </div>
 
            {/* 2. Content Area - Fills remaining height */}
-           <div className="flex-1 relative z-10 flex flex-col min-h-0 gap-5 md:gap-6">
+           <div className="flex-1 relative z-10 flex flex-col min-h-0 gap-4 sm:gap-5">
               
-              {/* Accolades - Elegant Text Layout */}
-              <div className="shrink-0 flex flex-wrap justify-center items-center gap-x-4 gap-y-2.5 px-2">
-                 {member.awards?.slice(0, 12).map((award, aIdx) => {
-                   const match = award.match(/^(\d+x\+?)\s+(.*)$/i);
-                   const count = match ? match[1] : '';
-                   const title = match ? match[2] : award;
-                   return (
-                     <div key={aIdx} className="flex items-baseline gap-1.5 whitespace-nowrap">
-                       {count && <span className="text-[#D4AF37] font-black text-[11px] md:text-xs tracking-tight">{count}</span>}
-                       <span className="text-zinc-300 font-bold text-[9px] md:text-[10px] tracking-widest uppercase">{title}</span>
-                     </div>
-                   );
-                 }) || <span className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold">No awards listed</span>}
-                 {(member.awards?.length || 0) > 12 && (
-                   <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                     <span className="text-zinc-500 font-black text-[11px] md:text-xs tracking-tight">+{(member.awards?.length || 0) - 12}</span>
-                     <span className="text-zinc-500 font-bold text-[9px] md:text-[10px] tracking-widest uppercase">MORE</span>
-                   </div>
-                 )}
+              {/* Accolades - Refined styling without header */}
+              <div className="shrink-0 px-1 lg:px-2">
+                 <div className="flex flex-wrap justify-center content-center gap-x-3 gap-y-1.5">
+                   {member.accolades?.slice(0, 10).map((award, aIdx) => {
+                     const match = award.match(/^(\d+x\+?)\s+(.*)$/i);
+                     if (match) {
+                       return (
+                         <span key={aIdx} className="text-[9px] md:text-[10px] font-black uppercase tracking-wider leading-none flex items-center">
+                           <span className="text-[#D4AF37] mr-1">{match[1]}</span>
+                           <span className="text-zinc-300">{match[2]}</span>
+                         </span>
+                       );
+                     }
+                     return (
+                         <span key={aIdx} className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-[#D4AF37] leading-none">
+                           {award}
+                         </span>
+                     );
+                   }) || <span className="text-zinc-600 text-xs italic">No accolades listed</span>}
+                   {(member.accolades?.length || 0) > 10 && (
+                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-zinc-500 leading-none">
+                       +{(member.accolades?.length || 0) - 10} MORE
+                     </span>
+                   )}
+                 </div>
               </div>
 
-              {/* Stats Panel - 2x2 Grid of Individual Cards */}
-              <div className="flex-1 flex flex-col min-h-0">
-                 <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
-                    {displayStats.map((stat, sIdx) => {
-                      return (
-                        <div key={sIdx} className="w-full h-full bg-black/40 border border-[#D4AF37]/20 rounded-2xl flex flex-col items-center justify-center p-2 backdrop-blur-sm shadow-[inset_0_0_15px_rgba(212,175,55,0.05)] transition-colors hover:bg-black/50">
-                          <span className="text-2xl md:text-3xl font-black text-white leading-none tracking-tight drop-shadow-md">{stat.val}</span>
-                          <span className="text-[9px] md:text-[10px] font-black text-[#D4AF37] uppercase tracking-widest opacity-90 mt-1.5">{stat.label}</span>
-                        </div>
-                      );
-                    })}
-                 </div>
+              {/* Stats Panel - Clean Text-Based System */}
+              <div className="flex-1 flex min-h-0 items-center justify-center pb-2 w-full px-2 sm:px-4 lg:px-6">
+                  {displayStats.length > 0 && (
+                    <div className="flex flex-col items-center justify-center gap-y-4 sm:gap-y-5 lg:gap-y-6 w-full max-w-[95%] sm:max-w-[90%] mx-auto relative z-10">
+                      {(() => {
+                        const statCount = displayStats.length;
+                        
+                        let rows: typeof displayStats[] = [];
+                        if (statCount === 2) rows = [displayStats.slice(0, 2)];
+                        else if (statCount === 3) rows = [displayStats.slice(0, 3)];
+                        else if (statCount === 4) rows = [displayStats.slice(0, 2), displayStats.slice(2, 4)];
+                        else if (statCount === 5) rows = [displayStats.slice(0, 3), displayStats.slice(3, 5)];
+                        else if (statCount === 6) rows = [displayStats.slice(0, 3), displayStats.slice(3, 6)];
+                        else if (statCount === 7) rows = [displayStats.slice(0, 3), displayStats.slice(3, 6), displayStats.slice(6, 7)];
+                        else {
+                          for (let i = 0; i < statCount; i += 3) {
+                            rows.push(displayStats.slice(i, i + 3));
+                          }
+                        }
+
+                        let valSize, labelSize;
+                        if (statCount <= 3) {
+                          valSize = "text-3xl sm:text-4xl lg:text-[38px]";
+                          labelSize = "text-[10px] sm:text-[11px] lg:text-[13px]";
+                        } else if (statCount <= 5) {
+                          valSize = "text-2xl sm:text-[28px] lg:text-[32px]";
+                          labelSize = "text-[9px] sm:text-[10px] lg:text-[11px]";
+                        } else {
+                          valSize = "text-xl sm:text-2xl lg:text-[28px]";
+                          labelSize = "text-[8px] sm:text-[9px] lg:text-[10px]";
+                        }
+
+                        return rows.map((row, rIdx) => (
+                          <div 
+                            key={rIdx} 
+                            className="flex flex-row items-center justify-center gap-x-4 sm:gap-x-6 lg:gap-x-10 w-full"
+                          >
+                            {row.map((stat, sIdx) => (
+                              <div key={sIdx} className="flex flex-col items-center justify-center shrink-0">
+                                <span className={`${valSize} font-black text-white leading-none tracking-tight tabular-nums drop-shadow-md`}>
+                                  {stat.value}
+                                </span>
+                                <span className={`${labelSize} font-bold text-[#D4AF37] uppercase tracking-widest opacity-90 leading-none drop-shadow-sm mt-1 sm:mt-1.5 lg:mt-2`}>
+                                  {stat.label}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  )}
               </div>
            </div>
            
-           {/* 3. Footer - Bottom Pinned */}
-           <div className="mt-4 pt-3 subtle-divider relative z-10 shrink-0" style={{ borderTop: '1px solid var(--divider)', background: 'transparent' }}>
-             <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em]">nbll hall of fame</span>
-           </div>
+            {/* 3. Footer - Bottom Pinned */}
+            <div className="mt-2 sm:mt-3 pt-3 subtle-divider relative z-10 shrink-0 text-center" style={{ borderTop: '1px solid var(--divider)', background: 'transparent' }}>
+              <span className="text-[10px] md:text-[11px] font-black text-zinc-500 uppercase tracking-widest">{member.position}</span>
+            </div>
         </div>
       </div>
     </div>
@@ -241,23 +183,6 @@ const HOFCard: React.FC<{ member: HOFMember; statsData?: PlayerStats }> = ({ mem
 };
 
 const HallOfFamePage: React.FC = () => {
-  const [allTimeStats, setAllTimeStats] = useState<PlayerStats[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const stats = await fetchSeasonStats('all-time');
-        setAllTimeStats(stats);
-      } catch (err) {
-        console.error('Failed to fetch all-time stats for HOF:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadStats();
-  }, []);
-
   /**
    * We initialize the shuffled order on component mount (visit).
    * Since this component is conditionally rendered by the parent router,
@@ -265,26 +190,18 @@ const HallOfFamePage: React.FC = () => {
    */
   const shuffledMembers = useMemo(() => shuffleArray(hallOfFameMembers), []);
 
-  const getStatsForMember = (member: HOFMember) => {
-    if (!member.username) return undefined;
-    const playerStat = allTimeStats.find(s => s.player.toLowerCase() === member.username?.toLowerCase());
-    
-    if (!playerStat && !loading && process.env.NODE_ENV === 'development') {
-      console.warn(`HOF member ${member.name} with username ${member.username} not found in all-time stats.`);
-    }
-    
-    return playerStat;
-  };
-
   return (
     <div className="space-y-16 animate-page-enter pt-4">
 
       {/* Inducted Members Section */}
       <div className="space-y-10">
         <div className="flex items-center gap-4">
-          <h3 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter">
+          <h3 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tighter shrink-0">
             Inducted Members
           </h3>
+          <span className="hidden md:inline text-xs font-medium text-zinc-400 dark:text-zinc-500 lowercase tracking-normal">
+            — temporary card layout, subject to change often
+          </span>
           <div className="h-px header-divider flex-1" />
         </div>
 
@@ -294,13 +211,10 @@ const HallOfFamePage: React.FC = () => {
             <HOFCard 
               key={member.name} 
               member={member} 
-              statsData={getStatsForMember(member)}
             />
           ))}
         </div>
       </div>
-
-      <HOFEligibility />
 
       <style>{`
         @keyframes page-enter {

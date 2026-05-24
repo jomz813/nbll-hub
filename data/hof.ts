@@ -1,109 +1,161 @@
 
 export interface HOFMember {
   name: string;
+  position: string;
   image?: string;
-  photo?: string;
-  awards?: string[];
-  stats?: string;
-  description?: string;
+  stats: { label: string; value: string }[];
+  accolades: string[];
   username?: string;
 }
 
 export const hallOfFameMembers: HOFMember[] = [
-  { 
-    name: 'Pansho',
-    username: 'ff2frs',
-    image: '/hof/pansho.gif',
-    photo: '/hof/pansho.png',
-    awards: ['6x CHAMP', '1x MVP', '2x FMVP', '3x OPOTY', '1x ROTY', '4x AS', '7x POTS'],
-    stats: '2,332 PTS • 351 AST • 139 REB • 180 STL'
+  {
+    name: "scalphunter",
+    position: "QB",
+    image: '/hof/scalphunter.gif',
+    username: 'ff2frss',
+    stats: [
+      { label: "YDS", value: "26,883" },
+      { label: "TD", value: "320" }
+    ],
+    accolades: ["2x champ", "1x mvp", "2x opoty", "1x qboty", "2x 1st Team AP"]
   },
-  { 
-    name: 'Tend',
+  {
+    name: "jalenramsey2199",
+    position: "QB/DE/MLB",
+    image: '/hof/jalenramsey2199.gif',
     username: 'aaronthekiii',
-    image: '/hof/tend.gif',
-    photo: '/hof/tend.png',
-    awards: ['2x CHAMP', '2x FMVP', '1x ROTY', '1x MIP', '3x AS', '2x RS', '2x POTS'],
-    stats: '1,805 PTS • 1,012 AST • 224 REB • 181 STL'
+    stats: [
+      { label: "YDS", value: "20,325" },
+      { label: "TDS", value: "260" }
+    ],
+    accolades: ["2x champ", "1x mvp", "2x qboty", "2x 2nd Team AP"]
   },
-  { 
-    name: 'Packed',
+  {
+    name: "wary",
+    position: "WR/DEEP/FS",
+    image: '/hof/warywase424.gif',
     username: 'lalpack125',
-    image: '/hof/packed2.gif',
-    photo: '/hof/packed.png',
-    awards: ['2x CHAMP', '1x FMVP', '4x AS', '25x+ POTG'],
-    stats: '3,413 PTS • 199 AST • 180 REB • 149 STL'
+    stats: [
+      { label: "REC", value: "426" },
+      { label: "YDS", value: "12,489" },
+      { label: "TDS", value: "178" },
+      { label: "TCK", value: "325" },
+      { label: "INT", value: "65" }
+    ],
+    accolades: ["4x champ", "1x mvp", "2x opoty", "2x wroty", "2x dboty", "1x koty", "5x 1st Team AP"]
   },
-  { 
-    name: 'Marsh',
+  {
+    name: "mirmir",
+    position: "OL/DE",
+    image: '/hof/mirmir.gif',
     username: 'Urmarshboi77',
-    image: '/hof/marsh2.gif',
-    photo: '/hof/marsh.png',
-    awards: ['2x CHAMP', '1x MVP', '1x FMVP', '1x DPOTY', '15x+ DPOTG'],
-    stats: '2,527 PTS • 1,108 AST • 191 REB • 441 STL'
+    stats: [
+      { label: "TCK", value: "121" },
+      { label: "INT", value: "9" },
+      { label: "SFTY", value: "15" },
+      { label: "SK", value: "64" }
+    ],
+    accolades: ["5x champ", "1x dpoty", "4x oloty", "1x deoty", "2x koty", "6x 1st Team AP", "4x 2nd Team AP"]
   },
-  { 
-    name: 'Dannygreen',
-    username: 'D4NNYGREEN',
-    image: '/hof/dannygreen.gif',
-    photo: '/hof/dannygreen.png',
-    awards: ['1x CHAMP', '1x FMVP', '2x AS', '15x+ POTG', '7x DPOTG'],
-    stats: '1,007 PTS • 674 AST • 145 REB • 132 STL'
-  },
-  { 
-    name: '1luv',
-    username: 'xr1r0',
-    image: '/hof/1luv.gif',
-    photo: '/hof/1luv.png',
-    awards: ['3x CHAMP', '6x AS', '5x 1ST TEAMS', '20x+ DPOTG'],
-    stats: '481 PTS • 672 AST • 151 REB • 180 STL'
-  },
-  { 
-    name: 'Rah',
-    username: 'alwayzbizzy41',
-    image: '/hof/rah.gif',
-    photo: '/hof/rah.png',
-    awards: ['3x CHAMP', '1x MVP', '1x FMVP', '1x DPOTY', '6x AS', '6x 1ST TEAMS', '7x POTS', '25x+ POTG', '25x+ DPOTG', 'REB LEADER'],
-    stats: '3,271 PTS • 285 AST • 297 REB • 343 STL'
-  },
-  { 
-    name: 'Dre',
-    username: 'aDrexelAvenue886',
-    image: '/hof/dre2.gif',
-    photo: '/hof/dre.png',
-    awards: ['2x CHAMP', '1x 5MOTY', '1x TMOTY', '1x MIP', '3x AS', '1x POTS', '20x+ POTG'],
-    stats: '2,286 PTS • 429 AST • 151 REB • 124 STL'
-  },
-  { 
-    name: 'Soulz',
-    username: 'qleerinsGoon1',
+  {
+    name: "silver",
+    position: "WR/DEEP/FS/DE",
     image: '/hof/soulz.gif',
-    photo: '/hof/soulz.png',
-    awards: ['3x CHAMP', '2x OPOTY', '1x DPOTY', '4x AS', '25x+ POTG'],
-    stats: '4,556 PTS • 894 AST • 227 REB • 254 STL'
+    username: 'qleerinsGoon1',
+    stats: [
+      { label: "REC", value: "358" },
+      { label: "YDS", value: "8,531" },
+      { label: "TDS", value: "103" },
+      { label: "TCK", value: "234" },
+      { label: "INT", value: "36" },
+      { label: "SFTY", value: "5" },
+      { label: "SK", value: "26" }
+    ],
+    accolades: ["1x champ", "1x mvp", "2x wroty", "1x dboty", "1x deoty", "2x koty", "5x 1st Team AP", "1x 2nd Team AP"]
   },
-  { 
-    name: 'Polar',
-    username: 'polurhx',
+  {
+    name: "rino",
+    position: "TE/DE",
+    image: '/hof/dannygreen.gif',
+    username: 'D4NNYGREEN',
+    stats: [
+      { label: "TCK", value: "175" },
+      { label: "SK", value: "65" },
+      { label: "SFTY", value: "20" }
+    ],
+    accolades: ["3x champ", "1x dpoy", "6x deoty", "6x 1st Team AP", "3x 2nd Team AP"]
+  },
+  {
+    name: "rahbizzy",
+    position: "STREAK/SHORT/DEEP/FS",
+    image: '/hof/1luv.gif',
+    username: 'xr1r0',
+    stats: [
+      { label: "REC", value: "251" },
+      { label: "YDS", value: "6,217" },
+      { label: "TDS", value: "98" },
+      { label: "TCK", value: "185" },
+      { label: "INT", value: "55" }
+    ],
+    accolades: ["4x champ", "2x mvp", "1x sb mvp", "1x opoy", "1x dpoy", "1x wroty", "1x dboty", "4x 1st Team AP"]
+  },
+  {
+    name: "missingspray",
+    position: "STREAK/MLB/FS/QB",
+    image: '/hof/rah.gif',
+    username: 'alwayzbizzy41',
+    stats: [
+      { label: "REC", value: "124" },
+      { label: "REC YDS", value: "2,485" },
+      { label: "REC TDS", value: "30" },
+      { label: "PASS YDS", value: "4,985" },
+      { label: "PASS TDS", value: "61" },
+      { label: "TCK", value: "69" },
+      { label: "INT", value: "24" }
+    ],
+    accolades: ["3x champ", "2x dboty", "1x wroty", "1x 1st Team AP", "2x 2nd Team AP"]
+  },
+  {
+    name: "st breezy",
+    position: "STREAK/FOLD/DEEP/SHORT",
+    image: '/hof/dre2.gif',
+    username: 'aDrexelAvenue886',
+    stats: [
+      { label: "REC", value: "155" },
+      { label: "YDS", value: "4,599" },
+      { label: "TDS", value: "69" },
+      { label: "TCK", value: "94" },
+      { label: "INT", value: "23" }
+    ],
+    accolades: ["4x champ", "1x opoy", "1x wroty", "2x 1st Team AP", "1x 2nd Team AP"]
+  },
+  {
+    name: "wx",
+    position: "FOLD/STREAK/DEEP/FS",
+    image: '/hof/soulz.gif',
+    username: 'qleerinsGoon1',
+    stats: [
+      { label: "REC", value: "138" },
+      { label: "YDS", value: "3,410" },
+      { label: "TDS", value: "49" },
+      { label: "TCK", value: "83" },
+      { label: "INT", value: "39" }
+    ],
+    accolades: ["2x wroty", "2x dboty", "4x 1st Team AP"]
+  },
+  {
+    name: "oxy",
+    position: "STREAK/FOLD/DEEP",
     image: '/hof/polar.gif',
-    photo: '/hof/polar.png',
-    awards: ['4x CHAMP', '1x DPOTY', '5x 1ST TEAMS', '5x AS', '25x+ DPOTG'],
-    stats: '487 PTS • 1,028 AST • 155 REB • 187 STL'
-  },
-  { 
-    name: 'Aim',
-    username: 'dndaim',
-    image: '/hof/aim.gif',
-    photo: '/hof/aim.png',
-    awards: ['3x CHAMP', '3x FMVP', '1x MIP', '3x AS', '4x POTS', '25x+ POTG'],
-    stats: '2,563 PTS • 312 AST • 126 REB • 128 STL'
-  },
-  { 
-    name: 'Cam',
-    username: 'offprkx_13',
-    image: '/hof/cam.gif',
-    photo: '/hof/cam.png',
-    awards: ['1x CHAMP', '1x AS', '4x RS', '2x POTS', '1x ECF MVP', '21x POTG', '7x DPOTG' ],
-    stats: '1,933 PTS • 502 AST • 197 REB • 128 STL'
-  },
+    username: 'polurhx',
+    stats: [
+      { label: "REC", value: "181" },
+      { label: "YDS", value: "4,831" },
+      { label: "TDS", value: "84" },
+      { label: "TCK", value: "86" },
+      { label: "INT", value: "31" }
+    ],
+    accolades: ["1x champ", "1x opoy", "1x dpoy", "1x dboty", "1x wroty", "2x 1st Team AP", "1x 2nd Team AP"]
+  }
 ];

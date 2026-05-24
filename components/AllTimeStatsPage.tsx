@@ -35,7 +35,7 @@ const AllTimeStatsPage: React.FC<AllTimeStatsPageProps> = ({ isEmbedded = false 
       try {
         setLoading(true);
         setError(null);
-        const stats = await fetchSeasonStats('all-time', controller.signal);
+        const stats = await fetchSeasonStats('all-time', 'ALL', controller.signal);
         if (alive) {
           setData(stats);
         }

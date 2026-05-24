@@ -18,7 +18,7 @@ export interface ThemeOption {
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
-  { id: "default", label: "nbll red", color: "#D60A07" },
+  { id: "default", label: "ufl red", color: "#D60A07" },
   { id: "marigold", label: "marigold", color: "#EAA221" },
   { id: "citrine", label: "citrine", color: "#E4D007" },
   { id: "aquamarine", label: "aquamarine", color: "#7FFFD4" },

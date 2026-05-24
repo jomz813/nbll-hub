@@ -107,7 +107,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   );
 
   const currentThemeOption = THEME_OPTIONS.find(opt => opt.id === settings.siteThemeAccent) || THEME_OPTIONS[0];
-  const currentThemeLabel = currentThemeOption.label || 'nbll red';
+  const currentThemeLabel = currentThemeOption.label || 'ufl red';
 
   return (
     <AnimatePresence>

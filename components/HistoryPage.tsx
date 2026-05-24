@@ -1,367 +1,350 @@
-import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
-import { fetchS10Stats } from '../data/s10Stats';
-import { fetchS11Stats } from '../data/s11Stats';
-import { fetchS12Stats } from '../data/s12Stats';
-import { fetchS13Stats } from '../data/s13Stats';
-
-interface HistorySeason {
-  id: number;
-  champion: string;
-  mvp: string;
-  isPending?: boolean;
-}
 
 type HistoryFilter = 'All' | 'Teams' | 'MVPs' | 'Rosters';
 
-const historyData: HistorySeason[] = [
-  { id: 13, champion: 'Colorado Comets', mvp: 'aim' },
-  { id: 12, champion: 'Detroit Pistons', mvp: 'Packed' },
-  { id: 11, champion: 'Milwaukee Bucks', mvp: 'Aim' },
-  { id: 10, champion: 'Miami Heat', mvp: 'Pansho' },
-  { id: 9, champion: 'Cleveland Cavaliers', mvp: 'Packed' },
-  { id: 8, champion: 'New York Knicks', mvp: 'Aim' },
-  { id: 7, champion: 'Sacramento Kings', mvp: 'Rah' },
-  { id: 6, champion: 'Cleveland Cavaliers', mvp: 'Dannygreen' },
-  { id: 5, champion: 'OKC Thunder', mvp: 'Pansho' },
-  { id: 4, champion: 'Houston Rockets', mvp: 'PunkMonk' },
-  { id: 3, champion: 'Golden State Warriors', mvp: 'Marsh' },
-  { id: 2, champion: 'Chicago Bulls', mvp: 'Tend' },
-  { id: 1, champion: 'Chicago Bulls', mvp: 'Tend' },
+const uflHistory = [
+  {
+    season: 1,
+    champion: "Pittsburg Steelers",
+    runnerUp: "New England Patriots",
+    sbMvp: "Wx",
+    championRoster: [
+      { position: "QB", player: "Rizzv2" },
+      { position: "TE/DE", player: "Power" },
+      { position: "WR", player: "Elite" },
+      { position: "WR", player: "Wx", mvp: true },
+      { position: "WR", player: "BaconBaller" },
+      { position: "WR", player: "Twizzy" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Zipperable" },
+      { position: "WR", player: "Trip" },
+      { position: "WR", player: "Scottie" }
+    ]
+  },
+  {
+    season: 2,
+    champion: "Philadelphia Eagles",
+    runnerUp: "Arizona Cardinals",
+    sbMvp: "WX",
+    championRoster: [
+      { position: "QB", player: "Epicly" },
+      { position: "TE", player: "Jaybird" },
+      { position: "WR", player: "WX", mvp: true },
+      { position: "WR", player: "Good" },
+      { position: "WR", player: "BigBolto" },
+      { position: "WR", player: "Ghost" },
+      { position: "WR", player: "Straps" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Slime" },
+      { position: "TE/WR", player: "Oko" },
+      { position: "WR", player: "Goku" },
+      { position: "WR", player: "Plum" },
+      { position: "WR", player: "Tutu" },
+      { position: "WR", player: "Pickles" },
+      { position: "WR", player: "Cookie" }
+    ]
+  },
+  {
+    season: 3,
+    champion: "New Orleans Saints",
+    runnerUp: "Los Angeles Chargers",
+    sbMvp: "Jalen",
+    championRoster: [
+      { position: "QB", player: "Jalen", mvp: true },
+      { position: "TE/DE", player: "Ktg" },
+      { position: "WR", player: "Steve" },
+      { position: "WR", player: "Symetrici" },
+      { position: "WR", player: "Froze" },
+      { position: "WR", player: "Dav" }
+    ],
+    championBench: ["Cruise", "Twizzy"],
+    runnerUpRoster: [
+      { position: "QB", player: "Slime" },
+      { position: "TE/DE", player: "Oko" },
+      { position: "WR", player: "Asenath" },
+      { position: "WR", player: "Tutu" },
+      { position: "WR", player: "Plum" },
+      { position: "WR", player: "Chibi" }
+    ]
+  },
+  {
+    season: 4,
+    champion: "Miami Dolphins",
+    runnerUp: "Los Angeles Rams",
+    sbMvp: "Marsh",
+    championRoster: [
+      { position: "QB", player: "Jalen" },
+      { position: "TE", player: "KTG" },
+      { position: "WR", player: "Steve" },
+      { position: "WR", player: "Marsh", mvp: true },
+      { position: "WR", player: "Dork" },
+      { position: "WR", player: "Viper" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Scalp" },
+      { position: "OL", player: "Illusional" },
+      { position: "TE", player: "Kaara" },
+      { position: "WR", player: "Six" },
+      { position: "WR", player: "Fbislife" },
+      { position: "WR", player: "Neon" },
+      { position: "WR", player: "St. Breezy" }
+    ]
+  },
+  {
+    season: 5,
+    champion: "Tennessee Titans",
+    runnerUp: "Arizona Cardinals",
+    sbMvp: "Facts",
+    championRoster: [
+      { position: "QB", player: "Swag" },
+      { position: "OL/DE", player: "Rohun" },
+      { position: "WR", player: "Wary" },
+      { position: "WR", player: "Facts", mvp: true },
+      { position: "WR", player: "Jaden" },
+      { position: "WR", player: "Breezy" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Benmosetablet" },
+      { position: "OL/DE", player: "Ryan" },
+      { position: "WR", player: "Kaylee" },
+      { position: "WR", player: "Steve" },
+      { position: "WR", player: "Static" },
+      { position: "WR", player: "Gerald" }
+    ],
+    runnerUpBench: ["Naugy"]
+  },
+  {
+    season: 6,
+    champion: "New Orlean Saints",
+    runnerUp: "Houston Texans",
+    sbMvp: "Kaara",
+    championRoster: [
+      { position: "QB", player: "Scalp" },
+      { position: "OL/DE", player: "Kaara", mvp: true },
+      { position: "WR", player: "Beast" },
+      { position: "WR", player: "Breezy" },
+      { position: "WR", player: "Spray" },
+      { position: "WR", player: "Suc" },
+      { position: "WR", player: "Rana" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Ben" },
+      { position: "OL/DE", player: "Rider" },
+      { position: "WR", player: "Silver" },
+      { position: "WR", player: "Facts" },
+      { position: "WR", player: "Jeaty" },
+      { position: "WR", player: "Poser" },
+      { position: "WR", player: "Elon" }
+    ]
+  },
+  {
+    season: 7,
+    champion: "New Orleans Saints",
+    runnerUp: "Cincinnati Bengals",
+    sbMvp: "St. Breezy",
+    championRoster: [
+      { position: "QB", player: "Scalp" },
+      { position: "OL/DE", player: "Woke" },
+      { position: "TE", player: "Mirmir" },
+      { position: "WR", player: "Beast" },
+      { position: "WR", player: "St. Breezy", mvp: true },
+      { position: "WR", player: "Spray" },
+      { position: "WR", player: "Rana" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Jalen" },
+      { position: "OL/DE", player: "Rohun" },
+      { position: "TE", player: "Desty" },
+      { position: "WR", player: "Lockdown" },
+      { position: "WR", player: "Truzz" },
+      { position: "WR", player: "Marsh" },
+      { position: "WR", player: "Jaden" }
+    ]
+  },
+  {
+    season: 8,
+    champion: "San Francisco 49ers",
+    runnerUp: "Detroit Lions",
+    sbMvp: "Truzz",
+    championRoster: [
+      { position: "QB", player: "Fashion" },
+      { position: "OL/DE", player: "Shazam" },
+      { position: "TE", player: "Good" },
+      { position: "WR", player: "Truzz", mvp: true },
+      { position: "WR", player: "Nova" },
+      { position: "WR", player: "Glo DK" },
+      { position: "WR", player: "Wary" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Jalen" },
+      { position: "OL/DE", player: "Rohun" },
+      { position: "TE", player: "Sylvia" },
+      { position: "WR", player: "Swag" },
+      { position: "WR", player: "Tae" },
+      { position: "WR", player: "Facts" },
+      { position: "WR", player: "Lux" }
+    ]
+  },
+  {
+    season: 9,
+    champion: "San Francisco 49ers",
+    runnerUp: "Minnesota Vikings",
+    sbMvp: "Fashion",
+    championRoster: [
+      { position: "QB", player: "Fashion", mvp: true },
+      { position: "OL/DE", player: "Mir" },
+      { position: "TE/DE", player: "Silver" },
+      { position: "WR", player: "Twizzy" },
+      { position: "WR", player: "DK" },
+      { position: "WR", player: "Jeaty" },
+      { position: "WR", player: "Nova" }
+    ],
+    championBench: ["Wary"],
+    runnerUpRoster: [
+      { position: "QB", player: "Slime" },
+      { position: "OL/DE", player: "Epicly" },
+      { position: "TE/DE", player: "Oko" },
+      { position: "WR", player: "Driss" },
+      { position: "WR", player: "Xv" },
+      { position: "WR", player: "Static" },
+      { position: "WR", player: "Kame" }
+    ]
+  },
+  {
+    season: 10,
+    champion: "Las Vegas Raiders",
+    runnerUp: "Philadelphia Eagles",
+    sbMvp: "Zach",
+    championRoster: [
+      { position: "QB", player: "Vajy" },
+      { position: "OL/DE", player: "Ruby" },
+      { position: "TE/DE", player: "Zach", mvp: true },
+      { position: "WR", player: "Oxy" },
+      { position: "WR", player: "Qin" },
+      { position: "WR", player: "Sealio" },
+      { position: "WR", player: "Naugy" }
+    ],
+    runnerUpRoster: [
+      { position: "QB/DE", player: "Savior" },
+      { position: "OL/DE", player: "Static" },
+      { position: "TE", player: "Jeaty" },
+      { position: "WR", player: "Nova" },
+      { position: "WR", player: "Wary" },
+      { position: "WR", player: "DK" },
+      { position: "WR", player: "Truzz" }
+    ]
+  },
+  {
+    season: 11,
+    champion: "Las Vegas Raiders",
+    runnerUp: "Baltimore Ravens",
+    sbMvp: "Tcay",
+    championRoster: [
+      { position: "QB/DE", player: "Konjure" },
+      { position: "OL/DE", player: "Koda" },
+      { position: "TE", player: "Vajy" },
+      { position: "WR", player: "Ryan" },
+      { position: "WR", player: "Tcay", mvp: true },
+      { position: "WR", player: "Sealio" },
+      { position: "WR", player: "RahBizzy" },
+      { position: "WR", player: "Jeaty" }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Ben" },
+      { position: "OL/DE", player: "Epicly" },
+      { position: "TE/DE", player: "Jaybird" },
+      { position: "WR", player: "Mek" },
+      { position: "WR", player: "Marsh" },
+      { position: "WR", player: "Red" },
+      { position: "WR", player: "DK" },
+      { position: "WR", player: "Static" }
+    ],
+    runnerUpBench: ["Silver", "Alam", "crally"]
+  },
+  {
+    season: 12,
+    champion: "Washington Commanders",
+    runnerUp: "Dallas Cowboys",
+    sbMvp: "Static",
+    championRoster: [
+      { position: "QB", player: "Konjure" },
+      { position: "OL/DE", player: "Koda" },
+      { position: "TE/DE", player: "Mirmir" },
+      { position: "WR", player: "RahBizzy" },
+      { position: "WR", player: "Goodutify" },
+      { position: "WR", player: "Wary" },
+      { position: "WR", player: "Viper" },
+      { position: "WR", player: "Static", mvp: true }
+    ],
+    runnerUpRoster: [
+      { position: "QB", player: "Ben" },
+      { position: "OL/DE", player: "Crally" },
+      { position: "LOS/DE", player: "Desty" },
+      { position: "WR", player: "Kromers" },
+      { position: "WR", player: "Naugy" },
+      { position: "WR", player: "Jaymerle" },
+      { position: "WR", player: "Lord" },
+      { position: "WR", player: "Roy" }
+    ]
+  },
+  {
+    season: 13,
+    champion: "Atlanta Falcons",
+    runnerUp: null,
+    sbMvp: null,
+    note: "FFW championship",
+    championRoster: [
+      { position: "QB/DE", player: "Konjure" },
+      { position: "OL/DE", player: "Koda" },
+      { position: "TE/SHORT", player: "Viper" },
+      { position: "WR/SHORT", player: "Rahbizzy" },
+      { position: "WR/DEEP", player: "Quinn" },
+      { position: "WR/MLB", player: "Mao" },
+      { position: "WR/DEEP", player: "Ryan" },
+      { position: "WR/FS", player: "Jaymerle" }
+    ],
+    championBench: ["Medtronical"]
+  },
+  {
+    season: 14,
+    status: "NO DATA FOUND"
+  },
+  {
+    season: 15,
+    champion: "New Orleans Saints",
+    runnerUp: "Jacksonville Jaguars",
+    sbMvp: "Rahbizzy",
+    championRoster: [
+      { position: "QB/DE", player: "Konjure" },
+      { position: "OL/DE", player: "Mirmir" },
+      { position: "TE", player: "Power" },
+      { position: "WR", player: "Ryan" },
+      { position: "WR", player: "Quinn" },
+      { position: "WR", player: "Rahbizzy", mvp: true },
+      { position: "WR", player: "Jeaty" },
+      { position: "WR", player: "Zxch" }
+    ],
+    runnerUpRoster: [
+      { position: "QB/FS", player: "Noka" },
+      { position: "OL/DE", player: "Will" },
+      { position: "TE/DE", player: "Alam" },
+      { position: "WR", player: "Sealio" },
+      { position: "WR", player: "Red" },
+      { position: "WR", player: "Woa" },
+      { position: "WR", player: "Chucky" },
+      { position: "WR", player: "Oxy" }
+    ],
+    runnerUpBench: ["A2ways"]
+  },
+  {
+    season: 16,
+    status: "PENDING"
+  }
 ];
-
-interface RosterEntry {
-  nickname: string;
-  username?: string;
-  clickable?: boolean;
-}
-
-interface SeasonFinals {
-  championsTeam: string;
-  championsRoster: (string | RosterEntry)[];
-  runnerUpTeam: string;
-  runnerUpRoster: (string | RosterEntry)[];
-}
-
-const finalsData: Record<number, SeasonFinals> = {
-  13: {
-    championsTeam: "Comets",
-    championsRoster: [
-      { nickname: "aim", username: "dndaim", clickable: true },
-      { nickname: "chino", username: "chinophobia", clickable: true },
-      { nickname: "junior", username: "jr49ers12", clickable: true },
-      { nickname: "virnadol" },
-      { nickname: "dannygreen", username: "D4NNYGREEN", clickable: true },
-      { nickname: "kbh" },
-      { nickname: "yoshida" },
-      { nickname: "sinful" }
-    ],
-    runnerUpTeam: "Plague",
-    runnerUpRoster: [
-      { nickname: "1luv", username: "xr1r0", clickable: true },
-      { nickname: "trae", username: "trae", clickable: true },
-      { nickname: "pansho", username: "ff2frs", clickable: true },
-      { nickname: "rock", username: "RockWayHunterYT", clickable: true },
-      { nickname: "meme" },
-      { nickname: "punkmonk", username: "PunkMonk00", clickable: true },
-      { nickname: "jomz", username: "spidermonkeywastaken", clickable: true },
-      { nickname: "halo", username: "Corey", clickable: true },
-      { nickname: "kaji", username: "timeownsyou", clickable: true },
-      { nickname: "rah", username: "alwayzbizzy41", clickable: true }
-    ]
-  },
-  12: {
-    championsTeam: "Pistons",
-    championsRoster: [
-      { nickname: "packed", username: "lalpack125", clickable: true },
-      { nickname: "rah", username: "alwayzbizzy41", clickable: true },
-      { nickname: "tend", username: "aaronthekiii", clickable: true },
-      { nickname: "liminal" },
-      { nickname: "doge", username: "DogeShadowDragon", clickable: true },
-      { nickname: "gmz", username: "heygmz", clickable: true },
-      { nickname: "perc" }
-    ],
-    runnerUpTeam: "Kings",
-    runnerUpRoster: [
-      { nickname: "phattie", username: "phatspacepirate", clickable: true },
-      { nickname: "bum", username: "Xlerent", clickable: true },
-      { nickname: "chino", username: "chinophobia", clickable: true },
-      { nickname: "rock", username: "RockWayHunterYT", clickable: true },
-      { nickname: "cam", username: "Offprkx_13", clickable: true },
-      { nickname: "kaza" },
-      { nickname: "silver", username: "jcoolclubs", clickable: true }
-    ]
-  },
-  1: {
-    championsTeam: "Bulls",
-    championsRoster: ["2hyped", "Koda", "Mateo", "Reticent", "Tend", "Voceity"],
-    runnerUpTeam: "Warriors",
-    runnerUpRoster: ["Castle", "Ethan", "Make-a-Wish", "Nebula", "Taser"]
-  },
-  2: {
-    championsTeam: "Bulls",
-    championsRoster: ["Koda", "Roro", "Tend", "Verse", "Voceity"],
-    runnerUpTeam: "Pelicans",
-    runnerUpRoster: ["Colt", "Jay", "Reece", "Sinful", "Soulz"]
-  },
-  3: {
-    championsTeam: "Warriors",
-    championsRoster: ["Marsh", "Nebula", "Shary", "Sinful", "Soulz"],
-    runnerUpTeam: "Bulls",
-    runnerUpRoster: ["Corey", "Jack", "Jay", "Kaza", "Seeker", "Verse"]
-  },
-  4: {
-    championsTeam: "Rockets",
-    championsRoster: ["Ghost", "Jay", "Meme", "Punk", "Seeker", "Sinful", "Verse"],
-    runnerUpTeam: "Hawks",
-    runnerUpRoster: ["Aym8", "Bullet", "Nebula", "Phattie", "Shray", "Wisn"]
-  },
-  5: {
-    championsTeam: "Thunder",
-    championsRoster: ["Aevolved", "Aesir", "Nero", "Pansho", "Purple", "Soxxer", "Wisn"],
-    runnerUpTeam: "Knicks",
-    runnerUpRoster: ["Chris", "Danny", "Jolly", "Packed", "Phattie", "Silver", "Soulz", "Trae"]
-  },
-  6: {
-    championsTeam: "Cavaliers",
-    championsRoster: ["1luv", "Albrx", "Chxno", "Danny", "Junior", "Packed", "Pansho", "Polar", "Taser"],
-    runnerUpTeam: "Lakers",
-    runnerUpRoster: ["Aesir", "Compxsharp", "Kirazi", "Suki"]
-  },
-  7: {
-    championsTeam: "Kings",
-    championsRoster: ["Bum", "Pansho", "Polar", "Rah", "Silver", "Taser", "Void"],
-    runnerUpTeam: "Magic",
-    runnerUpRoster: ["Cam", "Clipsyryan", "Dre", "Tend", "Wcs"]
-  },
-  8: {
-    championsTeam: "Knicks",
-    championsRoster: ["1luv", "Aim", "Albrx", "Chicken", "Pansho", "Phattie", "Polar", "Taser"],
-    runnerUpTeam: "—",
-    runnerUpRoster: ["Mattimized", "Packed", "Sosa", "Tend", "Wisn"]
-  },
-  9: {
-    championsTeam: "Cavaliers",
-    championsRoster: ["Albrx", "Cola", "Compxsharp", "Geek", "i2qn", "Jamal", "Marsh", "Packed", "Prt", "Rah", "Soulz"],
-    runnerUpTeam: "Lakers",
-    runnerUpRoster: ["Ghost", "Lavixey", "Phattie", "Polar"]
-  },
-  10: {
-    championsTeam: "Heat",
-    championsRoster: ["Anyrode", "Chxno", "Dre", "gmz", "Junior", "Paris", "Pansho", "Polar", "Red", "Taser"],
-    runnerUpTeam: "Lakers",
-    runnerUpRoster: ["Bum", "Coves", "Kac", "Lavixey", "Marsh", "Plv"]
-  },
-  11: {
-    championsTeam: "Bucks",
-    championsRoster: ["6Flags", "Aim", "Bum", "Cam", "Doge", "Green", "Liminal", "Soulz", "Taser",  "Suki"],
-    runnerUpTeam: "Clippers",
-    runnerUpRoster: ["1luv", "Chxno", "Coves", "Dre", "Jomz", "Junior", "Polar", "Rah", "Taser"]
-  }
-};
-
-const USERNAME_MAPPING: Record<number, Record<string, string>> = {
-  10: {
-    "Dre": "aDrexelAvenue886",
-    "gmz": "heygmz",
-    "Junior": "jr49ers12",
-    "Pansho": "ff2frs",
-    "Polar": "polurhx",
-    "Taser": "iTxser",
-    "Bum": "Xlerent",
-    "Coves": "coves7",
-    "Lavixey": "oxolxzyoxo",
-    "Marsh": "urmarshboi77"
-  },
-  11: {
-    "Aim": "dndaim",
-    "Bum": "Xlerent",
-    "Doge": "dogeshadowdragon",
-    "Green": "green_138",
-    "PraiseCam": "Offprkx_13",
-    "Soulz": "qleerinsGoon1",
-    "Suki": "666detached",
-    "Taser": "iTxser",
-    "1luv": "xr1r0",
-    "Coves": "coves7",
-    "Dre": "adrexelavenue886",
-    "Jomz": "spidermonkeywastaken",
-    "Junior": "jr49ers12",
-    "Polar": "polurhx",
-    "Rah": "alwayzbizzy41"
-  },
-  12: {
-    "phattie": "phatspacepirate",
-    "bum": "Xlerent",
-    "chino": "chinophobia",
-    "rock": "RockWayHunterYT",
-    "cam": "Offprkx_13",
-    "kaza": "kazas",
-    "silver": "jcoolclubs",
-    "packed": "lalpack125",
-    "rah": "alwayzbizzy41",
-    "tend": "aaronthekiii",
-    "liminal": "liminal",
-    "doge": "DogeShadowDragon",
-    "gmz": "heygmz",
-    "perc": "perc"
-  }
-};
-
-const AVATAR_CACHE: Record<string, string | null> = {};
-
-const StatPreview: React.FC<{ 
-  player: string, 
-  username: string,
-  stats: any, 
-  loadingStats: boolean,
-  onClose: () => void, 
-  offsetTop?: number,
-  offsetLeft?: number,
-  accentText: string,
-  accentBg: string,
-  reducedMotion: boolean,
-  seasonId: number,
-  isMobile: boolean,
-  filter: HistoryFilter
-}> = ({ player, username, stats, loadingStats, onClose, offsetTop, offsetLeft, accentText, accentBg, reducedMotion, seasonId, isMobile, filter }) => {
-  const [avatar, setAvatar] = useState<string | null>(null);
-  const [loadingAvatar, setLoadingAvatar] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  const isRostersActive = filter === 'Rosters';
-
-  useEffect(() => {
-    if (AVATAR_CACHE[username] !== undefined) {
-      setAvatar(AVATAR_CACHE[username]);
-      return;
-    }
-    setLoadingAvatar(true);
-    fetch(`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(username)}`)
-      .then(res => res.json())
-      .then(data => {
-        AVATAR_CACHE[username] = data.imageUrl || null;
-        setAvatar(data.imageUrl || null);
-      })
-      .catch(() => {
-        AVATAR_CACHE[username] = null;
-      })
-      .finally(() => setLoadingAvatar(false));
-  }, [username]);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    const handleClickOutside = (e: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) onClose();
-    };
-    const timer = setTimeout(() => {
-      window.addEventListener('keydown', handleEsc);
-      window.addEventListener('mousedown', handleClickOutside);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('keydown', handleEsc);
-      window.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [onClose]);
-
-  const containerStyle: React.CSSProperties = isMobile ? {
-    position: 'absolute',
-    left: isRostersActive ? 12 : 0,
-    right: isRostersActive ? 12 : 0,
-    bottom: isRostersActive ? 12 : 0,
-    top: isRostersActive ? 12 : 'auto',
-    maxHeight: isRostersActive ? 'calc(100% - 24px)' : 'none',
-    zIndex: 100,
-    display: 'flex',
-    flexDirection: 'column'
-  } : {
-    position: 'absolute',
-    top: (offsetTop ?? 0) + 45,
-    left: Math.max(0, Math.min(600, (offsetLeft ?? 0))),
-    zIndex: 1001,
-    width: '280px'
-  };
-
-  const variants = isMobile ? {
-    hidden: { y: '100%' },
-    visible: { y: 0 },
-    exit: { y: '100%' }
-  } : {
-    hidden: { opacity: 0, scale: 0.9, y: 10 },
-    visible: { opacity: 1, scale: 1, y: 0 },
-    exit: { opacity: 0, scale: 0.9, y: 10 }
-  };
-
-  return (
-    <motion.div
-      ref={modalRef}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      variants={variants}
-      transition={{ duration: reducedMotion ? 0.05 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-      style={containerStyle}
-      className={`
-        bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden
-        ${isMobile ? (isRostersActive ? 'rounded-[2rem] border' : 'rounded-t-[2rem] border-t') : 'rounded-[2.5rem] border'}
-      `}
-    >
-      <div className={`flex-1 overflow-y-auto no-scrollbar pt-12 px-8 pb-8`}>
-        <button 
-          onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onClose(); }} 
-          className="absolute top-6 right-6 p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 active:scale-90 z-20"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-        </button>
-
-        <div className="flex items-center gap-5 mb-8">
-          <div className="relative shrink-0">
-             <div className="w-16 h-16 rounded-[1.5rem] bg-zinc-50 dark:bg-zinc-800 overflow-hidden border border-zinc-100 dark:border-zinc-800 flex items-center justify-center">
-                {loadingAvatar ? (
-                  <div className="w-full h-full animate-pulse bg-zinc-100 dark:bg-zinc-700" />
-                ) : avatar ? (
-                  <img src={avatar} className="w-full h-full object-cover" alt="" />
-                ) : (
-                  <svg className="w-8 h-8 text-zinc-300 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                )}
-             </div>
-             <div className={`absolute -bottom-1 -right-1 w-5 h-5 ${accentBg} rounded-full border-2 border-white dark:border-zinc-900 flex items-center justify-center`}>
-                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg>
-             </div>
-          </div>
-          <div className="min-w-0">
-            <h4 className="text-lg font-black text-zinc-900 dark:text-white truncate uppercase tracking-tighter leading-none mb-1">{username}</h4>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] block leading-tight">{player}</span>
-              <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest opacity-80 leading-tight">S{seasonId}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'PTS', val: stats?.pts ?? 0 },
-            { label: 'AST', val: stats?.ast ?? 0 },
-            { label: 'REB', val: stats?.reb ?? 0 },
-            { label: 'STL', val: stats?.stl ?? 0 },
-            { label: 'GP', val: stats?.gp ?? 0 },
-            { label: 'EFF', val: stats?.eff ?? 0 },
-          ].map((st, i) => (
-            <div key={i} className="flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border border-transparent transition-colors">
-              <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">{st.label}</span>
-              <span className="text-base tabular-nums tracking-tight leading-none text-zinc-900 dark:text-zinc-100 font-bold">
-                {st.val}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
 
 const HistoryPage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
@@ -371,19 +354,6 @@ const HistoryPage: React.FC = () => {
 
   const [filter, setFilter] = useState<HistoryFilter>('All');
   const [openSeasonIds, setOpenSeasonIds] = useState<number[]>([]);
-  const [s10Stats, setS10Stats] = useState<any[]>([]);
-  const [s11Stats, setS11Stats] = useState<any[]>([]);
-  const [s12Stats, setS12Stats] = useState<any[]>([]);
-  const [s13Stats, setS13Stats] = useState<any[]>([]);
-  const [loadingGlobalStats, setLoadingGlobalStats] = useState(true);
-  const [activePreview, setActivePreview] = useState<{ 
-    player: string, 
-    username: string,
-    seasonId: number, 
-    offsetTop?: number,
-    offsetLeft?: number
-  } | null>(null);
-
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [timelineHeight, setTimelineHeight] = useState<number>(0);
   const seasonsListRef = useRef<HTMLDivElement>(null);
@@ -391,25 +361,6 @@ const HistoryPage: React.FC = () => {
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
-    const load = async () => {
-      try {
-        const [s10, s11, s12, s13] = await Promise.all([
-          fetchS10Stats(), 
-          fetchS11Stats(),
-          fetchS12Stats(),
-          fetchS13Stats()
-        ]);
-        setS10Stats(s10);
-        setS11Stats(s11);
-        setS12Stats(s12);
-        setS13Stats(s13);
-      } catch (e) {
-        console.error("Failed to prefetch history stats", e);
-      } finally {
-        setLoadingGlobalStats(false);
-      }
-    };
-    load();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -428,7 +379,7 @@ const HistoryPage: React.FC = () => {
 
   useEffect(() => {
     if (filter === 'Rosters' && !isMobile) {
-      setOpenSeasonIds(historyData.map(s => s.id));
+      setOpenSeasonIds(uflHistory.map(s => s.season));
     }
   }, [filter, isMobile]);
 
@@ -438,81 +389,38 @@ const HistoryPage: React.FC = () => {
     );
   };
 
-  const handleRosterNameClick = (e: React.MouseEvent<HTMLElement>, name: string, seasonId: number, mappedUsername: string) => {
-    e.stopPropagation();
-    if (activePreview?.username === mappedUsername && activePreview?.seasonId === seasonId) {
-      setActivePreview(null);
-      return;
-    }
-    const target = e.currentTarget;
-    setActivePreview({
-      player: name,
-      username: mappedUsername,
-      seasonId,
-      offsetTop: target.offsetTop,
-      offsetLeft: target.offsetLeft
-    });
-  };
-
-  const sortRoster = (roster: (string | RosterEntry)[]) => {
-    return [...roster].sort((a, b) => {
-      const nameA = typeof a === 'string' ? a : a.nickname;
-      const nameB = typeof b === 'string' ? b : b.nickname;
-      return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
-    });
-  };
-
-  const renderRosterChip = (entry: string | RosterEntry, seasonId: number) => {
+  const renderRosterChip = (entry: any) => {
     const isObject = typeof entry !== 'string';
-    const nickname = isObject ? entry.nickname : entry;
-    const isFO = nickname.includes('(FO)');
-    const displayName = nickname.replace('(FO)', '').trim();
+    const player = isObject ? entry.player : entry;
+    const position = isObject ? entry.position : null;
+    const mvp = isObject ? entry.mvp : false;
     
-    let mappedUsername = USERNAME_MAPPING[seasonId]?.[displayName];
-    let isInteractive = !!mappedUsername && (seasonId === 10 || seasonId === 11 || seasonId === 12);
-
-    if (isObject) {
-      mappedUsername = entry.username || '';
-      isInteractive = !!entry.clickable && !!entry.username;
-    }
-
     return (
-      <motion.div
-        key={nickname}
-        variants={{
-          hidden: { opacity: 0, y: 5 },
-          show: { opacity: 1, y: 0 }
-        }}
-        onClick={(e: React.MouseEvent<HTMLDivElement>) => isInteractive && handleRosterNameClick(e, displayName, seasonId, mappedUsername!)}
+      <div
+        key={player}
         className={`
-          flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all duration-300
-          ${isInteractive 
-            ? `cursor-pointer bg-white dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 hover:border-current hover:shadow-md active:scale-95 group ${accentText}` 
-            : 'cursor-default bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800/60'}
+          flex items-center gap-0.5 md:gap-1.5 px-0 py-0.5 md:px-3.5 md:py-2 md:rounded-full transition-all duration-300 relative
+          md:bg-zinc-50 md:dark:bg-zinc-800/40 md:border md:border-zinc-100 md:dark:border-zinc-800/60
         `}
       >
-        <span className={`text-[11px] md:text-xs font-bold transition-colors ${isInteractive ? 'text-zinc-900 dark:text-zinc-100 group-hover:text-current' : 'text-zinc-950 dark:text-zinc-200'}`}>
-          {displayName}
+        <span className={`text-[12px] md:text-xs font-semibold md:font-bold transition-colors text-zinc-700 dark:text-zinc-300 md:text-zinc-950 md:dark:text-zinc-200 tracking-tight`}>
+          {player}
         </span>
-        {isFO && (
-          <span className="text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-md">
-            FO
+        {position && (
+          <span className="hidden md:inline-flex text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 rounded-md">
+            {position}
           </span>
         )}
-      </motion.div>
+        {mvp && (
+          <span className={`static md:absolute ml-0.5 md:ml-0 md:-top-1.5 md:-right-1.5 w-2.5 h-2.5 md:w-4 md:h-4 ${accentBg} rounded-full flex md:border md:border-white md:dark:border-zinc-900 items-center justify-center shrink-0`}>
+            <svg className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+          </span>
+        )}
+      </div>
     );
   };
 
-  const previewStats = useMemo(() => {
-    if (!activePreview) return null;
-    let statsSource: any[] = [];
-    if (activePreview.seasonId === 10) statsSource = s10Stats;
-    else if (activePreview.seasonId === 11) statsSource = s11Stats;
-    else if (activePreview.seasonId === 12) statsSource = s12Stats;
-    else if (activePreview.seasonId === 13) statsSource = s13Stats;
-    
-    return statsSource.find(p => p.player.toLowerCase() === activePreview.username.toLowerCase());
-  }, [activePreview, s10Stats, s11Stats, s12Stats, s13Stats]);
+  const reversedHistory = [...uflHistory].reverse();
 
   return (
     <div className="pb-20 animate-page-enter">
@@ -526,16 +434,17 @@ const HistoryPage: React.FC = () => {
         <div 
           className="absolute left-2 md:left-2 w-px bg-zinc-200 dark:bg-zinc-800 z-0" 
           style={{ 
-            top: isMobile ? '124px' : '0px', 
-            height: isMobile ? 'calc(100% - 124px)' : `${timelineHeight}px` 
+            top: '0px', 
+            height: `${timelineHeight}px` 
           }} 
         />
 
         <div ref={seasonsListRef} className="space-y-8 md:space-y-12">
-          {historyData.map((season) => {
-            const isRosterOpen = openSeasonIds.includes(season.id);
-            const finals = finalsData[season.id];
-            const isLocalPreviewActive = activePreview?.seasonId === season.id;
+          {reversedHistory.map((seasonData) => {
+            const isRosterOpen = openSeasonIds.includes(seasonData.season);
+            const isPending = seasonData.status === "PENDING";
+            const noData = seasonData.status === "NO DATA FOUND";
+            const isAbnormal = isPending || noData;
 
             const showChampion = filter === 'All' || filter === 'Teams';
             const showMVP = filter === 'All' || filter === 'MVPs';
@@ -544,34 +453,30 @@ const HistoryPage: React.FC = () => {
             return (
               <motion.div 
                 layout
-                key={season.id} 
+                key={seasonData.season} 
                 className="relative flex flex-col md:flex-row items-start md:items-center"
               >
                 <div className={`absolute left-2 md:left-2 w-4 h-4 rounded-full border-4 border-white dark:border-zinc-950 ${accentBg} shadow-sm z-10 -translate-x-1/2 mt-8 md:mt-0`} />
 
                 <div className="ml-10 md:ml-16 w-[calc(100%-2.5rem)] md:w-auto md:flex-1">
                   <div 
-                    className={`bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2.5rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 group relative ${isLocalPreviewActive ? 'overflow-visible' : 'overflow-hidden'} ${isRosterOpen && showRosterUI ? 'ring-1 ring-current' : ''}`} 
-                    style={{ borderColor: isRosterOpen && showRosterUI ? 'var(--accent)' : undefined, zIndex: isLocalPreviewActive ? 50 : 1 }}
+                    className={`bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2.5rem] p-6 shadow-sm transition-all duration-300 relative overflow-hidden ${isRosterOpen && showRosterUI && !isAbnormal ? 'ring-1 ring-current' : ''}`} 
+                    style={{ borderColor: isRosterOpen && showRosterUI && !isAbnormal ? 'var(--accent)' : undefined }}
                   >
-                    <AnimatePresence>
-                      {isLocalPreviewActive && isMobile && (
-                        <motion.div 
-                          initial={{ opacity: 0 }} 
-                          animate={{ opacity: 1 }} 
-                          exit={{ opacity: 0 }} 
-                          onClick={() => setActivePreview(null)}
-                          className="absolute inset-0 bg-white/20 dark:bg-black/40 backdrop-blur-md z-[90] rounded-[2.5rem]"
-                        />
-                      )}
-                    </AnimatePresence>
 
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">S{season.id}</h3>
                       <div className="flex items-center gap-3">
-                        {showRosterUI && (
+                         <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">S{seasonData.season}</h3>
+                         {seasonData.note && (
+                           <span className="hidden md:inline-block text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
+                             * {seasonData.note}
+                           </span>
+                         )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {showRosterUI && !isAbnormal && (
                           <button 
-                            onClick={() => toggleRoster(season.id)}
+                            onClick={() => toggleRoster(seasonData.season)}
                             aria-expanded={isRosterOpen}
                             className={`flex items-center gap-2 px-4 py-1.5 rounded-full border transition-all duration-300 active:scale-95 group/btn ${isRosterOpen ? `${accentBg} border-transparent text-white shadow-lg` : `bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-current ${accentText}`}`}
                           >
@@ -582,49 +487,60 @@ const HistoryPage: React.FC = () => {
                           </button>
                         )}
                         <div className={`hidden md:block px-3 py-1.5 rounded-full ${colors.bgSoft}`}>
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${colors.text}`}>Season {season.id}</span>
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${colors.text}`}>Season {seasonData.season}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-3">
                       <AnimatePresence mode="popLayout">
-                        {showChampion && (
+                        {isAbnormal && (
+                          <motion.div 
+                            key="abnormal-row"
+                            className="flex items-center justify-center p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/50 overflow-hidden"
+                          >
+                            <span className="text-[11px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-500">
+                              {seasonData.status}
+                            </span>
+                          </motion.div>
+                        )}
+
+                        {!isAbnormal && showChampion && seasonData.champion && (
                           <motion.div 
                             key="champ-row"
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/50 group-hover:border-zinc-200 dark:group-hover:border-zinc-700 transition-colors overflow-hidden"
+                            className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/50 overflow-hidden"
                           >
                             <div className="flex flex-col">
                               <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Champion</span>
-                              <span className={`text-sm font-bold ${season.isPending ? 'text-zinc-400 dark:text-zinc-600 italic' : 'text-zinc-900 dark:text-zinc-100'}`}>{season.champion}</span>
+                              <span className={`text-sm font-bold text-zinc-900 dark:text-zinc-100`}>{seasonData.champion}</span>
                             </div>
-                            <svg className={`w-5 h-5 ${season.isPending ? 'text-zinc-200 dark:text-zinc-700' : 'text-zinc-300 dark:text-zinc-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                            <svg className={`w-5 h-5 text-zinc-300 dark:text-zinc-600`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
                           </motion.div>
                         )}
-                        {showMVP && (
+                        {!isAbnormal && showMVP && seasonData.sbMvp && (
                           <motion.div 
                             key="mvp-row"
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/50 group-hover:border-zinc-200 dark:group-hover:border-zinc-700 transition-colors overflow-hidden"
+                            className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/50 overflow-hidden"
                           >
                             <div className="flex flex-col">
-                              <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Finals MVP</span>
-                              <span className={`text-sm font-bold ${season.isPending ? 'text-zinc-400 dark:text-zinc-600 italic' : 'text-zinc-900 dark:text-zinc-100'}`}>{season.mvp}</span>
+                              <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Super Bowl MVP</span>
+                              <span className={`text-sm font-bold text-zinc-900 dark:text-zinc-100`}>{seasonData.sbMvp}</span>
                             </div>
-                            <svg className={`w-5 h-5 ${season.isPending ? 'text-zinc-200 dark:text-zinc-700' : 'text-zinc-300 dark:text-zinc-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                            <svg className={`w-5 h-5 text-zinc-300 dark:text-zinc-600`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </div>
 
-                    {showRosterUI && finals && (
+                    {!isAbnormal && showRosterUI && (
                       <AnimatePresence>
                         {isRosterOpen && (
                           <motion.div
@@ -632,63 +548,46 @@ const HistoryPage: React.FC = () => {
                             animate={{ height: 'auto', opacity: 1, marginTop: 24 }}
                             exit={{ height: 0, opacity: 0, marginTop: 0 }}
                             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                            className={isLocalPreviewActive ? 'overflow-visible' : 'overflow-hidden'}
+                            className="overflow-hidden"
                           >
                             <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800/50 space-y-8 relative">
-                              <div className="space-y-4">
-                                <SectionHeader title="Champions" rightValue={finals.championsTeam} />
-                                <div className="px-1 relative">
-                                  <motion.div 
-                                    variants={{
-                                      hidden: { opacity: 0 },
-                                      show: { opacity: 1, transition: { staggerChildren: settings.reducedMotion ? 0 : 0.05 } }
-                                    }}
-                                    initial="hidden"
-                                    animate="show"
-                                    className="flex flex-wrap gap-2"
-                                  >
-                                    {sortRoster(finals.championsRoster).map((entry) => renderRosterChip(entry, season.id))}
-                                  </motion.div>
+                              {seasonData.championRoster && (
+                                <div className="space-y-3 md:space-y-4">
+                                  <SectionHeader title="Champions" rightValue={seasonData.champion} />
+                                  <div className="px-1 relative">
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 md:gap-2 items-center">
+                                      {seasonData.championRoster.map((entry) => renderRosterChip(entry))}
+                                    </div>
+                                  </div>
+                                  {seasonData.championBench && seasonData.championBench.length > 0 && (
+                                     <div className="px-1 mt-1.5 md:mt-2">
+                                       <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1 md:mb-2 block">Bench</span>
+                                       <div className="flex flex-wrap gap-x-3 gap-y-1 md:gap-2 items-center">
+                                         {seasonData.championBench.map(entry => renderRosterChip(entry))}
+                                       </div>
+                                     </div>
+                                  )}
                                 </div>
-                              </div>
+                              )}
 
-                              <div className="space-y-4">
-                                <SectionHeader title="Runner Ups" rightValue={finals.runnerUpTeam} />
-                                <div className="px-1 relative">
-                                  <motion.div 
-                                    variants={{
-                                      hidden: { opacity: 0 },
-                                      show: { opacity: 1, transition: { staggerChildren: settings.reducedMotion ? 0 : 0.05 } }
-                                    }}
-                                    initial="hidden"
-                                    animate="show"
-                                    className="flex flex-wrap gap-2"
-                                  >
-                                    {sortRoster(finals.runnerUpRoster).map((entry) => renderRosterChip(entry, season.id))}
-                                  </motion.div>
+                              {seasonData.runnerUpRoster && (
+                                <div className="space-y-3 md:space-y-4">
+                                  <SectionHeader title="Runner Ups" rightValue={seasonData.runnerUp} />
+                                  <div className="px-1 relative">
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 md:gap-2 items-center">
+                                      {seasonData.runnerUpRoster.map((entry) => renderRosterChip(entry))}
+                                    </div>
+                                  </div>
+                                  {seasonData.runnerUpBench && seasonData.runnerUpBench.length > 0 && (
+                                     <div className="px-1 mt-1.5 md:mt-2">
+                                       <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1 md:mb-2 block">Bench</span>
+                                       <div className="flex flex-wrap gap-x-3 gap-y-1 md:gap-2 items-center">
+                                         {seasonData.runnerUpBench.map(entry => renderRosterChip(entry))}
+                                       </div>
+                                     </div>
+                                  )}
                                 </div>
-                              </div>
-
-                              {/* Desktop & Mobile Popout Anchor */}
-                              <AnimatePresence>
-                                {isLocalPreviewActive && (
-                                  <StatPreview 
-                                    player={activePreview.player}
-                                    username={activePreview.username}
-                                    stats={previewStats}
-                                    loadingStats={loadingGlobalStats}
-                                    onClose={() => setActivePreview(null)}
-                                    offsetTop={activePreview.offsetTop}
-                                    offsetLeft={activePreview.offsetLeft}
-                                    accentText={accentText}
-                                    accentBg={accentBg}
-                                    reducedMotion={settings.reducedMotion}
-                                    seasonId={season.id}
-                                    isMobile={isMobile}
-                                    filter={filter}
-                                  />
-                                )}
-                              </AnimatePresence>
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -707,7 +606,7 @@ const HistoryPage: React.FC = () => {
   );
 };
 
-const SectionHeader: React.FC<{ title: string, rightValue?: string }> = ({ title, rightValue }) => (
+const SectionHeader: React.FC<{ title: string, rightValue?: string | null }> = ({ title, rightValue }) => (
   <div className="flex items-center gap-3 w-full">
     <h4 className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.25em] shrink-0">{title}</h4>
     <div className="h-px bg-zinc-100 dark:bg-zinc-800/50 flex-1" />

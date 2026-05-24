@@ -43,10 +43,10 @@ export const contentMap: Record<string, TabContent> = {
     title: 'Discover More',
     description: '',
     items: [
-      { label: 'Achievements', category: 'Legacy' },
-      { label: 'History', category: 'Archives' },
-      { label: 'Players', category: 'Database' },
-      { label: 'Rules', category: 'Official' }
+      { label: 'awards', category: 'Legacy' },
+      { label: 'gallery', category: 'Media' },
+      { label: 'history', category: 'Archives' },
+      { label: 'rules', category: 'Official' }
     ]
   },
   'partner-hub': {
@@ -67,9 +67,14 @@ export const contentMap: Record<string, TabContent> = {
     description: 'Reference-style side-by-side stats.',
     items: []
   },
-  players: {
-    title: 'player database',
-    description: 'All-time career profiles and accolades.',
+  awards: {
+    title: 'award history',
+    description: '',
+    items: []
+  },
+  gallery: {
+    title: 'gfx gallery',
+    description: '',
     items: []
   }
 };

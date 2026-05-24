@@ -11,8 +11,8 @@ import MenuGridPage from './MenuGridPage';
 import RecordsPage from './RecordsPage';
 import HistoryPage from './HistoryPage';
 import ComparePage from './ComparePage';
-import AchievementsPage from './AchievementsPage';
-import PlayersPage from './PlayersPage';
+import AwardsPage from './AwardsPage';
+import GalleryPage from './GalleryPage';
 import { useSettings } from '../context/SettingsContext';
 
 interface TabPageProps {
@@ -29,8 +29,8 @@ const getParentTab = (tabId: TabID): TabID => {
     'records': 'legacy',
     'hall-of-fame': 'legacy',
     'league-history': 'more',
-    'achievements': 'more',
-    'players': 'more'
+    'awards': 'more',
+    'gallery': 'more'
   };
   return parentMap[tabId] || tabId;
 };
@@ -49,7 +49,7 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     window.scrollTo(0, 0);
   }, [tabId]);
 
-  const subPages: TabID[] = ['partner-hub', 'rules', 'hall-of-fame', 'league-history', 'records', 'achievements', 'players'];
+  const subPages: TabID[] = ['partner-hub', 'rules', 'hall-of-fame', 'league-history', 'records', 'awards', 'gallery'];
   const isSubPage = subPages.includes(tabId);
   
   // Always use neutral theme colors for the TabPage shell (like the back button)
@@ -90,12 +90,12 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
       'history': 'league-history',
       'records': 'records',
       'compare': 'compare',
-      'achievements': 'achievements',
-      'players': 'players'
+      'awards': 'awards',
+      'gallery': 'gallery'
     };
     
     const target = slugMap[label.toLowerCase()] || label.toLowerCase() as TabID;
-    const validTabs: TabID[] = ['stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'records', 'compare', 'achievements', 'players'];
+    const validTabs: TabID[] = ['stats', 'legacy', 'rules', 'more', 'partner-hub', 'hall-of-fame', 'league-history', 'records', 'compare', 'awards', 'gallery'];
     
     if (onTabChange && validTabs.includes(target)) {
       onTabChange(target);
@@ -118,11 +118,11 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
     if (tabId === 'compare') {
       return <ComparePage />;
     }
-    if (tabId === 'achievements') {
-      return <AchievementsPage />;
+    if (tabId === 'awards') {
+      return <AwardsPage />;
     }
-    if (tabId === 'players') {
-      return <PlayersPage />;
+    if (tabId === 'gallery') {
+      return <GalleryPage />;
     }
     if (tabId === 'more') {
       return (
@@ -163,7 +163,7 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
         </button>
 
         {/* Content Header */}
-        {tabId !== 'stats' && tabId !== 'legacy' && tabId !== 'hall-of-fame' && tabId !== 'records' && tabId !== 'compare' && tabId !== 'achievements' && tabId !== 'players' && tabId !== 'league-history' && (
+        {tabId !== 'stats' && tabId !== 'legacy' && tabId !== 'hall-of-fame' && tabId !== 'records' && tabId !== 'compare' && tabId !== 'league-history' && (
           <div>
             <h2 className={`text-4xl md:text-6xl font-black tracking-tighter ${colors.text === 'text-[#3B82F6]' ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}>
               {page.title.toLowerCase()}

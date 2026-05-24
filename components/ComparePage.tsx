@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { fetchSeasonStats, PlayerStats, SeasonID } from '../data/statsFetcher';
+import { fetchSeasonStats, PlayerStats, SeasonID, SEASONS, POSITIONS, PositionID, getFootballStatColumns, getStatStatusMessage, getAvailablePositionsForSeason } from '../data/statsFetcher';
 import { fetchAwards, AwardsData } from '../data/awards';
 import { useSettings } from '../context/SettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toPng } from 'html-to-image';
-
-const SEASONS: SeasonID[] = ['s14', 's13', 's12', 's11', 'all-time'];
 
 // Standardization helper matching the one in awards.ts for robust lookups
 const normalizeName = (name: string | null): string => {
@@ -20,18 +18,17 @@ const DropdownIcon = () => (
   </svg>
 );
 
-const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl' | 'compare', className?: string }> = ({ username, size, className = '' }) => {
+const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl', className?: string }> = ({ username, size, className = '' }) => {
   const [error, setError] = useState(false);
   const normalized = username?.trim();
 
   const sizeClasses = {
     md: 'w-16 h-16 md:w-24 md:h-24',
     xl: 'w-32 h-32 md:w-48 md:h-48',
-    compare: 'w-24 h-24 md:w-24 md:h-24',
   };
 
   const placeholder = (
-    <div className={`bg-zinc-100 dark:bg-zinc-900 shrink-0 flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${className}`}>
+    <div className={`bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${className}`}>
       <svg className="w-1/2 h-1/2 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />
@@ -45,7 +42,7 @@ const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl' | '
     <img
       src={`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(normalized)}&format=image`}
       alt={normalized}
-      className={`object-contain shrink-0 rounded-2xl ${sizeClasses[size]} ${className}`}
+      className={`object-contain rounded-2xl ${sizeClasses[size]} ${className}`}
       crossOrigin="anonymous"
       loading="lazy"
       decoding="async"
@@ -60,21 +57,42 @@ const ComparePage: React.FC = () => {
   const accentBg = colors.bg;
   const accentText = colors.text;
   
-  const [season, setSeason] = useState<SeasonID>('s14');
+  const [season, setSeason] = useState<SeasonID>('s16');
+  const [position, setPosition] = useState<PositionID>('QB');
+  const [activeSeasonIndex, setActiveSeasonIndex] = useState(12); // index 12 -> s13-s16
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<PlayerStats[]>([]);
   
-  // Load selection from localStorage on mount
   useEffect(() => {
-    // Reset season to default on mount per new requirements
-    setSeason('s14');
+    // defaults are handled by state
   }, []);
 
   const handleSeasonChange = (s: SeasonID) => {
     setSeason(s);
-    // Removed localStorage.setItem
+    setPosition('QB');
   };
   
+  const cyclePosition = (direction: 1 | -1) => {
+    const available = getAvailablePositionsForSeason(season);
+    const currentIndex = available.indexOf(position);
+    let nextIndex;
+    if (currentIndex === -1) {
+      nextIndex = 0;
+    } else {
+      nextIndex = currentIndex + direction;
+      if (nextIndex < 0) nextIndex = available.length - 1;
+      if (nextIndex >= available.length) nextIndex = 0;
+    }
+    setPosition(available[nextIndex]);
+  };
+
+  const cycleSeasons = (direction: 1 | -1) => {
+    let nextIndex = activeSeasonIndex + (direction * 4);
+    if (nextIndex < 0) nextIndex = 0;
+    if (nextIndex >= SEASONS.length) nextIndex = SEASONS.length - 4;
+    setActiveSeasonIndex(nextIndex);
+  };
+
   // Store only names to persist selection across season data swaps
   const [selectedNames, setSelectedNames] = useState<(string | null)[]>([null, null]);
   
@@ -104,21 +122,9 @@ const ComparePage: React.FC = () => {
     let rows = 4;
     let sections = 1;
 
-    if (season === 'all-time') {
-      rows += 3;
-      sections += 1;
-      if (awardsData) {
-        rows += awardsData.categories.length;
-        sections += 1;
-      } else {
-        rows += 6; 
-        sections += 1;
-      }
-    } else {
-      rows += 5;
-      rows += 3;
-      sections += 2;
-    }
+    rows += 5;
+    rows += 3;
+    sections += 2;
 
     return headerH + (rows * rowH) + (sections * sectionH);
   }, [season, awardsData]);
@@ -135,13 +141,10 @@ const ComparePage: React.FC = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const [statsData, fetchedAwards] = await Promise.all([
-          fetchSeasonStats(season, controller.signal),
-          season === 'all-time' ? fetchAwards(controller.signal) : Promise.resolve(null)
-        ]);
+        const statsData = await fetchSeasonStats(season, position, controller.signal);
 
         setPlayers(statsData);
-        setAwardsData(fetchedAwards);
+        setAwardsData(null);
       } catch (e: any) {
         if (e.name !== 'AbortError') console.error(e);
       } finally {
@@ -150,7 +153,7 @@ const ComparePage: React.FC = () => {
     };
     load();
     return () => controller.abort();
-  }, [season]);
+  }, [season, position]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return [];
@@ -260,7 +263,7 @@ const ComparePage: React.FC = () => {
 
       const p1 = selectedNames[0] ? selectedNames[0].toLowerCase().replace(/\s+/g, '-') : 'empty';
       const p2 = selectedNames[1] ? `-vs-${selectedNames[1].toLowerCase().replace(/\s+/g, '-')}` : '';
-      const filename = `nbll-compare-${season}-${p1}${p2}.png`;
+      const filename = `ufl-compare-${season}-${p1}${p2}.png`;
 
       const isDarkMode = document.documentElement.classList.contains('dark');
       const bgColor = isDarkMode ? '#09090b' : '#ffffff';
@@ -372,35 +375,10 @@ const ComparePage: React.FC = () => {
     return isWinner ? { backgroundColor: highlightColor } : undefined;
   };
 
-  const categories = {
-    ratings: [
-      { label: 'EFF', key: 'eff' as keyof PlayerStats },
-      { label: 'OFF', key: 'off' as keyof PlayerStats },
-      { label: 'DEF', key: 'def' as keyof PlayerStats },
-    ],
-    stats: [
-      { label: 'PTS', key: 'pts' as keyof PlayerStats },
-      { label: 'AST', key: 'ast' as keyof PlayerStats },
-      { label: 'REB', key: 'reb' as keyof PlayerStats },
-      { label: 'STL', key: 'stl' as keyof PlayerStats },
-    ],
-    averages: [
-      { label: 'GP', key: 'gp' as keyof PlayerStats },
-      { label: 'PPG', key: 'ppg' as keyof PlayerStats },
-      { label: 'APG', key: 'apg' as keyof PlayerStats },
-      { label: 'RPG', key: 'rpg' as keyof PlayerStats },
-      { label: 'SPG', key: 'spg' as keyof PlayerStats },
-    ]
-  };
-
-  const showRatings = true;
-  const showAverages = season !== 'all-time';
-  const showAwards = season === 'all-time' && awardsData;
-
   const isMaxPlayers = selectedNames.every(s => s !== null);
   const hasSelection = selectedNames.some(s => s !== null);
 
-  const seasonLabel = season === 'all-time' ? 'ALL-TIME' : season.toUpperCase();
+  const seasonLabel = season.toUpperCase();
 
   const ComparisonRow = ({ label, leftVal, rightVal }: { label: string, leftVal: any, rightVal: any }) => {
     const leftStyle = getHighlightStyle(leftVal, rightVal, true);
@@ -489,6 +467,8 @@ const ComparePage: React.FC = () => {
     </div>
   );
 
+  const statusMessage = getStatStatusMessage(season, position);
+
   return (
     <div className="space-y-6 md:space-y-10 pb-20 animate-page-enter">
       {/* Header Row */}
@@ -501,13 +481,44 @@ const ComparePage: React.FC = () => {
               x: isSearchOpen && window.innerWidth <= 768 ? -20 : 0
             }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className={`text-4xl md:text-6xl font-black tracking-tighter shrink-0 select-none pointer-events-none md:pointer-events-auto ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}
+            className={`text-4xl md:text-6xl font-black tracking-tighter shrink-0 select-none pointer-events-none md:pointer-events-auto flex items-center h-full ${settings.rahBizzyTheme ? 'text-[#3B82F6]' : 'text-zinc-900 dark:text-white'}`}
           >
-            compare players
+            <span className="hidden md:inline">compare players</span>
+            <span className="md:hidden">compare</span>
           </motion.h2>
 
           {/* Mobile Search Button Overlay */}
           <div className="md:hidden absolute right-0 flex items-center justify-end">
+            {/* Mobile Position Selector */}
+            <motion.div
+              initial={false}
+              animate={{
+                opacity: isSearchOpen ? 0 : 1,
+                width: isSearchOpen ? 0 : 112,
+                marginRight: isSearchOpen ? 0 : 8,
+              }}
+              className="flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full h-12 shadow-sm shrink-0 overflow-hidden"
+              style={{ pointerEvents: isSearchOpen ? 'none' : 'auto' }}
+            >
+              <button 
+                onClick={() => cyclePosition(-1)}
+                className="w-10 h-full shrink-0 flex items-center justify-center text-zinc-400 flex-none"
+                aria-label="Previous position"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div className="w-8 h-full shrink-0 flex items-center justify-center font-black text-xs uppercase text-zinc-900 dark:text-zinc-100 tracking-widest pointer-events-none select-none flex-none">
+                {position}
+              </div>
+              <button 
+                onClick={() => cyclePosition(1)}
+                className="w-10 h-full shrink-0 flex items-center justify-center text-zinc-400 flex-none"
+                aria-label="Next position"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </motion.div>
+
             <div className="relative" ref={mobileSearchContainerRef}>
               <motion.div 
                 initial={false}
@@ -660,16 +671,45 @@ const ComparePage: React.FC = () => {
           </div>
 
           <div className="relative flex items-center gap-2.5 h-full" ref={pillAreaRef}>
+            {/* Position Selector */}
+            <div className={`flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full h-full shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <button 
+                onClick={() => cyclePosition(-1)}
+                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                aria-label="Previous position"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div className="w-12 h-full flex items-center justify-center font-black text-xs uppercase text-zinc-900 dark:text-zinc-100 tracking-widest pointer-events-none select-none">
+                {position}
+              </div>
+              <button 
+                onClick={() => cyclePosition(1)}
+                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                aria-label="Next position"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
             <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-              <div role="tablist" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1.5 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0">
-                <div className="flex gap-1 h-full items-center px-0.5">
-                  {SEASONS.map((s) => {
+              <div role="tablist" aria-label="Select season group" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0">
+                <button 
+                  onClick={() => cycleSeasons(-1)}
+                  disabled={activeSeasonIndex === 0}
+                  className={`w-6 h-full rounded-full flex justify-center items-center transition-colors ${activeSeasonIndex === 0 ? 'text-zinc-300 dark:text-zinc-700 opacity-30 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}
+                >
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+
+                <div className="flex gap-1 h-full items-center px-1">
+                  {SEASONS.slice(activeSeasonIndex, activeSeasonIndex + 4).map((s) => {
                     const isActive = season === s;
                     return (
                       <button
                         key={s}
                         onClick={() => handleSeasonChange(s)}
-                        className={`relative flex-none rounded-full font-black uppercase tracking-widest transition-colors duration-300 whitespace-nowrap px-4 py-2 text-[10px] ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
+                        className={`relative flex-none rounded-full font-black uppercase tracking-widest transition-colors duration-300 whitespace-nowrap z-10 px-4 py-[0.35rem] text-[10px] h-full flex items-center justify-center ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
                       >
                         <span className="relative z-20">{s}</span>
                         {isActive && (
@@ -679,7 +719,16 @@ const ComparePage: React.FC = () => {
                     );
                   })}
                 </div>
+
+                <button 
+                  onClick={() => cycleSeasons(1)}
+                  disabled={activeSeasonIndex >= SEASONS.length - 4}
+                  className={`w-6 h-full rounded-full flex justify-center items-center transition-colors ${activeSeasonIndex >= SEASONS.length - 4 ? 'text-zinc-300 dark:text-zinc-700 opacity-30 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}
+                >
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
               </div>
+
               <button
                 onClick={() => !isMaxPlayers && openSearch()}
                 disabled={isMaxPlayers}
@@ -688,6 +737,7 @@ const ComparePage: React.FC = () => {
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </button>
             </div>
+
             <AnimatePresence>
               {isSearchOpen && (
                 <motion.div
@@ -732,7 +782,18 @@ const ComparePage: React.FC = () => {
         </div>
       </div>
 
-      {hasSelection ? (
+      {statusMessage ? (
+        <motion.div 
+          initial={false}
+          animate={{ minHeight: expectedTableHeight }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          className="flex flex-col items-center justify-center pt-20 md:pt-32 text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2rem] md:rounded-[3rem] px-6 transition-all duration-300"
+        >
+          <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-600">
+            {statusMessage}
+          </span>
+        </motion.div>
+      ) : hasSelection ? (
         <div ref={compareRef} className="relative bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-xl z-10">
            <div className="relative grid grid-cols-2 md:grid-cols-[1fr_120px_1fr] items-stretch bg-zinc-50/50 dark:bg-zinc-900/20 border-b border-zinc-100 dark:border-zinc-900">
               
@@ -749,18 +810,10 @@ const ComparePage: React.FC = () => {
                    className={`flex flex-col md:flex-row items-center md:items-center gap-2 md:gap-3 focus:outline-none min-w-0 w-full group/name0 ${selectedNames[0] ? 'md:cursor-pointer md:hover:opacity-70 transition-opacity' : 'cursor-default'}`}
                    title={selectedNames[0] ? "Click to remove" : ""}
                  >
-                   <div className="flex flex-col md:hidden items-center gap-2 w-full">
-                     <RobloxAvatarImg username={selectedNames[0]} size="compare" />
-                     <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-center`}>
-                       {selectedNames[0] ? selectedNames[0] : '...'}
-                     </span>
-                   </div>
-                   <div className="hidden md:flex flex-row items-center gap-3 w-full justify-start">
-                     <RobloxAvatarImg username={selectedNames[0]} size="md" />
-                     <span className={`text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-left ${selectedNames[0] ? 'group-hover:underline decoration-current underline-offset-4' : ''}`}>
-                       {selectedNames[0] ? selectedNames[0] : '...'}
-                     </span>
-                   </div>
+                   <RobloxAvatarImg username={selectedNames[0]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
+                   <span className={`text-sm md:text-3xl font-medium md:font-black text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-left md:text-left ${selectedNames[0] ? 'md:group-hover:underline decoration-current underline-offset-4' : ''}`}>
+                     {selectedNames[0] ? selectedNames[0] : '...'}
+                   </span>
                  </button>
               </div>
 
@@ -778,8 +831,8 @@ const ComparePage: React.FC = () => {
                    title={selectedNames[1] ? "Click to remove" : ""}
                  >
                    <div className="flex flex-col md:hidden items-center gap-2 w-full">
-                     <RobloxAvatarImg username={selectedNames[1]} size="compare" />
-                     <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-center`}>
+                     <RobloxAvatarImg username={selectedNames[1]} size={window.innerWidth <= 768 ? 'xl' : 'md'} />
+                     <span className={`text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase truncate w-full text-right`}>
                         {selectedNames[1] ? selectedNames[1] : '...'}
                      </span>
                    </div>
@@ -794,84 +847,14 @@ const ComparePage: React.FC = () => {
            </div>
            <div className="flex flex-col">
               <SectionHeader title="Stats" />
-              {categories.stats.map(cat => (
+              {getFootballStatColumns(season, position).filter((col: any) => col !== 'PLAYER').map((col: any) => (
                 <ComparisonRow 
-                  key={cat.label} 
-                  label={cat.label} 
-                  leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
-                  rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
+                  key={col} 
+                  label={col} 
+                  leftVal={selectedStats[0] ? selectedStats[0][col.toLowerCase() as keyof PlayerStats] : null} 
+                  rightVal={selectedStats[1] ? selectedStats[1][col.toLowerCase() as keyof PlayerStats] : null} 
                 />
               ))}
-              {season === 'all-time' ? (
-                <>
-                  <SectionHeader title="Ratings" />
-                  {categories.ratings.map(cat => (
-                    <ComparisonRow 
-                      key={cat.label} 
-                      label={cat.label} 
-                      leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
-                      rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
-                    />
-                  ))}
-                  {showAwards && awardsData && (
-                    <>
-                      <SectionHeader title="Awards" />
-                      {awardsData.categories.map(cat => {
-                        if (!cat) return null;
-                        const normCat = String(cat).toLowerCase().trim();
-                        const isBool = ['ROTY', 'HOF'].includes(String(cat).toUpperCase());
-                        
-                        const normPlayer1 = normalizeName(selectedNames[0] || '');
-                        const normPlayer2 = normalizeName(selectedNames[1] || '');
-                        
-                        const leftRaw = normPlayer1 ? awardsData.byPlayer[normPlayer1]?.[normCat] : null;
-                        const rightRaw = normPlayer2 ? awardsData.byPlayer[normPlayer2]?.[normCat] : null;
-
-                        // Filter: If both are effectively 0/null/empty, skip the row
-                        const leftNum = parseValue(leftRaw);
-                        const rightNum = parseValue(rightRaw);
-                        if (!isBool && leftNum === 0 && rightNum === 0) return null;
-                        if (isBool && !isYes(leftRaw) && !isYes(rightRaw)) return null;
-
-                        if (isBool) return <BooleanComparisonRow key={cat} label={cat} leftRaw={leftRaw} rightRaw={rightRaw} />;
-                        
-                        const leftVal = normPlayer1 ? (leftRaw || 0) : 0;
-                        const rightVal = normPlayer2 ? (rightRaw || 0) : null;
-                        return <ComparisonRow key={cat} label={cat} leftVal={leftVal} rightVal={rightVal} />;
-                      })}
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  {showAverages && (
-                    <>
-                      <SectionHeader title="Averages" />
-                      {categories.averages.map(cat => (
-                        <ComparisonRow 
-                          key={cat.label} 
-                          label={cat.label} 
-                          leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
-                          rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
-                        />
-                      ))}
-                    </>
-                  )}
-                  {showRatings && (
-                    <>
-                      <SectionHeader title="Ratings" />
-                      {categories.ratings.map(cat => (
-                        <ComparisonRow 
-                          key={cat.label} 
-                          label={cat.label} 
-                          leftVal={selectedStats[0] ? selectedStats[0][cat.key as keyof PlayerStats] : null} 
-                          rightVal={selectedStats[1] ? selectedStats[1][cat.key as keyof PlayerStats] : null} 
-                        />
-                      ))}
-                    </>
-                  )}
-                </>
-              )}
            </div>
         </div>
       ) : (
