@@ -286,7 +286,7 @@ const StatsPage: React.FC = () => {
         {/* Desktop Controls Area */}
         <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1 gap-2.5">
           {/* Position Selector */}
-          <div className={`flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full h-full shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full h-full shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 transition-opacity duration-300 opacity-100">
             <button 
               onClick={() => cyclePosition(-1)}
               className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"

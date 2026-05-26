@@ -4,8 +4,27 @@ import React from 'react';
 const FluidBackground: React.FC = () => {
   return (
     <div className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none">
-      {/* Primary Fluid Layer */}
-      <div className="absolute inset-0 opacity-[var(--fluid-opacity)]">
+      {/* Mobile-Safe Fluid Layer (Lightweight) */}
+      <div className="md:hidden absolute inset-0 opacity-[var(--fluid-opacity)] overflow-hidden">
+        {/* Soft radial backgrounds, no massive CSS blurs, no SVGs */}
+        <div 
+          className="absolute top-[-10%] left-[-20%] w-[150vw] h-[100vh] rounded-[100%] opacity-30 animate-fluid-mobile"
+          style={{ 
+            background: 'radial-gradient(circle at center, var(--accent) 0%, transparent 70%)',
+            mixBlendMode: 'screen',
+          }}
+        />
+        <div 
+          className="absolute bottom-[-20%] right-[-20%] w-[150vw] h-[100vh] rounded-[100%] opacity-40 animate-fluid-mobile-reverse"
+          style={{ 
+            background: 'radial-gradient(circle at center, color-mix(in srgb, var(--accent) 70%, black) 0%, transparent 70%)',
+            mixBlendMode: 'screen',
+          }}
+        />
+      </div>
+
+      {/* Primary Fluid Layer (Desktop Only) */}
+      <div className="hidden md:block absolute inset-0 opacity-[var(--fluid-opacity)]">
         {/* Large drifting primary blob - Site Accent */}
         <div 
           className="absolute top-[-20%] left-[-10%] w-[120%] h-[120%] rounded-full filter blur-[120px] animate-fluid-slow opacity-60"
@@ -65,9 +84,9 @@ const FluidBackground: React.FC = () => {
         </svg>
       </div>
 
-      {/* Noise Texture Overlay for film grain feel */}
+      {/* Noise Texture Overlay for film grain feel (Desktop only) */}
       <div 
-        className="absolute inset-0 pointer-events-none z-[2]"
+        className="hidden md:block absolute inset-0 pointer-events-none z-[2]"
         style={{
           opacity: 0.05,
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
@@ -79,6 +98,16 @@ const FluidBackground: React.FC = () => {
       <div className="absolute inset-0 z-[3] bg-gradient-to-b from-black via-transparent to-black opacity-70" />
 
       <style>{`
+        @keyframes fluid-mobile {
+          0% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(3%) scale(1.05); }
+          100% { transform: translateY(0) scale(1); }
+        }
+        @keyframes fluid-mobile-reverse {
+          0% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-3%) scale(1.05); }
+          100% { transform: translateY(0) scale(1); }
+        }
         @keyframes fluid-slow {
           0% { transform: translate(0, 0) scale(1) rotate(0deg); }
           33% { transform: translate(4%, 8%) scale(1.1) rotate(4deg); }
@@ -110,6 +139,12 @@ const FluidBackground: React.FC = () => {
         }
         .animate-grid-fade {
           animation: grid-fade 8s ease-in-out infinite;
+        }
+        .animate-fluid-mobile {
+          animation: fluid-mobile 15s ease-in-out infinite;
+        }
+        .animate-fluid-mobile-reverse {
+          animation: fluid-mobile-reverse 20s ease-in-out infinite;
         }
       `}</style>
     </div>

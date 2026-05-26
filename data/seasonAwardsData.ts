@@ -442,8 +442,8 @@ export const seasonAwardsData: SeasonAwards[] = [
       { team: "Panthers", awardName: "DBOTY", player: "rahbizzy" },
       { team: "Panthers", awardName: "DEOTY", player: "desty" },
       { team: "Patriots", awardName: "HCCOTY", player: "Tcay" },
-      { team: "Jaguars", awardName: "ROTY", player: "inelligible*" },
-      { team: "Rams", awardName: "MIP", player: "inelligible*" },
+      { team: "Jaguars", awardName: "ROTY", player: "illegible*" },
+      { team: "Rams", awardName: "MIP", player: "illegible*" },
       { team: "Patriots", awardName: "KOTY", player: "mirmir" },
     ],
     firstTeam: [

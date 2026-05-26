@@ -564,17 +564,15 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
               ring-white/10 dark:ring-white/5
             `}
             style={window.innerWidth < 768 ? {
-              backgroundColor: isHomeLightMobile ? 'rgba(255, 255, 255, 0.75)' : (theme === 'dark' ? 'rgba(9, 9, 11, 0.45)' : 'rgba(255, 255, 255, 0.4)'),
-              backdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
-              WebkitBackdropFilter: isHomeLightMobile ? 'blur(8px) saturate(190%) contrast(105%)' : 'blur(10px) saturate(190%) contrast(105%)',
+              backgroundColor: isHomeLightMobile ? 'rgba(255, 255, 255, 0.95)' : (theme === 'dark' ? 'rgba(9, 9, 11, 0.95)' : 'rgba(255, 255, 255, 0.95)'),
               border: !isMenuOpen ? (isHomeLightMobile 
                   ? '1px solid rgba(0, 0, 0, 0.15)' 
                   : `1px solid rgba(var(--accent-rgb), 0.2)`) : undefined
             } : {}}
           >
-            {/* Noise Texture Overlay for liquid glass effect (Visible on mobile both states) */}
+            {/* Noise Texture Overlay for liquid glass effect (Desktop only now) */}
             <div 
-              className="md:hidden absolute inset-0 z-0 pointer-events-none opacity-[0.02] select-none"
+              className="hidden md:block absolute inset-0 z-0 pointer-events-none opacity-[0.02] select-none"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
               }}
@@ -759,42 +757,32 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onOpenSettings,
                           key={tab.name}
                           onClick={() => handleTabClick(tab.name)}
                           className={`
-                            relative w-full h-[60px] flex items-center justify-between px-8 text-left transition-all duration-300 outline-none active:bg-zinc-100/40 dark:active:bg-zinc-900/40 group
-                            ${active ? 'bg-zinc-500/5 dark:bg-zinc-400/5' : ''}
+                            relative w-full h-[60px] flex items-center justify-between px-8 text-left transition-all duration-300 outline-none active:bg-zinc-100/60 dark:active:bg-zinc-900/60 group
                             ${idx !== tabs.length - 1 ? (isHomeLightMobile ? 'border-b border-zinc-200' : 'border-b border-zinc-100/30 dark:border-zinc-800/20') : ''}
                           `}
+                          style={{
+                            backgroundColor: active ? (isHomeLightMobile ? 'rgba(0,0,0,0.03)' : 'rgba(var(--accent-rgb), 0.08)') : 'transparent'
+                          }}
                         >
-                          {active && (
-                            <motion.div
-                              layoutId="mobile-active-indicator"
-                              className={`absolute left-0 w-[5px] h-[32px] ${accentBg} rounded-r-full z-20`}
-                              style={{ boxShadow: `0 0 12px rgba(var(--accent-rgb), 0.3)` }}
-                              initial={{ opacity: 0, scaleY: 0.5 }}
-                              animate={{ opacity: 1, scaleY: 1 }}
-                              exit={{ opacity: 0, scaleY: 0.5 }}
-                              transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                            />
-                          )}
-
                           <span className={`
-                            text-base font-black tracking-tight transition-colors duration-300
+                            text-base tracking-tight transition-all duration-300
                             ${active 
-                               ? (settings.rahBizzyTheme ? 'text-[#3B82F6]' : (isHomeLightMobile ? 'text-zinc-950' : 'text-zinc-900 dark:text-white')) 
-                               : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-400 dark:text-zinc-500')}
+                               ? (settings.rahBizzyTheme ? 'text-[#3B82F6] font-black' : (isHomeLightMobile ? 'text-zinc-950 font-black' : 'text-white font-black drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]')) 
+                               : (isHomeLightMobile ? 'text-zinc-600 font-bold' : 'text-zinc-400 dark:text-zinc-500 font-bold')}
                           `}>
                             {tab.label}
                           </span>
 
                           <svg 
-                            className={`w-4 h-4 transition-all duration-300 ${active ? (isHomeLightMobile ? 'text-zinc-950' : accentText) : (isHomeLightMobile ? 'text-zinc-800' : 'text-zinc-200 dark:text-zinc-800 group-hover:text-zinc-400')}`} 
+                            className={`w-[18px] h-[18px] transition-all duration-500 transform ${active ? (isHomeLightMobile ? 'text-zinc-950 opacity-100 translate-x-1' : `${accentText} opacity-100 translate-x-1`) : (isHomeLightMobile ? 'text-zinc-400 opacity-60 group-active:translate-x-1' : 'text-zinc-500 dark:text-zinc-600 opacity-40 group-active:translate-x-1 group-active:opacity-80')}`} 
                             viewBox="0 0 24 24" 
                             fill="none" 
                             stroke="currentColor" 
-                            strokeWidth="3.5" 
+                            strokeWidth="2.5" 
                             strokeLinecap="round" 
                             strokeLinejoin="round"
                           >
-                            <polyline points="9 18 15 12 9 6"></polyline>
+                            <path d="m9 18 6-6-6-6" />
                           </svg>
                         </button>
                       );

@@ -672,7 +672,7 @@ const ComparePage: React.FC = () => {
 
           <div className="relative flex items-center gap-2.5 h-full" ref={pillAreaRef}>
             {/* Position Selector */}
-            <div className={`flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full h-full shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full h-full shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 transition-opacity duration-300 opacity-100">
               <button 
                 onClick={() => cyclePosition(-1)}
                 className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
@@ -692,81 +692,84 @@ const ComparePage: React.FC = () => {
               </button>
             </div>
 
-            <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-              <div role="tablist" aria-label="Select season group" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0">
-                <button 
-                  onClick={() => cycleSeasons(-1)}
-                  disabled={activeSeasonIndex === 0}
-                  className={`w-6 h-full rounded-full flex justify-center items-center transition-colors ${activeSeasonIndex === 0 ? 'text-zinc-300 dark:text-zinc-700 opacity-30 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}
-                >
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
+            <div className="relative h-full flex items-center">
+              <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <div role="tablist" aria-label="Select season group" className="inline-flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full p-1 shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 h-full shrink-0">
+                  <button 
+                    onClick={() => cycleSeasons(-1)}
+                    disabled={activeSeasonIndex === 0}
+                    className={`w-6 h-full rounded-full flex justify-center items-center transition-colors ${activeSeasonIndex === 0 ? 'text-zinc-300 dark:text-zinc-700 opacity-30 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}
+                  >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
 
-                <div className="flex gap-1 h-full items-center px-1">
-                  {SEASONS.slice(activeSeasonIndex, activeSeasonIndex + 4).map((s) => {
-                    const isActive = season === s;
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => handleSeasonChange(s)}
-                        className={`relative flex-none rounded-full font-black uppercase tracking-widest transition-colors duration-300 whitespace-nowrap z-10 px-4 py-[0.35rem] text-[10px] h-full flex items-center justify-center ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
-                      >
-                        <span className="relative z-20">{s}</span>
-                        {isActive && (
-                          <motion.div layoutId="compare-active-pill" className={`absolute inset-0 ${accentBg} rounded-full shadow-md z-10`} transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.6 }} />
-                        )}
-                      </button>
-                    );
-                  })}
+                  <div className="flex gap-1 h-full items-center px-1">
+                    {SEASONS.slice(activeSeasonIndex, activeSeasonIndex + 4).map((s) => {
+                      const isActive = season === s;
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => handleSeasonChange(s)}
+                          className={`relative flex-none rounded-full font-black uppercase tracking-widest transition-colors duration-300 whitespace-nowrap z-10 px-4 py-[0.35rem] text-[10px] h-full flex items-center justify-center ${isActive ? 'text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300'}`}
+                        >
+                          <span className="relative z-20">{s}</span>
+                          {isActive && (
+                            <motion.div layoutId="compare-active-pill" className={`absolute inset-0 ${accentBg} rounded-full shadow-md z-10`} transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.6 }} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button 
+                    onClick={() => cycleSeasons(1)}
+                    disabled={activeSeasonIndex >= SEASONS.length - 4}
+                    className={`w-6 h-full rounded-full flex justify-center items-center transition-colors ${activeSeasonIndex >= SEASONS.length - 4 ? 'text-zinc-300 dark:text-zinc-700 opacity-30 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}
+                  >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
                 </div>
 
-                <button 
-                  onClick={() => cycleSeasons(1)}
-                  disabled={activeSeasonIndex >= SEASONS.length - 4}
-                  className={`w-6 h-full rounded-full flex justify-center items-center transition-colors ${activeSeasonIndex >= SEASONS.length - 4 ? 'text-zinc-300 dark:text-zinc-700 opacity-30 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}
+                <button
+                  onClick={() => !isMaxPlayers && openSearch()}
+                  disabled={isMaxPlayers}
+                  className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${isMaxPlayers ? 'opacity-30 cursor-not-allowed' : ''}`}
                 >
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </button>
               </div>
 
-              <button
-                onClick={() => !isMaxPlayers && openSearch()}
-                disabled={isMaxPlayers}
-                className={`w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center ${accentText} shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-95 transition-all shrink-0 ${isMaxPlayers ? 'opacity-30 cursor-not-allowed' : ''}`}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </button>
+              <AnimatePresence>
+                {isSearchOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scaleX: 0.8 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    exit={{ opacity: 0, scaleX: 0.8 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ transformOrigin: 'right center' }}
+                    className="absolute inset-0 z-20 h-11 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 flex items-center bg-zinc-100 dark:bg-zinc-900 shadow-inner overflow-hidden"
+                  >
+                    <div className={`flex-none w-11 h-11 flex items-center justify-center ${accentText}`}>
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <div className="flex-1 flex items-center pr-3">
+                      <input
+                        ref={desktopSearchInputRef}
+                        type="text"
+                        value={query}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setShowResults(true); }}
+                        placeholder={isMaxPlayers ? "Max players" : "Search players..."}
+                        className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
+                      />
+                      <button onClick={closeSearch} className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-600 active:scale-90 transition-all">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <AnimatePresence>
-              {isSearchOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scaleX: 0.8 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
-                  exit={{ opacity: 0, scaleX: 0.8 }}
-                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ transformOrigin: 'right center' }}
-                  className="absolute inset-0 z-20 h-11 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 flex items-center bg-zinc-100 dark:bg-zinc-900 shadow-inner overflow-hidden"
-                >
-                  <div className={`flex-none w-11 h-11 flex items-center justify-center ${accentText}`}>
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  </div>
-                  <div className="flex-1 flex items-center pr-3">
-                    <input
-                      ref={desktopSearchInputRef}
-                      type="text"
-                      value={query}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setQuery(e.target.value); setShowResults(true); }}
-                      placeholder={isMaxPlayers ? "Max players" : "Search players..."}
-                      className="flex-1 bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
-                    />
-                    <button onClick={closeSearch} className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-600 active:scale-90 transition-all">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
             <AnimatePresence>
               {isSearchOpen && query && showResults && (
                 <motion.div 
