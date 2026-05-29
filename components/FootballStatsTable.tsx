@@ -13,6 +13,8 @@ interface FootballStatsTableProps {
   searchQuery?: string;
   externalSortKey?: string;
   showStat?: string;
+  onCompare?: (players: string[], comparisonSeason: string, comparisonPosition: string) => void;
+  onSelectionChange?: (players: string[]) => void;
 }
 
 const TableSkeleton: React.FC<{ columnsCount?: number }> = ({ columnsCount = 10 }) => (
@@ -128,7 +130,7 @@ const getColumnMaxes = (rows: PlayerStats[], keys: (keyof PlayerStats)[]) => {
   return maxes;
 };
 
-const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = false, season, position, onSeasonChange, searchQuery = '', externalSortKey, showStat = 'ALL' }) => {
+const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = false, season, position, onSeasonChange, searchQuery = '', externalSortKey, showStat = 'ALL', onCompare, onSelectionChange }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
   const accentBg = colors.bg;
@@ -144,6 +146,25 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
     key: defaultSort,
     direction: 'desc'
   });
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedPlayers([]);
+  }, [season, position]);
+
+  useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(selectedPlayers);
+    }
+  }, [selectedPlayers, onSelectionChange]);
+
+  const togglePlayer = (player: string) => {
+    setSelectedPlayers(prev => {
+      if (prev.includes(player)) return prev.filter(p => p !== player);
+      if (prev.length < 2) return [...prev, player];
+      return prev;
+    });
+  };
 
   const currentColumns = useMemo(() => getFootballStatColumns(season, position), [season, position]);
   const statKeys = useMemo(() => currentColumns.filter(k => k !== 'PLAYER').map(k => k.toLowerCase()), [currentColumns]);
@@ -224,6 +245,24 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
     return getColumnMaxes(filteredData, statKeys as (keyof PlayerStats)[]);
   }, [filteredData, statKeys]);
 
+  const columnAverages = useMemo(() => {
+    const averages: Partial<Record<keyof PlayerStats, number>> = {};
+    const validPlayers = data.filter(p => p.gp === undefined || p.gp > 0);
+    const pool = validPlayers.length > 0 ? validPlayers : data;
+
+    statKeys.forEach(key => {
+      const values = pool
+        .map(row => row[key] as number)
+        .filter(val => typeof val === 'number' && !isNaN(val));
+      if (values.length > 0) {
+        averages[key] = values.reduce((a, b) => a + b, 0) / values.length;
+      } else {
+        averages[key] = 0;
+      }
+    });
+    return averages;
+  }, [data, statKeys]);
+
   const requestSort = (key: SortKey) => {
     let direction: 'asc' | 'desc' = 'desc';
     if (sortConfig.key === key && sortConfig.direction === 'desc') {
@@ -237,14 +276,34 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
     const isLeader = typeof value === 'number' && val > 0 && val === columnMaxes[colKey];
     const displayValue = value === undefined || value === null || value === '' ? '' : value;
     
+    const colAvg = columnAverages[colKey] || 0;
+    const hasAvg = typeof colAvg === 'number' && colAvg > 0;
+    const isAboveAverage = settings.advancedAnalytics && typeof value === 'number' && value > 0 && hasAvg && value > colAvg;
+    const isBelowAverage = settings.advancedAnalytics && typeof value === 'number' && hasAvg && value < colAvg;
+    
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full gap-0.5">
         <span className={`
           tabular-nums transition-all duration-300
-          ${isLeader ? `px-2 py-0.5 rounded-full bg-[var(--accent)]/10 font-black ${accentText} shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)]` : (isBold ? 'font-black' : 'font-bold')}
+          ${isLeader ? `px-2 py-0.5 rounded-full bg-emerald-500/10 font-black text-emerald-600 dark:text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)]` : (isBold ? 'font-black' : 'font-bold')}
         `}>
           {displayValue}
         </span>
+        {isAboveAverage && !isLeader && (
+          <svg className="w-2.5 h-2.5 text-emerald-500 dark:text-emerald-400 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+          </svg>
+        )}
+        {isAboveAverage && isLeader && (
+          <svg className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 shrink-0 opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+          </svg>
+        )}
+        {isBelowAverage && value !== 0 && (
+          <svg className="w-2.5 h-2.5 text-red-500/70 dark:text-red-400/70 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M19 12l-7 7-7-7"/>
+          </svg>
+        )}
       </div>
     );
   };
@@ -288,6 +347,8 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
 
   return (
     <div className={containerClasses}>
+      {/* DESKTOP COMPARE BUTTON (HIDDEN) */}
+
       {/* DESKTOP TABLE */}
       <div className="hidden md:block bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-sm">
         <div className="w-full overflow-x-auto overflow-y-auto max-h-[70vh] no-scrollbar">
@@ -332,8 +393,15 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
             <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
               {filteredData.length > 0 ? (
                 filteredData.map((row, idx) => (
-                  <div key={idx} className="grid px-4 py-3.5 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors" style={gridStyle}>
-                    <div className="text-[11px] lg:text-[13px] font-bold text-zinc-900 dark:text-zinc-100 truncate pr-2">{row.player}</div>
+                  <div key={idx} onClick={() => togglePlayer(row.player)} className={`grid px-4 py-3.5 items-center hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer select-none ${selectedPlayers.includes(row.player) ? 'bg-zinc-50 dark:bg-zinc-800' : ''}`} style={gridStyle}>
+                    <div className="flex items-center gap-2.5 pr-2 truncate">
+                       <div className={`flex-none shrink-0 w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center transition-colors ${selectedPlayers.includes(row.player) ? 'bg-zinc-900 border-zinc-900 dark:bg-zinc-100 dark:border-zinc-100' : 'bg-white border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700'}`}>
+                         {selectedPlayers.includes(row.player) && (
+                            <svg className="w-2.5 h-2.5 text-white dark:text-zinc-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                         )}
+                       </div>
+                       <div className="text-[11px] lg:text-[13px] font-bold text-zinc-900 dark:text-zinc-100 truncate">{row.player}</div>
+                    </div>
                     {statKeys.map(k => (
                       <div key={k} className="text-[11px] lg:text-[13px] text-zinc-500 dark:text-zinc-400 text-center tabular-nums">
                         <HighlightedCell value={row[k]} colKey={k as keyof PlayerStats} isBold={BOLD_COLUMNS.includes(k.toUpperCase())} />
@@ -351,6 +419,27 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
             </div>
           </div>
         </div>
+      </div>
+
+      {/* DESKTOP TABLE KEY NOTE */}
+      <div className="hidden md:flex items-center justify-end gap-4 mt-2 px-6 text-[10px] text-zinc-400 dark:text-zinc-500 font-bold select-none">
+        {!settings.advancedAnalytics && (
+          <span className="mr-auto text-[10px] text-zinc-400/60 dark:text-zinc-500/50 font-bold lowercase tracking-wider">
+            enable advanced analytics in settings
+          </span>
+        )}
+        <span className="flex items-center gap-1">
+          <svg className="w-2.5 h-2.5 text-emerald-500 dark:text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+          </svg>
+          above league average
+        </span>
+        <span className="flex items-center gap-1">
+          <svg className="w-2.5 h-2.5 text-red-500/70 dark:text-red-400/70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M19 12l-7 7-7-7"/>
+          </svg>
+          below league average
+        </span>
       </div>
 
       {/* MOBILE LIST */}
@@ -384,26 +473,27 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
                 : statKeys.filter(k => k !== 'gp').slice(0, 6);
 
             const renderMobileStats = () => {
+              const renderStat = (k: string) => {
+                const val = row[k];
+                return <StatGroup key={k} label={k.toUpperCase()} value={val || 0} />;
+              };
+
               if (mobileCols.length === 6) {
                 return (
                   <div className="grid grid-cols-3 gap-y-3">
-                    {mobileCols.map(k => (
-                      <StatGroup key={k} label={k.toUpperCase()} value={row[k] || 0} />
-                    ))}
+                    {mobileCols.map(k => renderStat(k))}
                   </div>
                 );
               } else if (mobileCols.length === 5) {
                 return (
                   <div className="flex flex-col gap-y-3">
                     <div className="grid grid-cols-3 gap-x-2">
-                      {mobileCols.slice(0, 3).map(k => (
-                        <StatGroup key={k} label={k.toUpperCase()} value={row[k] || 0} />
-                      ))}
+                      {mobileCols.slice(0, 3).map(k => renderStat(k))}
                     </div>
                     <div className="grid grid-cols-2 gap-x-2 max-w-[66%] mx-auto w-full">
                       {mobileCols.slice(3, 5).map(k => (
                         <div key={k} className="flex justify-center">
-                          <StatGroup label={k.toUpperCase()} value={row[k] || 0} />
+                          {renderStat(k)}
                         </div>
                       ))}
                     </div>
@@ -414,7 +504,7 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
                   <div className="grid grid-cols-2 gap-y-3 max-w-[80%] mx-auto w-full">
                      {mobileCols.map(k => (
                        <div key={k} className="flex justify-center">
-                         <StatGroup label={k.toUpperCase()} value={row[k] || 0} />
+                         {renderStat(k)}
                        </div>
                      ))}
                   </div>
@@ -422,9 +512,7 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
               } else {
                 return (
                   <div className="grid grid-cols-3 gap-y-3">
-                    {mobileCols.slice(0, 3).map(k => (
-                      <StatGroup key={k} label={k.toUpperCase()} value={row[k] || 0} />
-                    ))}
+                    {mobileCols.slice(0, 3).map(k => renderStat(k))}
                   </div>
                 );
               }
@@ -432,7 +520,7 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
 
             return (
               <div key={idx} className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-2xl p-4 shadow-sm">
-                <div className="flex items-baseline justify-between mb-3 border-b border-zinc-50 dark:border-zinc-900/50 pb-2">
+                <div className="flex items-center justify-between mb-3 border-b border-zinc-50 dark:border-zinc-900/50 pb-2 gap-2">
                   <h4 className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate pr-4">{row.player}</h4>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">GP</span>
@@ -461,6 +549,7 @@ const FootballStatsTable: React.FC<FootballStatsTableProps> = ({ isEmbedded = fa
           </div>
         </div>
       )}
+
       {activeTooltip && typeof document !== 'undefined' && createPortal(
         <div 
           className="pointer-events-none fixed z-[9999] transition-opacity duration-200"

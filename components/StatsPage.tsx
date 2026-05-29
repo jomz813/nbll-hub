@@ -4,23 +4,131 @@ import { useSettings } from '../context/SettingsContext';
 import FootballStatsTable from './FootballStatsTable';
 import { SEASONS, SeasonID, POSITIONS, PositionID, STAT_SOURCES, getFootballStatColumns, getAvailablePositionsForSeason, defaultSortByPosition } from '../data/statsFetcher';
 
-const StatsPage: React.FC = () => {
+interface StatsPageProps {
+  onTabChange?: (tabId: string) => void;
+}
+
+const StatsPage: React.FC<StatsPageProps> = ({ onTabChange }) => {
   const { settings, getThemeColors } = useSettings();
   const colors = getThemeColors();
   const accentBg = colors.bg;
   const accentText = colors.text;
+  const isLightAccent = settings.siteThemeAccent === 'citrine' || settings.siteThemeAccent === 'aquamarine' || settings.siteThemeAccent === 'marigold';
 
-  const [season, setSeason] = useState<SeasonID>('s16');
-  const [position, setPosition] = useState<PositionID>('QB');
-  const [activeSeasonIndex, setActiveSeasonIndex] = useState(12);
+  const [season, setSeason] = useState<SeasonID>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSeason = urlParams.get('season') as SeasonID;
+      if (urlSeason && SEASONS.includes(urlSeason)) return urlSeason;
+    }
+    return 's16';
+  });
+  
+  const [position, setPosition] = useState<PositionID>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPosition = urlParams.get('position') as PositionID;
+      if (urlPosition) return urlPosition;
+    }
+    return 'QB';
+  });
+  
+  const [activeSeasonIndex, setActiveSeasonIndex] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlSeason = urlParams.get('season') as SeasonID;
+      if (urlSeason && SEASONS.includes(urlSeason)) {
+        const sIdx = SEASONS.indexOf(urlSeason);
+        if (sIdx !== -1) {
+          let nextIndex = sIdx - (sIdx % 4);
+          if (nextIndex < 0) nextIndex = 0;
+          if (nextIndex >= SEASONS.length) nextIndex = SEASONS.length - 4;
+          return Math.max(0, nextIndex);
+        }
+      }
+    }
+    return 12;
+  });
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   const currentColumns = getFootballStatColumns(season, position);
   const defaultSort = defaultSortByPosition[position]?.toLowerCase() || 'gp';
   
-  const [sortKey, setSortKey] = useState(defaultSort);
-  const [showStat, setShowStat] = useState('ALL');
+  const [sortKey, setSortKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const s = p.get('sort');
+      if (s) return s;
+    }
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (isMobile) {
+      const mobileDefaultStats: Record<string, string> = {
+        QB: 'yds', WR: 'yds', RB: 'yds', TE: 'yds', DB: 'tkl', OL: 'blk', K: 'fgm'
+      };
+      return mobileDefaultStats['QB'] || 'yds';
+    }
+    return defaultSort;
+  });
+  
+  const [showStat, setShowStat] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const s = p.get('show');
+      if (s) return s;
+    }
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (isMobile) {
+      const mobileDefaultStats: Record<string, string> = {
+        QB: 'yds', WR: 'yds', RB: 'yds', TE: 'yds', DB: 'tkl', OL: 'blk', K: 'fgm'
+      };
+      return mobileDefaultStats['QB'] || 'yds';
+    }
+    return 'ALL';
+  });
+
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const players = p.get('players');
+      if (players) {
+        return players.split(',').map(p => p.trim()).filter(Boolean);
+      }
+    }
+    return [];
+  });
+  
+  // Sync state to URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      let changed = false;
+
+      if (season !== params.get('season')) { params.set('season', season); changed = true; }
+      if (position !== params.get('position')) { params.set('position', position); changed = true; }
+      if (sortKey !== params.get('sort')) { params.set('sort', sortKey); changed = true; }
+      if (showStat !== params.get('show')) { params.set('show', showStat); changed = true; }
+      
+      const playersStr = selectedPlayers.join(',');
+      if (playersStr) {
+        if (params.get('players') !== playersStr) {
+          params.set('players', playersStr);
+          changed = true;
+        }
+      } else {
+        if (params.has('players')) {
+          params.delete('players');
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+        window.history.replaceState(null, '', newUrl);
+      }
+    }
+  }, [season, position, sortKey, showStat, selectedPlayers]);
   
   // Refs
   const pillAreaRef = useRef<HTMLDivElement>(null);
@@ -50,11 +158,31 @@ const StatsPage: React.FC = () => {
     // Check if the current sortKey is valid for this season/position
     // Also reset if season or position changed
     if (prevContext.current.season !== season || prevContext.current.position !== position || !validKeys.includes(sortKey)) {
-        const newDefaultSort = defaultSortByPosition[position]?.toLowerCase() || 'gp';
-        setSortKey(validKeys.includes(newDefaultSort) ? newDefaultSort : (validKeys[0] || 'gp'));
-        
-        if (showStat !== 'ALL') {
-            setShowStat('ALL'); // Reset show stat since column might be irrelevant or we just want default
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        const contextChanged = prevContext.current.season !== season || prevContext.current.position !== position;
+
+        if (isMobile && contextChanged) {
+            const mobileDefaultStats: Record<string, string> = {
+              QB: 'yds', WR: 'yds', RB: 'yds', TE: 'yds', DB: 'tkl', OL: 'blk', K: 'fgm'
+            };
+            const mobDef = mobileDefaultStats[position];
+            if (mobDef && validKeys.includes(mobDef)) {
+                setSortKey(mobDef);
+                setShowStat(mobDef);
+            } else {
+                const newDefaultSort = defaultSortByPosition[position]?.toLowerCase() || 'gp';
+                setSortKey(validKeys.includes(newDefaultSort) ? newDefaultSort : (validKeys[0] || 'gp'));
+                if (showStat !== 'ALL') {
+                    setShowStat('ALL');
+                }
+            }
+        } else {
+            const newDefaultSort = defaultSortByPosition[position]?.toLowerCase() || 'gp';
+            setSortKey(validKeys.includes(newDefaultSort) ? newDefaultSort : (validKeys[0] || 'gp'));
+            
+            if (showStat !== 'ALL') {
+                setShowStat('ALL'); // Reset show stat since column might be irrelevant or we just want default
+            }
         }
     } else {
         if (showStat !== 'ALL' && !validKeys.includes(showStat)) {
@@ -164,6 +292,15 @@ const StatsPage: React.FC = () => {
     };
   }, [isSearchOpen]);
 
+  const handleCompare = (playersToCompare: string[] = selectedPlayers, comparisonSeason?: string, comparisonPosition?: string) => {
+    try {
+      sessionStorage.setItem('compare_players', JSON.stringify(playersToCompare));
+      sessionStorage.setItem('compare_season', comparisonSeason || season);
+      sessionStorage.setItem('compare_position', comparisonPosition || position);
+    } catch {}
+    if (onTabChange) onTabChange('compare');
+  };
+
   const renderView = () => {
     const commonProps = { 
       season,
@@ -171,7 +308,9 @@ const StatsPage: React.FC = () => {
       onSeasonChange: handleSeasonChange,
       searchQuery,
       externalSortKey: sortKey,
-      showStat
+      showStat,
+      onCompare: handleCompare,
+      onSelectionChange: setSelectedPlayers
     };
 
     return <FootballStatsTable isEmbedded={true} {...commonProps} />;
@@ -285,26 +424,44 @@ const StatsPage: React.FC = () => {
 
         {/* Desktop Controls Area */}
         <div className="hidden md:flex items-center justify-end h-11 relative shrink-0 -translate-y-1 gap-2.5">
-          {/* Position Selector */}
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full h-full shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 transition-opacity duration-300 opacity-100">
+          {/* Position Selector / Compare Button */}
+          {selectedPlayers.length > 0 ? (
             <button 
-              onClick={() => cyclePosition(-1)}
-              className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-              aria-label="Previous position"
+              onClick={() => handleCompare()}
+              disabled={selectedPlayers.length < 2}
+              style={selectedPlayers.length === 2 ? { backgroundColor: colors.hex, borderColor: colors.hex } : {}}
+              className={`flex w-[112px] items-center justify-center gap-1.5 rounded-full h-full transition-all duration-300 font-black text-xs uppercase tracking-widest select-none ${
+                selectedPlayers.length === 2 
+                  ? `${isLightAccent ? 'text-zinc-950 border-transparent shadow-md hover:opacity-90 active:scale-[0.97] cursor-pointer pointer-events-auto' : 'text-white border-transparent shadow-md hover:opacity-90 active:scale-[0.97] cursor-pointer pointer-events-auto'}` 
+                  : 'bg-zinc-100 border-zinc-200/50 text-zinc-400 dark:bg-zinc-900/50 dark:border-zinc-800/50 dark:text-zinc-600 border shadow-inner cursor-not-allowed pointer-events-none'
+              }`}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              <span className="text-[13px] font-black tracking-normal mt-[1px]">{selectedPlayers.length}/2</span>
+              <svg className="w-3.5 h-3.5 ml-0.5 pt-[1px] opacity-85" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 17l9.2-9.2M17 17V7H7"/>
+              </svg>
             </button>
-            <div className="w-12 h-full flex items-center justify-center font-black text-xs uppercase text-zinc-900 dark:text-zinc-100 tracking-widest pointer-events-none select-none">
-              {position}
+          ) : (
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 rounded-full h-full shadow-inner border border-zinc-200/50 dark:border-zinc-800/50 transition-opacity duration-300 opacity-100">
+              <button 
+                onClick={() => cyclePosition(-1)}
+                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                aria-label="Previous position"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div className="w-12 h-full flex items-center justify-center font-black text-xs uppercase text-zinc-900 dark:text-zinc-100 tracking-widest pointer-events-none select-none">
+                {position}
+              </div>
+              <button 
+                onClick={() => cyclePosition(1)}
+                className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                aria-label="Next position"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
-            <button 
-              onClick={() => cyclePosition(1)}
-              className="w-8 h-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-              aria-label="Next position"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
+          )}
 
           <div className="relative flex items-center gap-2.5 h-full" ref={pillAreaRef}>
             <div className={`flex items-center gap-2.5 h-full transition-opacity duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>

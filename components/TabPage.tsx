@@ -110,7 +110,7 @@ const TabPage: React.FC<TabPageProps> = ({ tabId, onBack, onTabChange }) => {
       return <RulesPage />;
     }
     if (tabId === 'stats') {
-      return <StatsPage />;
+      return <StatsPage onTabChange={onTabChange} />;
     }
     if (tabId === 'league-history') {
       return <HistoryPage />;

@@ -19,37 +19,43 @@ const DropdownIcon = () => (
 );
 
 const RobloxAvatarImg: React.FC<{ username: string | null, size: 'md' | 'xl', className?: string }> = ({ username, size, className = '' }) => {
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const normalized = username?.trim();
+
+  useEffect(() => {
+    setLoaded(false);
+    setError(false);
+  }, [normalized]);
 
   const sizeClasses = {
     md: 'w-16 h-16 md:w-24 md:h-24',
     xl: 'w-32 h-32 md:w-48 md:h-48',
   };
 
-  const placeholder = (
-    <div className={`bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center rounded-2xl ${sizeClasses[size]} ${className}`}>
-      <svg className="w-1/2 h-1/2 text-zinc-300 dark:text-zinc-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    </div>
+  const blankPlaceholder = (
+    <div className={`${sizeClasses[size]} ${className}`} />
   );
 
-  if (!normalized || error) return placeholder;
+  if (!normalized || error) return blankPlaceholder;
 
   return (
-    <img
-      src={`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(normalized)}&format=image`}
-      alt={normalized}
-      className={`object-contain rounded-2xl ${sizeClasses[size]} ${className}`}
-      crossOrigin="anonymous"
-      loading="lazy"
-      decoding="async"
-      onError={() => setError(true)}
-    />
+    <div className={`relative ${sizeClasses[size]} ${className}`}>
+      <img
+        src={`/.netlify/functions/robloxAvatar?username=${encodeURIComponent(normalized)}&format=image`}
+        alt={normalized}
+        className={`object-contain rounded-2xl w-full h-full transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        crossOrigin="anonymous"
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+      />
+    </div>
   );
 };
+
+import RadarChart from './RadarChart';
 
 const ComparePage: React.FC = () => {
   const { settings, getThemeColors } = useSettings();
@@ -57,14 +63,112 @@ const ComparePage: React.FC = () => {
   const accentBg = colors.bg;
   const accentText = colors.text;
   
-  const [season, setSeason] = useState<SeasonID>('s16');
-  const [position, setPosition] = useState<PositionID>('QB');
-  const [activeSeasonIndex, setActiveSeasonIndex] = useState(12); // index 12 -> s13-s16
+  const [season, setSeason] = useState<SeasonID>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSeason = urlParams.get('season') as SeasonID | null;
+        if (urlSeason && SEASONS.includes(urlSeason)) return urlSeason;
+      }
+      const stored = sessionStorage.getItem('compare_season');
+      return (stored as SeasonID) || 's16';
+    } catch { return 's16'; }
+  });
+  
+  const [position, setPosition] = useState<PositionID>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPosition = urlParams.get('position') as PositionID | null;
+        if (urlPosition) return urlPosition; // Could validate against getAvailablePositionsForSeason but leaving as is for flexibility
+      }
+      const stored = sessionStorage.getItem('compare_position');
+      return (stored as PositionID) || 'QB';
+    } catch { return 'QB'; }
+  });
+
+  const [activeSeasonIndex, setActiveSeasonIndex] = useState(() => {
+    try {
+      let targetSeason: SeasonID | null = null;
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSeason = urlParams.get('season') as SeasonID | null;
+        if (urlSeason && SEASONS.includes(urlSeason)) {
+          targetSeason = urlSeason;
+        }
+      }
+      const stored = targetSeason || sessionStorage.getItem('compare_season');
+      if (stored) {
+        const sIdx = SEASONS.indexOf(stored as SeasonID);
+        if (sIdx !== -1) {
+          let nextIndex = sIdx - (sIdx % 4);
+          if (nextIndex < 0) nextIndex = 0;
+          if (nextIndex >= SEASONS.length) nextIndex = SEASONS.length - 4;
+          return Math.max(0, nextIndex);
+        }
+      }
+    } catch {}
+    return 12;
+  });
+
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<PlayerStats[]>([]);
   
+  const [selectedNames, setSelectedNames] = useState<(string | null)[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPlayers = urlParams.get('compare');
+        if (urlPlayers) {
+          const parsed = urlPlayers.split(',').map(p => p.trim());
+          return [parsed[0] || null, parsed[1] || null];
+        }
+      }
+      const stored = sessionStorage.getItem('compare_players');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return [parsed[0] || null, parsed[1] || null];
+      }
+    } catch {}
+    return [null, null];
+  });
+
+  // Sync state to URL
   useEffect(() => {
-    // defaults are handled by state
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      let changed = false;
+
+      if (season !== params.get('season')) { params.set('season', season); changed = true; }
+      if (position !== params.get('position')) { params.set('position', position); changed = true; }
+      
+      const validPlayers = selectedNames.filter(Boolean);
+      if (validPlayers.length > 0) {
+        const compareStr = validPlayers.join(',');
+        if (params.get('compare') !== compareStr) {
+          params.set('compare', compareStr);
+          changed = true;
+        }
+      } else {
+        if (params.has('compare')) {
+           params.delete('compare');
+           changed = true;
+        }
+      }
+
+      if (changed) {
+        const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+        window.history.replaceState(null, '', newUrl);
+      }
+    }
+  }, [season, position, selectedNames]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('compare_season');
+      sessionStorage.removeItem('compare_position');
+      sessionStorage.removeItem('compare_players');
+    } catch {}
   }, []);
 
   const handleSeasonChange = (s: SeasonID) => {
@@ -93,9 +197,6 @@ const ComparePage: React.FC = () => {
     setActiveSeasonIndex(nextIndex);
   };
 
-  // Store only names to persist selection across season data swaps
-  const [selectedNames, setSelectedNames] = useState<(string | null)[]>([null, null]);
-  
   const [awardsData, setAwardsData] = useState<AwardsData | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   
@@ -135,6 +236,46 @@ const ComparePage: React.FC = () => {
       return players.find(p => p.player.toLowerCase() === name.toLowerCase()) || null;
     });
   }, [players, selectedNames]);
+
+  const columnMaxes = useMemo(() => {
+    const maxes: Partial<Record<string, number>> = {};
+    if (!players || players.length === 0) return maxes;
+
+    const keys = Object.keys(players[0]).filter(k => k !== 'player');
+    
+    keys.forEach(key => {
+      const values = players
+        .map(row => row[key] as number)
+        .filter(val => typeof val === 'number' && !isNaN(val));
+      if (values.length > 0) {
+        maxes[key] = Math.max(...values);
+      }
+    });
+
+    return maxes;
+  }, [players]);
+    
+  const columnAverages = useMemo(() => {
+    const averages: Partial<Record<string, number>> = {};
+    if (!players || players.length === 0) return averages;
+    // Determine which columns exist based on the first player
+    const keys = Object.keys(players[0]).filter(k => k !== 'player' && k !== 'gp');
+    
+    const validPlayers = players.filter(p => p.gp === undefined || p.gp > 0);
+    const pool = validPlayers.length > 0 ? validPlayers : players;
+
+    keys.forEach(key => {
+      const values = pool
+        .map(row => row[key] as number)
+        .filter(val => typeof val === 'number' && !isNaN(val));
+      if (values.length > 0) {
+        averages[key] = values.reduce((a, b) => a + b, 0) / values.length;
+      } else {
+        averages[key] = 0;
+      }
+    });
+    return averages;
+  }, [players]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -380,27 +521,130 @@ const ComparePage: React.FC = () => {
 
   const seasonLabel = season.toUpperCase();
 
+  const getOrdinalSuffix = (i: number) => {
+    const j = i % 10,
+        k = i % 100;
+    if (j === 1 && k !== 11) return i + "st";
+    if (j === 2 && k !== 12) return i + "nd";
+    if (j === 3 && k !== 13) return i + "rd";
+    return i + "th";
+  };
+
+  const getPercentile = (val: number, label: string) => {
+    if (val === 0 || isNaN(val)) return null;
+    const colKey = label.toLowerCase();
+    const allValues = players
+      .map(p => {
+        const v = p[colKey as keyof PlayerStats];
+        return typeof v === 'number' ? v : parseFloat(String(v));
+      })
+      .filter(v => !isNaN(v));
+      
+    if (allValues.length < 2) return null;
+    
+    // For INT, fewer is better. For most stats, more is better.
+    const lowerIsBetter = ['int', 'ga', 'l', 'fl'].includes(colKey);
+    
+    let pct: number;
+    if (lowerIsBetter) {
+      const countAboveOrEqual = allValues.filter(v => v >= val).length;
+      pct = (countAboveOrEqual / allValues.length) * 100;
+    } else {
+      const countBelowOrEqual = allValues.filter(v => v <= val).length;
+      pct = (countBelowOrEqual / allValues.length) * 100;
+    }
+
+    if (pct === 100) pct = 99;
+    return Math.round(pct);
+  };
+
   const ComparisonRow = ({ label, leftVal, rightVal }: { label: string, leftVal: any, rightVal: any }) => {
     const leftStyle = getHighlightStyle(leftVal, rightVal, true);
     const rightStyle = getHighlightStyle(leftVal, rightVal, false);
     
     const lNum = parseValue(leftVal);
     const rNum = parseValue(rightVal);
-    const leftIsWinner = (lNum !== 0 || rNum !== 0) && lNum >= rNum;
-    const rightIsWinner = (lNum !== 0 || rNum !== 0) && rNum >= lNum;
+    
+    // For some stats like INT, lower is better
+    const lowerIsBetter = ['int', 'ga', 'l', 'fl'].includes(label.toLowerCase());
+
+    const leftIsWinner = (lNum !== 0 || rNum !== 0) && (lowerIsBetter ? lNum <= rNum : lNum >= rNum);
+    const rightIsWinner = (lNum !== 0 || rNum !== 0) && (lowerIsBetter ? rNum <= lNum : rNum >= lNum);
+
+    const colAvg = columnAverages[label.toLowerCase()] || 0;
+    const hasAvg = colAvg > 0;
+    
+    // "Above Average" in quality means getting *better* than average.
+    // For normal stats: lNum > colAvg is good. For lower-is-better: lNum < colAvg is good.
+    const isLeftGood = hasAvg && (lowerIsBetter ? lNum < colAvg : lNum > colAvg);
+    const isLeftBad = hasAvg && (lowerIsBetter ? lNum > colAvg : lNum < colAvg);
+    const isRightGood = hasAvg && (lowerIsBetter ? rNum < colAvg : rNum > colAvg);
+    const isRightBad = hasAvg && (lowerIsBetter ? rNum > colAvg : rNum < colAvg);
 
     const getValColorClass = (isWinner: boolean) => isWinner ? 'text-zinc-900 dark:text-zinc-100 font-extrabold' : 'text-zinc-900 dark:text-zinc-400 font-semibold';
     
+    const getDiffText = (winNum: number, loseNum: number) => {
+      if (loseNum <= 0 || winNum <= 0 || winNum <= loseNum) return null;
+      const pct = ((winNum - loseNum) / loseNum) * 100;
+      return `+${Math.round(pct)}%`;
+    };
+
+    const leftDiff = settings.advancedAnalytics && leftIsWinner && lNum > rNum ? getDiffText(lNum, rNum) : null;
+    const rightDiff = settings.advancedAnalytics && rightIsWinner && rNum > lNum ? getDiffText(rNum, lNum) : null;
+
+    const leftPct = settings.advancedAnalytics && lNum !== 0 ? getPercentile(lNum, label) : null;
+    const rightPct = settings.advancedAnalytics && rNum !== 0 ? getPercentile(rNum, label) : null;
+
     return (
-      <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0">
-        <div className={`py-3 md:py-5 px-4 text-right transition-colors`} style={leftStyle}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftIsWinner)}`}>{leftVal === 0 || leftVal === null || leftVal === undefined || leftVal === '' ? '—' : leftVal}</span>
+      <div className="grid grid-cols-[1fr_80px_1fr] md:grid-cols-[1fr_120px_1fr] items-center border-b border-zinc-100 dark:border-zinc-900 last:border-0 relative">
+        <div className={`py-3 md:py-4 px-4 flex flex-col items-end justify-center min-h-[56px] md:min-h-[72px] transition-colors relative`} style={leftStyle}>
+          {leftPct !== null && (
+            <div className="hidden md:flex absolute top-1.5 left-4 items-center gap-1">
+               <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 bg-white/50 dark:bg-zinc-900/50 px-1.5 py-0.5 rounded shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">
+                 {getOrdinalSuffix(leftPct)} %ILE
+               </span>
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-1">
+            {isLeftBad && lNum !== 0 && !settings.advancedAnalytics && (
+              <svg className="hidden md:block w-3 h-3 text-red-500/70 dark:text-red-400/70 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M19 12l-7 7-7-7"/>
+              </svg>
+            )}
+            {isLeftGood && !settings.advancedAnalytics && (
+              <svg className="hidden md:block w-3 h-3 text-emerald-500 dark:text-emerald-400 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+            )}
+            <span className={`text-sm md:text-base tabular-nums ${getValColorClass(leftIsWinner)}`}>{leftVal === 0 || leftVal === null || leftVal === undefined || leftVal === '' ? '—' : leftVal}</span>
+          </div>
+          {leftDiff && <span className="hidden md:block text-[10px] font-black text-emerald-600 dark:text-emerald-400 mt-1 leading-none">{leftDiff}</span>}
         </div>
         <div className="py-3 md:py-5 text-center bg-zinc-50/30 dark:bg-zinc-900/10 h-full flex items-center justify-center border-x border-zinc-100 dark:border-zinc-900">
           <span className="text-[8px] md:text-[10px] font-black text-zinc-900 dark:text-zinc-600 uppercase tracking-widest whitespace-nowrap px-1">{label}</span>
         </div>
-        <div className={`py-3 md:py-5 px-4 text-left transition-colors`} style={rightStyle}>
-          <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightIsWinner)}`}>{rightVal === 0 || rightVal === null || rightVal === undefined || rightVal === '' ? '—' : rightVal}</span>
+        <div className={`py-3 md:py-4 px-4 flex flex-col items-start justify-center min-h-[56px] md:min-h-[72px] transition-colors relative`} style={rightStyle}>
+          {rightPct !== null && (
+            <div className="hidden md:flex absolute top-1.5 right-4 items-center gap-1">
+               <span className="text-[9px] font-bold text-zinc-400 dark:text-zinc-500 bg-white/50 dark:bg-zinc-900/50 px-1.5 py-0.5 rounded shadow-sm border border-zinc-200/50 dark:border-zinc-700/50">
+                 {getOrdinalSuffix(rightPct)} %ILE
+               </span>
+            </div>
+          )}
+          <div className="flex items-center justify-start gap-1">
+            <span className={`text-sm md:text-base tabular-nums ${getValColorClass(rightIsWinner)}`}>{rightVal === 0 || rightVal === null || rightVal === undefined || rightVal === '' ? '—' : rightVal}</span>
+            {isRightGood && !settings.advancedAnalytics && (
+              <svg className="hidden md:block w-3 h-3 text-emerald-500 dark:text-emerald-400 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+            )}
+            {isRightBad && rNum !== 0 && !settings.advancedAnalytics && (
+              <svg className="hidden md:block w-3 h-3 text-red-500/70 dark:text-red-400/70 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M19 12l-7 7-7-7"/>
+              </svg>
+            )}
+          </div>
+          {rightDiff && <span className="hidden md:block text-[10px] font-black text-emerald-600 dark:text-emerald-400 mt-1 leading-none">{rightDiff}</span>}
         </div>
       </div>
     );
@@ -849,6 +1093,22 @@ const ComparePage: React.FC = () => {
               </div>
            </div>
            <div className="flex flex-col">
+              {settings.advancedAnalytics && hasSelection && (
+                <div className="hidden md:flex flex-col mb-12">
+                  <SectionHeader title="Radar" />
+                  <div className="pt-6">
+                    <RadarChart
+                      player1={selectedStats[0]}
+                      player2={selectedStats[1]}
+                      player1Name={selectedNames[0] || ''}
+                      player2Name={selectedNames[1] || ''}
+                      fields={getFootballStatColumns(season, position).filter((col: any) => !['PLAYER', 'GP'].includes(col)).map((c: string) => c.toLowerCase()).slice(0, 5)}
+                      maxes={columnMaxes}
+                      themeHex={colors.hex}
+                    />
+                  </div>
+                </div>
+              )}
               <SectionHeader title="Stats" />
               {getFootballStatColumns(season, position).filter((col: any) => col !== 'PLAYER').map((col: any) => (
                 <ComparisonRow 

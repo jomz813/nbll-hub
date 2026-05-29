@@ -92,10 +92,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     </div>
   );
 
-  const Toggle = ({ active, onToggle, color = 'bg-zinc-900 dark:bg-zinc-100' }: { active: boolean, onToggle: () => void, color?: string }) => (
+  const Toggle = ({ active, onToggle, color = 'bg-zinc-900 dark:bg-zinc-100', disabled = false }: { active: boolean, onToggle: () => void, color?: string, disabled?: boolean }) => (
     <button 
       onClick={onToggle}
-      className={`w-10 h-6 rounded-full transition-all duration-300 relative ${active ? color : 'bg-zinc-200 dark:bg-zinc-800'}`}
+      disabled={disabled}
+      className={`w-10 h-6 rounded-full transition-all duration-300 relative ${active ? color : 'bg-zinc-200 dark:bg-zinc-800'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <motion.div 
         initial={false}
@@ -263,6 +264,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   </ControlRow>
                   <ControlRow label="Quick Search" desc="Enable '/' keyboard shortcut." isLast={isMobile}>
                     <Toggle active={settings.searchSlashOpens} onToggle={() => updateSettings({ searchSlashOpens: !settings.searchSlashOpens })} />
+                  </ControlRow>
+                </div>
+              </section>
+
+              {/* Analytics Section */}
+              <section className="space-y-4">
+                <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">Analytics</h3>
+                <div className="space-y-0">
+                  <ControlRow label="Advanced Analytics" desc="Display additional metrics in select locations." isLast>
+                    {isMobile ? (
+                      <div className="flex items-center gap-3">
+                         <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded cursor-not-allowed select-none">Desktop Only</span>
+                         <Toggle active={false} onToggle={() => {}} disabled />
+                      </div>
+                    ) : (
+                      <Toggle active={settings.advancedAnalytics} onToggle={() => updateSettings({ advancedAnalytics: !settings.advancedAnalytics })} />
+                    )}
                   </ControlRow>
                 </div>
               </section>

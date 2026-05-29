@@ -17,7 +17,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 
 
 
-const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
+const HOFCard: React.FC<{ member: HOFMember; index: number }> = ({ member, index }) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const displayStats = useMemo(() => {
@@ -34,7 +34,8 @@ const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
 
   return (
     <div 
-      className="group relative h-[400px] lg:h-[460px] w-full perspective-1000 cursor-pointer"
+      className="group relative h-[400px] lg:h-[460px] w-full perspective-1000 cursor-pointer animate-card-hint shadow-xl hover:-translate-y-2 hover:shadow-2xl rounded-[2rem] transition-all duration-300"
+      style={{ animationDelay: `${0.8 + index * 0.12}s` }}
       onClick={() => setIsFlipped(!isFlipped)}
     >
       <div className={`
@@ -118,52 +119,57 @@ const HOFCard: React.FC<{ member: HOFMember }> = ({ member }) => {
               </div>
 
               {/* Stats Panel - Clean Text-Based System */}
-              <div className="flex-1 flex min-h-0 items-center justify-center pb-2 w-full px-2 sm:px-4 lg:px-6">
+              <div className="flex-1 flex min-h-0 items-stretch justify-center pb-4 sm:pb-5 w-full px-3 sm:px-4 lg:px-5">
                   {displayStats.length > 0 && (
-                    <div className="flex flex-col items-center justify-center gap-y-4 sm:gap-y-5 lg:gap-y-6 w-full max-w-[95%] sm:max-w-[90%] mx-auto relative z-10">
+                    <div className={`grid w-full h-full gap-2.5 sm:gap-3 relative z-10 ${
+                      displayStats.length === 2 ? `grid-cols-1 grid-rows-2 max-w-[80%] ${(member.name === 'jalenramsey2199' || member.name === 'scalphunter') ? 'lg:max-w-[95%]' : ''} mx-auto` :
+                      displayStats.length === 4 ? 'grid-cols-2 grid-rows-2' :
+                      displayStats.length === 6 ? 'grid-cols-2 grid-rows-3' :
+                      'grid-cols-2 grid-rows-2'
+                    }`}>
                       {(() => {
                         const statCount = displayStats.length;
                         
-                        let rows: typeof displayStats[] = [];
-                        if (statCount === 2) rows = [displayStats.slice(0, 2)];
-                        else if (statCount === 3) rows = [displayStats.slice(0, 3)];
-                        else if (statCount === 4) rows = [displayStats.slice(0, 2), displayStats.slice(2, 4)];
-                        else if (statCount === 5) rows = [displayStats.slice(0, 3), displayStats.slice(3, 5)];
-                        else if (statCount === 6) rows = [displayStats.slice(0, 3), displayStats.slice(3, 6)];
-                        else if (statCount === 7) rows = [displayStats.slice(0, 3), displayStats.slice(3, 6), displayStats.slice(6, 7)];
-                        else {
-                          for (let i = 0; i < statCount; i += 3) {
-                            rows.push(displayStats.slice(i, i + 3));
-                          }
-                        }
-
                         let valSize, labelSize;
-                        if (statCount <= 3) {
-                          valSize = "text-3xl sm:text-4xl lg:text-[38px]";
-                          labelSize = "text-[10px] sm:text-[11px] lg:text-[13px]";
-                        } else if (statCount <= 5) {
-                          valSize = "text-2xl sm:text-[28px] lg:text-[32px]";
-                          labelSize = "text-[9px] sm:text-[10px] lg:text-[11px]";
+                        let customValStyles = {};
+                        if (statCount <= 2) {
+                          if (member.name === 'jalenramsey2199' || member.name === 'scalphunter') {
+                            valSize = "text-4xl sm:text-5xl lg:text-4xl whitespace-nowrap";
+                            customValStyles = { wordBreak: 'normal', overflowWrap: 'normal' };
+                          } else {
+                            valSize = "text-4xl sm:text-5xl lg:text-6xl";
+                            customValStyles = { wordBreak: 'break-word', overflowWrap: 'anywhere' };
+                          }
+                          labelSize = "text-xs sm:text-sm lg:text-base";
+                        } else if (statCount <= 4) {
+                          valSize = "text-2xl sm:text-3xl lg:text-4xl";
+                          labelSize = "text-[10px] sm:text-xs lg:text-[13px]";
+                          customValStyles = { wordBreak: 'break-word', overflowWrap: 'anywhere' };
                         } else {
-                          valSize = "text-xl sm:text-2xl lg:text-[28px]";
-                          labelSize = "text-[8px] sm:text-[9px] lg:text-[10px]";
+                          if (member.name === 'wary') {
+                            valSize = "text-[20px] sm:text-2xl lg:text-[22px] whitespace-nowrap";
+                            customValStyles = { wordBreak: 'normal', overflowWrap: 'normal' };
+                          } else {
+                            valSize = "text-[20px] sm:text-2xl lg:text-[28px]";
+                            customValStyles = { wordBreak: 'break-word', overflowWrap: 'anywhere' };
+                          }
+                          labelSize = "text-[9px] sm:text-[10px] lg:text-[11px]";
                         }
 
-                        return rows.map((row, rIdx) => (
+                        return displayStats.map((stat, sIdx) => (
                           <div 
-                            key={rIdx} 
-                            className="flex flex-row items-center justify-center gap-x-4 sm:gap-x-6 lg:gap-x-10 w-full"
+                            key={sIdx} 
+                            className="flex flex-col items-center justify-center w-full h-full min-h-0 border border-[#D4AF37]/10 bg-zinc-900/30 rounded-xl sm:rounded-2xl shadow-[inset_0_0_15px_rgba(212,175,55,0.03)] p-1.5 sm:p-2 overflow-hidden"
                           >
-                            {row.map((stat, sIdx) => (
-                              <div key={sIdx} className="flex flex-col items-center justify-center shrink-0">
-                                <span className={`${valSize} font-black text-white leading-none tracking-tight tabular-nums drop-shadow-md`}>
-                                  {stat.value}
-                                </span>
-                                <span className={`${labelSize} font-bold text-[#D4AF37] uppercase tracking-widest opacity-90 leading-none drop-shadow-sm mt-1 sm:mt-1.5 lg:mt-2`}>
-                                  {stat.label}
-                                </span>
-                              </div>
-                            ))}
+                            <span 
+                              className={`${valSize} font-black text-white leading-[1.1] tracking-tight tabular-nums drop-shadow-md text-center max-w-full`}
+                              style={customValStyles}
+                            >
+                              {stat.value}
+                            </span>
+                            <span className={`${labelSize} font-bold text-[#D4AF37] uppercase tracking-widest opacity-90 leading-tight drop-shadow-sm mt-1 sm:mt-1.5 text-center max-w-full px-0.5`}>
+                              {stat.label}
+                            </span>
                           </div>
                         ));
                       })()}
@@ -207,10 +213,11 @@ const HallOfFamePage: React.FC = () => {
 
         {/* 1 col mobile, 2 col tablet, 3 col desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {shuffledMembers.map((member) => (
+          {shuffledMembers.map((member, index) => (
             <HOFCard 
               key={member.name} 
               member={member} 
+              index={index}
             />
           ))}
         </div>
@@ -223,6 +230,30 @@ const HallOfFamePage: React.FC = () => {
         }
         .animate-page-enter {
           animation: page-enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes card-hint {
+          0%, 100% {
+            transform: translateY(0) scale(1) rotate(0deg);
+          }
+          15% {
+            transform: translateY(-8px) scale(1.02) rotate(-1.3deg);
+          }
+          30% {
+            transform: translateY(-8px) scale(1.02) rotate(1.3deg);
+          }
+          45% {
+            transform: translateY(-3px) scale(1.01) rotate(-0.6deg);
+          }
+          60% {
+            transform: translateY(-3px) scale(1.01) rotate(0.6deg);
+          }
+          75% {
+            transform: translateY(0) scale(1) rotate(0deg);
+          }
+        }
+        .animate-card-hint {
+          animation: card-hint 1.4s cubic-bezier(0.25, 1, 0.5, 1) both;
         }
 
         /* Flip Card Support */

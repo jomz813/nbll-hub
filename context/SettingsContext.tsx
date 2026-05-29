@@ -9,6 +9,7 @@ export interface Settings {
   stickyHeader: boolean;
   searchSlashOpens: boolean;
   siteThemeAccent: SiteThemeAccent;
+  advancedAnalytics: boolean;
 }
 
 export interface ThemeOption {
@@ -53,6 +54,7 @@ const defaultSettings: Settings = {
   stickyHeader: true,
   searchSlashOpens: true,
   siteThemeAccent: "default",
+  advancedAnalytics: false,
 };
 
 const THEME_ACCENTS_MAP: Record<SiteThemeAccent, string> = {
